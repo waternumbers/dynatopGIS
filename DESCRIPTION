@@ -1,0 +1,23 @@
+Package: dynatopGIS
+Title: GIS tools for helping build dynamic TOPMODEL
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Paul",
+           family = "Smith",
+           role = c("aut", "cre"),
+           email = "paul@waternumbers.co.uk",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: This package assists in building implimentations of dynamic TOPMODEL for use with the dynatop package.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Imports:
+    Rcpp,
+	raster,
+	sp,
+	rgeos,
+Depends:
+	R (>= 3.1),
+LinkingTo:
+    Rcpp
+RoxygenNote: 6.1.1
