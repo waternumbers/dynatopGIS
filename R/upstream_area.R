@@ -4,12 +4,11 @@
 #' 
 #' @param project_path folder whcih is being used for the analysis
 #' @param max_iter maximum number of iterations of the algorithm
-#' @param minimum_tangent  minimum value of the gradient to the next cell downstream
 #' @param use_filled_dem logical indicating if the analysis should start with the filled DEM
 #'
 #' @details the algotithm works by looping over all the cells in the DEM and is relavitley robust but inefficent. If the maximum number of iterations is exceeded and there are still sinks the \code{use_filled_dem} flag can be used to restart from the final state.
 #' @export
-sink_fill<- function(project_path,max_iter=10,minimum_tangent=0.001,use_filled_dem=FALSE){
+upstream_area <- function(project_path,max_iter=10,use_filled_dem=TRUE){
 
     ## load dem and channel id
     if(use_filled_dem){
@@ -21,17 +20,34 @@ sink_fill<- function(project_path,max_iter=10,minimum_tangent=0.001,use_filled_d
 
     ## check it is square
     if( raster::xres(dem)!=raster::yres(dem) ){
-        stop("Sink fill only works with dem with equal x & y resolutuions")
+        stop("Upstream area only works with dem with equal x & y resolutuions")
     }
 
-    ## standardise dem so don't have to pass distances into focal function
+    ## standardise dem so don't have to pass distances into gradient
     dem <- dem / raster::xres(dem)
 
-    ## test for if it is a sinkgradient of scaled DEM
-    grad_calc <- function(x,...){
+    ## weight for each direction
+    weight_calc <- function(x,...){
         s2 <- sqrt(2)
-        max((x[5]-x[-5])/c(s2,1,s2,1,1,s2,1,s2))
+        pmax((x[5]-x)/c(s2,1,s2,1,1,s2,1,s2),0)
     }
+
+    ## number of upstream cells
+    upstream_calc <- function(x,...){
+        if(is.finite(x[5])){
+            sum( (x[5]-x)>0 ,na.rm=TRUE )
+        }else{
+            NA
+        }
+    }
+
+    ## calulate the number of upstream cells
+    n_upstream <- raster::focal(dem,w=matrix(rep(1,9),3),fun=upstream_calc,
+                                pad=TRUE)
+
+    
+
+    
     ## fill value for DEM
     fill_calc <- function(x,...){
         s2 <- sqrt(2)

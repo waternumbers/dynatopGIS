@@ -50,9 +50,9 @@ catchment in the UK.
 Start the analysis by loading the \code{dynatopGIS} package and specifying a
 path for the project to which the intermediate files will be written.
 ```{r, initialisation}
-devtools::load_all('./dynatopGIS')
+devtools::load_all()
 ## library(dynatopGIS)
-project_path <- './gis_vig' #tmpDir()
+project_path <- '../../gis_vig' #tmpDir()
 ```
 The package contains helper functions for reading the DEM and river
 network. These read in the specified files and outputs them to the project
@@ -131,7 +131,7 @@ For Swindale, where the example DEM is already partially filled the algorithm
 finishes quickly and the changes in the DEM are minor
 ```{r, sink_fill}
 sink_fill(project_path,max_iter = 1000)
-plot( raster:raster(file.path(project_path,'filled_dem.tif')) - raster:raster(file.path(project_path,'dem.tif')) )
+plot( raster::raster(file.path(project_path,'filled_dem.tif')) - raster::raster(file.path(project_path,'dem.tif')) )
 ```
 
 ## Computing topographic index
@@ -181,6 +181,11 @@ HRUs.
 
 For example in the case of the division of Swindale by togographic index into
 21 classes the resulting model can be generated and displayed by
-```{r, model_atb_split}
+```{r, mode_atb_split}
 create_model(project_path,'atb_split')
+```
+
+```{r, debug}
+## some extra bits for debugging
+
 ```
