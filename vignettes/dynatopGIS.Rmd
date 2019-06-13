@@ -50,17 +50,18 @@ catchment in the UK.
 Start the analysis by loading the \code{dynatopGIS} package and specifying a
 path for the project to which the intermediate files will be written.
 ```{r, initialisation}
-devtools::load_all()
-## library(dynatopGIS)
-project_path <- '../../gis_vig' #tmpDir()
+##devtools::load_all()
+library(dynatopGIS)
+project_path <- file.path(tempdir(),'vig') #'../../gis_vig' #tmpDir()
+dir.create(project_path)
 ```
 The package contains helper functions for reading the DEM and river
 network. These read in the specified files and outputs them to the project
 directory in a standard format. For the DEM this is straight forward
 ```{r, load_dem}
+dem_file <- 
 load_dem(system.file("extdata", "SwindaleDTM4mFilled.tif", package = "dynatopGIS", mustWork = TRUE),
          project_path)
-
 plot( raster::raster(file.path(project_path,'dem.tif')) )
 ```
 As with most of the \code{dynatopGIS} functions the value \code{TRUE} is
@@ -91,8 +92,8 @@ property_names <- c(chanel_id="identifier",
 Since the underlying data set for Swindale does not contain a channel width we
 use the default width of 2m in \code{load_channel}. The river network to be imported by calling
 ```{r, channel_load}
-load_channel( system.file("extdata", "SwindaleRiverNetwork.shp", package = "dynatopGIS", mustWork = TRUE),
-            property_names,project_path)
+load_channel(system.file("extdata", "SwindaleRiverNetwork.shp", package = "dynatopGIS", mustWork = TRUE),
+             property_names,project_path)
 plot( raster::shapefile(file.path(project_path,'channel')) )
 ```
 
@@ -136,15 +137,30 @@ plot( raster::raster(file.path(project_path,'filled_dem.tif')) - raster::raster(
 
 ## Computing topographic index
 The basis of seperation of the hydrological response units in TOPMODEL is the
-topographic index.
-This can be computed by the the function \code{cal_atb} which impliments an
-algorithm that computes the area draining to a cell from those upstream
-presuming the flow is split between the downsteam (lower) neighbouring cells
-proportional to the gradient.
+topographic index, which is computeed from the upstream area and gradient.
+
+The upstream area is computed by routing down slope with the fraction of the
+area being routed to the next downstream pixel being proportional to the
+gradient. Ths can be evaluated with
+```{r, calc_area}
+upslope_area(project_path,max_iter = 2000)
+plot( raster::raster(file.path(project_path,'upslope_area.tif')))
+```
+This shows clearly an area of flow accumulation where no channel is defined.
+
+The local value of the gradient (tanb) if computed using the average of a
+subset of between pixel gradients. For a normal 'hillslope' cell these are the
+gradients to downslope pixels. In the case of pixels which contain river
+channels, or fall on the edge of the catchment with \code{NA} neighbours it is
+the average of the gradients from upslope pixels.
+```{r, calc_tanb}
+tanb(project_path)
+plot( raster::raster(file.path(project_path,'tanb.tif')))
+```
 
 For Swindale the resulting topographic is calculated as
 ```{r, calc_atb}
-calc_atb(project_path,max_iter = 2000)
+atb(project_path)
 plot( raster::raster(file.path(project_path,'atb.tif')))
 ```
 
@@ -170,7 +186,6 @@ cuts <- list(atb=20)
 split_to_class(project_path,'atb_split',cuts)
 plot( raster::raster(file.path(project_path,'atb_split.tif')))
 ```
-
 
 # Generating a dynamic TOPMODEL
 As final stage dynamic TOPMODELs can be generated from the GIS data for use

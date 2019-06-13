@@ -4,8 +4,12 @@
 #'
 #' @param file_name name of file to read in
 #' @param property_names named vector of columns of the spatial data frame to use for channel properties
+#' @param project_path path to the project folder
+#' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
+#' @return TRUE if runs otherwise an error message.
 #'
-#' @return A SpatialLinesDataFrame with properties chanel_id,length,width,startNode,endNode
+#' @details reading in the input file and covnerts it then saves a shape file of polygons with properties chanel_id,length,width,startNode,endNode in the project directory under the name \code{channel.shp}. Feild in the input file corresponding to the properties can be specified in the \code{property_names} vector.
+#' 
 #' @export
 load_channel <- function(file_name,property_names,project_path='.',default_width=2){
     ## check property names

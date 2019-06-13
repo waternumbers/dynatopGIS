@@ -11,10 +11,17 @@ load_channel(file_name, property_names, project_path = ".",
 \item{file_name}{name of file to read in}
 
 \item{property_names}{named vector of columns of the spatial data frame to use for channel properties}
+
+\item{project_path}{path to the project folder}
+
+\item{default_width}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
 }
 \value{
-A SpatialLinesDataFrame with properties chanel_id,length,width,startNode,endNode
+TRUE if runs otherwise an error message.
 }
 \description{
 
+}
+\details{
+reading in the input file and covnerts it then saves a shape file of polygons with properties chanel_id,length,width,startNode,endNode in the project directory under the name \code{channel.shp}. Feild in the input file corresponding to the properties can be specified in the \code{property_names} vector.
 }

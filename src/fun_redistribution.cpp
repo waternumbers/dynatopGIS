@@ -5,107 +5,98 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 List fun_redistribution(NumericMatrix dem, NumericMatrix land_area,
-				 IntegerMatrix hillslope, IntegerMatrix channel,
-				 int number_hillslope_class,
-				 int number_channel_class,
-				 NumericMatrix dist){
+			IntegerMatrix hillslope, IntegerMatrix channel,
+			int number_hillslope_class,
+			int number_channel_class,
+			NumericMatrix dist){
   
   // initialise the output
   NumericMatrix slope_redist(number_hillslope_class,number_hillslope_class);
   NumericMatrix channel_redist(number_channel_class,number_hillslope_class);
   // logical test matrix
-  LogicalMatrix is_valid_from(dem.nrow(),dem.ncol());
-  LogicalMatrix is_valid_to(dem.nrow(),dem.ncol());
-
+  LogicalMatrix can_eval(dem.nrow(),dem.ncol());
+  int uc, dc, n_finite;
+  NumericMatrix W(3,3);
+  double sW;
+  
+  double na_test_val = -10000; // test for NAN against this - if NAN will return false
+  
   Rcout << "Start of function" << std::endl;
   
-  // loop to determin cells with valid dem, area and hillslope class values
-  // these are the cells we can drain from 
+  // loop to determin cells can be drained from
   for(int i=0;i < dem.nrow(); i++){
     for(int j=0; j < dem.ncol(); j++){
-      // evaluate if we can drain from this cell
-      // valid dem, land_area and hillslope class
-      is_valid_from(i,j)=false;
-      if(dem(i,j) > -10000){
-	if(land_area(i,j) > 0){
-	  if(hillslope(i,j) > 0){
-	    is_valid_from(i,j) = true;
+      // to be drained froma pixle must have:
+      // - a  hillslope class
+      // - have a positive land area
+      // - either:
+      //     - a channel class
+      //     - or 9 finite values in the block around i,j
+            
+      // work out finite neighbours
+      n_finite = 0;
+      for(int ii=-1;ii<2;ii++){
+	for(int jj=-1;jj<2;jj++){
+	  if( i+ii > -1 && i+ii < dem.nrow() && 
+	      j+jj > -1 && j+jj < dem.ncol() ){
+	    if( dem(i+ii,j+jj) > na_test_val ){
+	      n_finite = n_finite + 1;
+	    }
 	  }
 	}
       }
-      // evaluate if we can drain to this cell
-      // valid dem, and either hillslope class & area > 0 or river class
-      is_valid_to(i,j)=false;
-      if(dem(i,j) > -10000){
-	if(land_area(i,j) > 0){
-	  if(hillslope(i,j) > 0){
-	    is_valid_to(i,j) = true;
-	  }
-	}
-	if(channel(i,j) > 0){
-	  is_valid_to(i,j) = true;
-	}
+      // see if tests passed
+      if( (n_finite==9 || channel(i,j)>na_test_val) &&
+	  land_area(i,j)>0 &&
+	  hillslope(i,j) > na_test_val ){
+	can_eval(i,j) = true;
       }
     }
   }
+
   Rcout << "Computed valid sources and downsteams" << std::endl;
   
-  // Loop to compute the fluxes
+  // the see how cells redistribute
   for(int i=0;i < dem.nrow(); i++){
     for(int j=0; j < dem.ncol(); j++){
-      if(is_valid_from(i,j)==true){
-	// Rcout << "Start to determine initial index" << std::endl;
-	int upslope_index = hillslope(i,j);
-	int downslope_index = -1;
-	// Rcout << "Determined initial indexes" << std::endl;
-	if( channel(i,j) > -10000 ){ // then it is a channel pixel
-	  // all land area goes to channel
-	  downslope_index = channel(i,j) ;
-	  //Rcout << downslope_index << " " << upslope_index << std::endl;
-	  channel_redist(downslope_index,upslope_index) =
-	    channel_redist(downslope_index,upslope_index) + land_area(i,j) ;
-	  //Rcout << "Evaluated as downsteam channel" << std::endl;
+      // check it can be propogaed
+      if( can_eval(i,j)==true ){
+	
+	if( channel(i,j) > na_test_val ){
+	  // drains straight to the channel
+	  uc = hillslope(i,j);
+	  dc = channel(i,j);
+	  channel_redist( dc,uc ) = channel_redist( dc,uc ) + land_area(i,j) ;
 	}else{
-	  // sent to downslope pixels proportional to gradient
-	  // compute total gradient
-	  double sum_tanb = 0;
+	  // drains to various areas
+
+	  // work out weights in each direction
+	  sW = 0; 
 	  for(int ii=-1;ii<2;ii++){
 	    for(int jj=-1;jj<2;jj++){
-	      if( i+ii > -1 && i+ii < dem.nrow() && 
-		  j+jj > -1 && j+jj < dem.ncol() &&
-		  ii != 0 && jj != 0 &&
-		  is_valid_to(i+ii,j+jj) ==true){
-		if( dem(i,j) > dem(i+ii,j+jj) ){
-		  sum_tanb = sum_tanb + ( (dem(i,j) - dem(i+ii,j+jj))/dist(ii+1,jj+1) );
-		}
+	      W(ii+1,jj+1) = (dem(i,j)-dem(i+ii,j+jj))/dist(ii+1,jj+1);
+	      if( W(ii+1,jj+1) > 0 ){
+		sW=sW+W(ii+1,jj+1);
 	      }
 	    }
 	  }
-	  //Rcout << "Computed sum_tanb" << std::endl;
-	  // redistribute
+
+	  // propogate
 	  for(int ii=-1;ii<2;ii++){
 	    for(int jj=-1;jj<2;jj++){
-	      if( i+ii > -1 && i+ii < dem.nrow() && 
-		  j+jj > -1 && j+jj < dem.ncol() &&
-		  ii != 0 && jj != 0 &&
-		  is_valid_to(i+ii,j+jj) ==true){
-		if( dem(i,j) > dem(i+ii,j+jj) ){
-		  double w = ( (dem(i,j) - dem(i+ii,j+jj))/dist(ii+1,jj+1) ) / sum_tanb;
-		  if( is_valid_from(i+ii,j+jj)==true ){
-		    // send to the hillslope class
-		    int downslope_index = hillslope(i+ii,j+jj) ;
-		    //Rcout << downslope_index << " " << upslope_index << std::endl;
-		    slope_redist( downslope_index,upslope_index) =
-			slope_redist(downslope_index,upslope_index) + w*land_area(i,j) ;
-		    //Rcout << "Evaluated as hillslope class" << std::endl;
-		  }else{
-		    // send to the channel class if there is one
-		    if( channel(i+ii,j+jj) > 0 ){
-		      downslope_index = channel(i+ii,j+jj);
-		      channel_redist(downslope_index,upslope_index) =
-			channel_redist(downslope_index,upslope_index) + w*land_area(i,j) ;
-		      //Rcout << "Evaluated as channel" << std::endl;
-		    }
+	      if( W(ii+1,jj+1) > 0 ){
+		if( hillslope(i+ii,j+jj) > na_test_val ){
+		  uc = hillslope(i,j);
+		  dc = hillslope(i+ii,j+jj);
+		  // pass to hillslope class
+		  slope_redist(dc,uc) = slope_redist(dc,uc) + 
+		    land_area(i,j)*W(ii+1,jj+1)/sW;
+		}else{
+		  if( channel(i+ii,j+jj) > na_test_val ){
+		    uc = hillslope(i,j);
+		    dc = channel(i+ii,j+jj);
+		    channel_redist(dc,uc) = channel_redist(dc,uc) + 
+		      land_area(i,j)*W(ii+1,jj+1)/sW;
 		  }
 		}
 	      }
@@ -115,7 +106,6 @@ List fun_redistribution(NumericMatrix dem, NumericMatrix land_area,
       }
     }
   }
-  //Rcout << "Got to output" << std::endl;
-  //return slope_redist;
+
   return List::create(Named("hillslope") = slope_redist , Named("channel") = channel_redist);
 }

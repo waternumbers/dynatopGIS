@@ -1,6 +1,6 @@
 #' Add a channel to the DEM
 #'
-#' @description Adds a chanel to the DEM by working out the land and channela areas and channel id
+#' @description Adds a chanel to the DEM by working out the land and channel areas and channel id
 #'
 #' @param project_path the path to the folder used for the analysis
 #'
@@ -43,7 +43,7 @@ add_channel <- function(project_path){
                           function(chunk) chunk[which.max(chunk$channel_area),]))
 
     ## make land an channel area in ch_cell consistent
-    ch_cell[,'channel_area'] <- pmax( ch_cell[,'channel_area'], ch_cell[,'land_area'] )
+    ch_cell[,'channel_area'] <- pmin( ch_cell[,'channel_area'], ch_cell[,'land_area'] )
     ch_cell[,'land_area'] <- ch_cell[,'land_area'] - ch_cell[,'channel_area']
 
     ## add to rasters and write out

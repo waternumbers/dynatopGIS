@@ -12,7 +12,7 @@ NumericMatrix fun_sink_fill(NumericMatrix dem, LogicalMatrix is_channel,
   int niter = 0;
   LogicalMatrix can_eval(dem.nrow(),dem.ncol());
 
-  numeric na_test_val = -10000; // test the for NAN against this - if NAN will return false
+  double na_test_val = -10000; // test the for NAN against this - if NAN will return false
     
   // determine if we can fill a cell if it is a sink
   for(int i=0;i < dem.nrow(); i++){
@@ -56,7 +56,7 @@ NumericMatrix fun_sink_fill(NumericMatrix dem, LogicalMatrix is_channel,
 	    for(int jj=-1;jj<2;jj++){
 	      if( i+ii > -1 && i+ii < dem.nrow() && 
 		  j+jj > -1 && j+jj < dem.ncol() &&
-		  ii != 0 && jj != 0){
+		  !(ii == 0 && jj == 0) ){
 		// value that dem(i,j) but excedd if the gradient in greater then min required
 		double neighbour = dem(i+ii,j+jj) + delta(ii+1,jj+1);
 		// see if this neighbour is low enough

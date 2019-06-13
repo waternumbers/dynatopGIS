@@ -2,8 +2,8 @@
 #'
 #' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL
 #' 
-#' @param project_dir Directory of the project
-#' @param class_name Name fo the existing classification to use to generate the model
+#' @param project_dir directory of the project being worked on
+#' @param hillslope_class Name of the existing hillslope classification to use to generate the model
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
@@ -28,13 +28,30 @@ create_model <- function(project_path,hillslope_class){
                       area = raster::zonal(brck[['land_area']],brck[[hillslope_class]],
                                            'sum',digits=4)[,2],
                       atb_bar = raster::zonal(brck[['atb']],brck[[hillslope_class]],
-                                              'mean',digits=4)[,2]
+                                              'mean',digits=4)[,2],
+                      precip_input="unknown",
+                      pet_input="unknown",
+                      srz_max="srz_max_default",
+                      srz_0="srz_0_default",
+                      ln_t0="ln_t0_default",
+                      m="m_default",
+                      td="td_default",
+                      tex="tex_default"
                   ),
                   channel = data.frame(
                       id = raster::unique(brck[['channel_id']]),
                       area = raster::zonal(brck[['channel_area']],brck[['channel_id']],
-                                           'sum',digits=4)[,2]
-                  ))
+                                           'sum',digits=4)[,2],
+                      precip_input="unknown",
+                      pet_input="unknown"
+                  ),
+                  param <- c(srz_max_default=0.05,
+                             srz_0_default=0.99,
+                             ln_t0_default=19,
+                             m_default=0.004,
+                             td_default=20,
+                             tex_default=100)
+                  )
 
     ## make distance for computing the weighting matrices
     dist <- matrix(sqrt(raster::xres(brck)^2 + raster::yres(brck)^2),3,3)
@@ -54,7 +71,7 @@ create_model <- function(project_path,hillslope_class){
                               length(model$channel$id),
                               dist)
     
-    ## nae the matrices 
+    ## name the matrices 
     rownames(tmp$hillslope) <- colnames(tmp$hillslope) <- model$hillslope$id
     colnames(tmp$channel) <- model$hillslope$id
     rownames(tmp$channel) <- model$channel$id

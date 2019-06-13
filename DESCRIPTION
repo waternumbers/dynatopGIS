@@ -1,6 +1,6 @@
 Package: dynatopGIS
-Title: GIS tools for helping build dynamic TOPMODEL
-Version: 0.0.0.9000
+Title: GIS tools for helping build dynamic TOPMODEL implimentations
+Version: 0.0.0.9001
 Authors@R: 
     person(given = "Paul",
            family = "Smith",
@@ -15,9 +15,15 @@ Imports:
     Rcpp,
 	raster,
 	sp,
-	rgeos,
-Depends:
-	R (>= 3.1),
+	rgeos
 LinkingTo:
     Rcpp
+Depends:
+	R (>= 3.1)
+BugReports: https://github.com/waternumbers/dynatopGIS/issues
+URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
 RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

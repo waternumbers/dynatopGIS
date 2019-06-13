@@ -12,7 +12,7 @@ sink_fill(project_path, max_iter = 10, minimum_tangent = 0.001,
 
 \item{max_iter}{maximum number of iterations of the algorithm}
 
-\item{minimum_tangent}{minimum value of teh gradient to the next cell downstream}
+\item{minimum_tangent}{minimum value of the gradient to the next cell downstream}
 
 \item{use_filled_dem}{logical indicating if the analysis should start with the filled DEM}
 }

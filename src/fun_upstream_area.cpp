@@ -12,12 +12,13 @@ NumericMatrix fun_upslope_area(NumericMatrix dem, NumericMatrix area, LogicalMat
   IntegerMatrix n_above(dem.nrow(),dem.ncol());
   int niter = 0;
   int n_propergate = 0;
-
+  int n_finite;
+  
   NumericMatrix W(3,3);
-  numeric sW;
+  double sW;
     
   
-  numeric na_test_val = -10000; // test for NAN against this - if NAN will return false
+  double na_test_val = -10000; // test for NAN against this - if NAN will return false
     
 
   // determine if we can route a cell area downstream
@@ -84,22 +85,26 @@ NumericMatrix fun_upslope_area(NumericMatrix dem, NumericMatrix area, LogicalMat
 	  sW = 0; 
 	  for(int ii=-1;ii<2;ii++){
 	    for(int jj=-1;jj<2;jj++){
-	      W(ii,jj) = max(0,(dem(i,j)-dem(i+ii,j+jj))/dist(ii+1,jj+1));
-	      sW=sW+W(ii,jj);
+	      W(ii+1,jj+1) = (dem(i,j)-dem(i+ii,j+jj))/dist(ii+1,jj+1);
+	      if( W(ii+1,jj+1) > 0 ){
+		sW=sW+W(ii+1,jj+1);
+	      }
 	    }
 	  }
 
 	  // propogate
 	  for(int ii=-1;ii<2;ii++){
 	    for(int jj=-1;jj<2;jj++){
-	      if( W(i,j) > 0 ){
-		area(i+ii,j+jj) = area(i+ii,j+jj) + area(i,j)*W(ii,jj)/sW;
-		n_above(ii+ii,j+jj) = n_above(i+ii,j+jj)-1;
+	      if( W(ii+1,jj+1) > 0 ){
+		area(i+ii,j+jj) = area(i+ii,j+jj) + area(i,j)*W(ii+1,jj+1)/sW;
+		n_above(i+ii,j+jj) = n_above(i+ii,j+jj)-1;
 	      }
 	    }
 	  }
 	  // update count
-	  n_propergate = n_propergate-1;
+	  n_propergate = n_propergate - 1;
+	  // change can_eval so don't do twice
+	  can_eval(i,j)=false;
 	}
 	Rcpp::checkUserInterrupt();
       }
@@ -111,6 +116,7 @@ NumericMatrix fun_upslope_area(NumericMatrix dem, NumericMatrix area, LogicalMat
     Rcout << "The number of cells left to propogate after iteration " << niter << " is " << n_propergate << std::endl;
     
   }
-
+  Rcout << "Finished after iteration " << niter << " with " << n_propergate << " unevaluated cells" << std::endl;
+  
   return area;
 }
