@@ -7,9 +7,9 @@
 create_model(project_path, hillslope_class)
 }
 \arguments{
-\item{hillslope_class}{Name of the existing hillslope classification to use to generate the model}
+\item{project_path}{directory of the project being worked on}
 
-\item{project_dir}{directory of the project being worked on}
+\item{hillslope_class}{Name of the existing hillslope classification to use to generate the model}
 }
 \value{
 Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.

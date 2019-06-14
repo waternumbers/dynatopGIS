@@ -20,7 +20,7 @@ load_channel(file_name, property_names, project_path = ".",
 TRUE if runs otherwise an error message.
 }
 \description{
-
+Import channel data from an OGR file to the project directory
 }
 \details{
 reading in the input file and covnerts it then saves a shape file of polygons with properties chanel_id,length,width,startNode,endNode in the project directory under the name \code{channel.shp}. Feild in the input file corresponding to the properties can be specified in the \code{property_names} vector.

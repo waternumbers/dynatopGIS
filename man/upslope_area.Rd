@@ -11,7 +11,7 @@ upslope_area(project_path, use_filled_dem = TRUE, max_iter = 10000)
 
 \item{use_filled_dem}{logical, shouldthe filled DEM be used?}
 
-\item{max_iterations}{Maximum number of iterations}
+\item{max_iter}{Maximum number of iterations}
 }
 \description{
 Computes the upslope area of a pixel for use in topographic index calculations

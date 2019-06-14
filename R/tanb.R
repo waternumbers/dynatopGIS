@@ -38,7 +38,7 @@ tanb <- function(project_path,use_filled_dem=TRUE){
                          dist)
    
     tanb <- raster::raster(brck,layer=0)
-    tanb <- setValues(tanb,mat_tanb)
+    tanb <- raster::setValues(tanb,mat_tanb)
     raster::writeRaster(tanb, file.path(project_path,'tanb.tif') )
 
     return(TRUE)

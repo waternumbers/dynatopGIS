@@ -8,14 +8,16 @@
 #' * the area in the DEM cell covered by land
 #' * the area in the DEM cell covered by channel
 #' * the id of the channel
-#' If multiple river lengths intersect a DEM cell the id of that with the largest intersection is used. 
+#' If multiple river lengths intersect a DEM cell the id of that with the largest intersection is used.
+#'
+#' @export
 add_channel <- function(project_path){
     
     ## read in dem
     dem <- raster::raster(file.path(project_path,'dem.tif'))
 
     ## compute tha area of each pixel
-    land_area <- mask( raster::area(dem), dem )
+    land_area <- raster::mask( raster::area(dem), dem )
 
     ## read in the channel network
     channel <- raster::shapefile(file.path(project_path,'channel'))

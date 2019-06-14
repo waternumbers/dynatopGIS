@@ -54,6 +54,7 @@ path for the project to which the intermediate files will be written.
 library(dynatopGIS)
 project_path <- file.path(tempdir(),'vig') #'../../gis_vig' #tmpDir()
 dir.create(project_path)
+print(project_path)
 ```
 The package contains helper functions for reading the DEM and river
 network. These read in the specified files and outputs them to the project
@@ -62,7 +63,7 @@ directory in a standard format. For the DEM this is straight forward
 dem_file <- 
 load_dem(system.file("extdata", "SwindaleDTM4mFilled.tif", package = "dynatopGIS", mustWork = TRUE),
          project_path)
-plot( raster::raster(file.path(project_path,'dem.tif')) )
+raster::plot( raster::raster(file.path(project_path,'dem.tif')) )
 ```
 As with most of the \code{dynatopGIS} functions the value \code{TRUE} is
 returned is the function completes successfully.
@@ -94,7 +95,7 @@ use the default width of 2m in \code{load_channel}. The river network to be impo
 ```{r, channel_load}
 load_channel(system.file("extdata", "SwindaleRiverNetwork.shp", package = "dynatopGIS", mustWork = TRUE),
              property_names,project_path)
-plot( raster::shapefile(file.path(project_path,'channel')) )
+raster::plot( raster::shapefile(file.path(project_path,'channel')) )
 ```
 
 # Combing the channel to the River network
@@ -112,8 +113,9 @@ intersection is used.
 For Swindale an indication of the intersected DEM cells is given int
 he follwoing plot.is case combing the DEM and river network
 ```{r, add_channel}
+print(list.files(project_path))
 add_channel(project_path)
-plot( raster::raster(file.path(project_path,'channel_id.tif')) )
+raster::plot( raster::raster(file.path(project_path,'channel_id.tif')) )
 ```
 # Filling sinks
 
@@ -132,7 +134,7 @@ For Swindale, where the example DEM is already partially filled the algorithm
 finishes quickly and the changes in the DEM are minor
 ```{r, sink_fill}
 sink_fill(project_path,max_iter = 1000)
-plot( raster::raster(file.path(project_path,'filled_dem.tif')) - raster::raster(file.path(project_path,'dem.tif')) )
+raster::plot( raster::raster(file.path(project_path,'filled_dem.tif')) - raster::raster(file.path(project_path,'dem.tif')) )
 ```
 
 ## Computing topographic index
@@ -144,7 +146,7 @@ area being routed to the next downstream pixel being proportional to the
 gradient. Ths can be evaluated with
 ```{r, calc_area}
 upslope_area(project_path,max_iter = 2000)
-plot( raster::raster(file.path(project_path,'upslope_area.tif')))
+raster::plot( raster::raster(file.path(project_path,'upslope_area.tif')))
 ```
 This shows clearly an area of flow accumulation where no channel is defined.
 
@@ -155,13 +157,13 @@ channels, or fall on the edge of the catchment with \code{NA} neighbours it is
 the average of the gradients from upslope pixels.
 ```{r, calc_tanb}
 tanb(project_path)
-plot( raster::raster(file.path(project_path,'tanb.tif')))
+raster::plot( raster::raster(file.path(project_path,'tanb.tif')))
 ```
 
 For Swindale the resulting topographic is calculated as
 ```{r, calc_atb}
 atb(project_path)
-plot( raster::raster(file.path(project_path,'atb.tif')))
+raster::plot( raster::raster(file.path(project_path,'atb.tif')))
 ```
 
 ## Spliting into Hydrological response units
@@ -184,7 +186,7 @@ project folder:
 ```{r, atb_split}
 cuts <- list(atb=20)
 split_to_class(project_path,'atb_split',cuts)
-plot( raster::raster(file.path(project_path,'atb_split.tif')))
+raster::plot( raster::raster(file.path(project_path,'atb_split.tif')))
 ```
 
 # Generating a dynamic TOPMODEL
@@ -196,6 +198,6 @@ HRUs.
 
 For example in the case of the division of Swindale by togographic index into
 21 classes the resulting model can be generated and displayed by
-```{r, mode_atb_split}
+```{r, model_atb_split}
 create_model(project_path,'atb_split')
 ```

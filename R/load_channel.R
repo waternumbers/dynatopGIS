@@ -1,6 +1,6 @@
 #' load a chanel file and ensure it has the correct properties
 #'
-#' @description
+#' @description Import channel data from an OGR file to the project directory
 #'
 #' @param file_name name of file to read in
 #' @param property_names named vector of columns of the spatial data frame to use for channel properties

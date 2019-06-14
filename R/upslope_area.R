@@ -4,7 +4,7 @@
 #' 
 #' @param project_path folder whcih is being used for the analysis
 #' @param use_filled_dem logical, shouldthe filled DEM be used?
-#' @param max_iterations Maximum number of iterations
+#' @param max_iter Maximum number of iterations
 #'
 #' @details The algorithm computes the area draining to a cell from those upstream presuming the flow is split between the downsteam (lower)  neighbouring cells proportional to the gradient.
 #' @export
@@ -44,7 +44,7 @@ upslope_area <- function(project_path,use_filled_dem=TRUE,max_iter=10000){
     print("returned mat_upslope_area")
         
     upslope_area <- raster::raster(brck,layer=0)
-    upslope_area <- setValues(upslope_area,mat_upslope_area)
+    upslope_area <- raster::setValues(upslope_area,mat_upslope_area)
     raster::writeRaster(upslope_area, file.path(project_path,'upslope_area.tif') )
 
     return(TRUE)

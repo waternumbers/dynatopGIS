@@ -12,10 +12,12 @@ License: GPL-2
 Encoding: UTF-8
 LazyData: true
 Imports:
-    Rcpp,
+	Rcpp,
 	raster,
 	sp,
-	rgeos
+	rgeos,
+	rgdal,
+	jsonlite
 LinkingTo:
     Rcpp
 Depends:

@@ -2,7 +2,7 @@
 #'
 #' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL
 #' 
-#' @param project_dir directory of the project being worked on
+#' @param project_path directory of the project being worked on
 #' @param hillslope_class Name of the existing hillslope classification to use to generate the model
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
