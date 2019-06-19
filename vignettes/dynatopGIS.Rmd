@@ -9,126 +9,138 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
+                      collapse = TRUE,
+                      comment = "#>"
 )
 ```
 The purpose of this vignette is to provide an outline of the steps needed to
-build a dynamic TOPMODEL implimentation using the dynatopGIS package.
+build a dynamic TOPMODEL implementation using the dynatopGIS package.
 
 # Principles behind dynatopGIS
 
 The dynatopGIS package is designed to work with a structured data flow, where
 by GIS data are processed through intermediate stages until one or more dynamic
-TOPMODEL implimentations are produced. The process GIS data of the intermediate stages are written
+TOPMODEL implementations are produced. The process GIS data of the intermediate stages are written
 into files with a common directory that acts as record of the work
 undertaken. Coupling this with a document such as this vignette which
-documents the workflow should significantly enhance the chances of ensuring
-the work is reproducable.
+documents the work flow should significantly enhance the chances of ensuring
+the work is reproducible.
 
 The basis of the analysis is presumed to be a rasterised Digital Elevation Model (DEM) of
 the catchment and a vectorised representation of the river network with
-attributes. Current these can be in any format supported by the \code{raster} and \code{sp}
+attributes. Current these can be in any format supported by the ```raster``` and ```sp```
 libraries.
 
 There are however a number of limitations
-* Within the calculations of the gradient used within the sink filling, flow routing and
-  topographic index calculation the raster DEM is presumed to be in a
-  projection that is has square or rectangular cells such that the difference
-  between the cells centers (in meters) does not alter.
-* Intermediate files are written in GeoTIFF and shapefile format. The GeoTIFF does not keep
-  projection information, however the dimensions asn projection of the
-  original DEM are maintained
+-    Within the calculations of the gradient used within the sink filling,
+     flow routing and topographic index calculation the raster DEM is presumed
+     to be in a projection that is has square or rectangular cells such that
+     the difference between the cells centers (in meters) does not alter.
+-    Intermediate files are written in GeoTIFF and shapefile format. The
+     GeoTIFF does not keep projection information, however the dimensions and
+     projection of the original DEM are maintained
 
 # Swindale
 
 The use of the dynatopGIS package is demonstrated using data from the Swindale
 catchment in the UK.
 
+# Getting the data
+
+Due to the recommended limitations on package sizes for CRAN repositories the
+data for creating this vignette is not contained within the
+```dynatopGIS``` package. It can be downloaded from the github repository for
+the package [here](https://​github.com/​waternumbers/​dynatopGIS).
+
+Start the analysis by loading the ```dynatopGIS``` package and specifying a
+paths for both the initial data and the project to which the files generated will be written.
+```{r, initialization}
+library(dynatopGIS)
+initial_path <- file.path("../vignette_data")
+project_path <- file.path("../vignette_data/processed")
+dir.create(project_path)
+```
+
+```{r, include = FALSE}
+## this stops the code evaluating on CRAN
+knitr::opts_chunk$set(eval = file.exists(file.path(initial_path,"SwindaleDTM4mFilled.tif"))
+)
+```
+
 # Reading the DEM and River network
 
-Start the analysis by loading the \code{dynatopGIS} package and specifying a
-path for the project to which the intermediate files will be written.
-```{r, initialisation}
-##devtools::load_all()
-library(dynatopGIS)
-project_path <- file.path(tempdir(),'vig') #'../../gis_vig' #tmpDir()
-dir.create(project_path)
-print(project_path)
-```
 The package contains helper functions for reading the DEM and river
 network. These read in the specified files and outputs them to the project
 directory in a standard format. For the DEM this is straight forward
+
 ```{r, load_dem}
-dem_file <- 
-load_dem(system.file("extdata", "SwindaleDTM4mFilled.tif", package = "dynatopGIS", mustWork = TRUE),
-         project_path)
+dem_file <- load_dem(file.path(initial_path, "SwindaleDTM4mFilled.tif"),
+                     project_path)
 raster::plot( raster::raster(file.path(project_path,'dem.tif')) )
 ```
-As with most of the \code{dynatopGIS} functions the value \code{TRUE} is
+As with most of the ```dynatopGIS``` functions the value `r TRUE` is
 returned is the function completes successfully.
 
 Reading the river channel data is more complex since each vector object in the
 GIS file is treated as a length of river reach and requires the following
 properties
-* *chanel_id* - the identifier of which model dynamic TOPMODEL channel HRU the
+-   *chanel_id* - the identifier of which model dynamic TOPMODEL channel HRU the
 vector object belongs to
-* *width* - the width of the channel length
-* *endNode* - a label for the downstream end of the river length
-* *startNode* - a label for the upstream end of the river length
-* *length* - the length in meters
+-   *width* - the width of the channel length
+-   *endNode* - a label for the downstream end of the river length
+-   *startNode* - a label for the upstream end of the river length
+-   *length* - the length in meters
 
 Currently only the channel_id and width properties are used, but it is considered in later
 releases that the remaining properties will describe the connectivity of the
 river network and distance from outlet.
 
-These properties are provided to the \code{load_channel} function as a named
+These properties are provided to the ```load_channel``` function as a named
 vector, in the case of Swindale
-```{r, channel_properies}
+```{r, channel_properties}
 property_names <- c(chanel_id="identifier",
                     endNode="endNode",
                     startNode="startNode",
                     length="length")
 ```
 Since the underlying data set for Swindale does not contain a channel width we
-use the default width of 2m in \code{load_channel}. The river network to be imported by calling
+use the default width of 2m in ```load_channel```. The river network to be imported by calling
 ```{r, channel_load}
-load_channel(system.file("extdata", "SwindaleRiverNetwork.shp", package = "dynatopGIS", mustWork = TRUE),
+load_channel(file.path(initial_path, "SwindaleRiverNetwork.shp"),
              property_names,project_path)
 raster::plot( raster::shapefile(file.path(project_path,'channel')) )
 ```
 
-# Combing the channel to the River network
+# Combining the river network and DEM
 
-Having loaded the channel and DEM the next stage is to combine the channel network
-and the DEM. the \code{add_channel} function acheives this by intersecting the
+Having loaded the channel and DEM the next stage is to combine them. The ```add_channel``` function achieves this by intersecting the
 DEM and river network to determine which of the raster DEM cells contain parts
 of the river network. From this three raster maps are produced containing:
-* the area in the DEM cell covered by land
-* the area in the DEM cell covered by channel
-* the id of the channel
+-   the area in the DEM cell covered by land
+-   the area in the DEM cell covered by channel
+-   the id of the channel
 If multiple river lengths intersect a DEM cell the id of that with the largest
 intersection is used. 
 
-For Swindale an indication of the intersected DEM cells is given int
-he follwoing plot.is case combing the DEM and river network
+For Swindale an indication of the intersected DEM cells is given in the following plot.is case combing the DEM and river network
 ```{r, add_channel}
 print(list.files(project_path))
 add_channel(project_path)
+print(list.files(project_path))
 raster::plot( raster::raster(file.path(project_path,'channel_id.tif')) )
 ```
 # Filling sinks
 
-For the hillslope to be connected to the rivernework the hillslope parts of
-the DEM but drain to the DEM cells which intersect with the river network.
+For the hill slope to be connected to the river network the hill slope parts of
+the DEM must drain to the DEM cells which intersect with the river network.
 
-While no check is enforced on the full connectivity ofthe catchment a basic requirement is that there are no
-sinks: that is DEM pixels which are lower then their neighbours and not
-intersected by the network. The algorithm implimented in the \code{sink_fill}
+While no check is enforced on the full connectivity of the catchment a basic requirement is that there are no
+sinks: that is DEM pixels which are lower then their neighbors and not
+intersected by the network. The algorithm implemented in the ```sink_fill```
 function tries to ensure this using a relatively simple iterative
-algorithm. te execution time of the function is limited by capping the number
-of iterations of the algorithm, howver the algorithm can be restarted and the
-minimum gradient adjuest from the default of 1m in 1km.
+algorithm. The execution time of the function is limited by capping the number
+of iterations of the algorithm, however the algorithm can be restarted and the
+minimum gradient adjust from the default of 1m in 1km.
 
 For Swindale, where the example DEM is already partially filled the algorithm
 finishes quickly and the changes in the DEM are minor
@@ -138,12 +150,12 @@ raster::plot( raster::raster(file.path(project_path,'filled_dem.tif')) - raster:
 ```
 
 ## Computing topographic index
-The basis of seperation of the hydrological response units in TOPMODEL is the
-topographic index, which is computeed from the upstream area and gradient.
+The basis of separation of the hydrological response units in TOPMODEL is the
+topographic index, which is computed from the upstream area and gradient.
 
 The upstream area is computed by routing down slope with the fraction of the
 area being routed to the next downstream pixel being proportional to the
-gradient. Ths can be evaluated with
+gradient. This can be evaluated with
 ```{r, calc_area}
 upslope_area(project_path,max_iter = 2000)
 raster::plot( raster::raster(file.path(project_path,'upslope_area.tif')))
@@ -151,9 +163,10 @@ raster::plot( raster::raster(file.path(project_path,'upslope_area.tif')))
 This shows clearly an area of flow accumulation where no channel is defined.
 
 The local value of the gradient (tanb) if computed using the average of a
-subset of between pixel gradients. For a normal 'hillslope' cell these are the
+subset of between pixel gradients. For a normal 'hill slope' cell these are the
 gradients to downslope pixels. In the case of pixels which contain river
-channels, or fall on the edge of the catchment with \code{NA} neighbours it is
+channels, or fall on the edge of the catchment with neighbors whose values is
+`r NA` it is
 the average of the gradients from upslope pixels.
 ```{r, calc_tanb}
 tanb(project_path)
@@ -166,22 +179,22 @@ atb(project_path)
 raster::plot( raster::raster(file.path(project_path,'atb.tif')))
 ```
 
-## Spliting into Hydrological response units
-Hillslope hydrological response units can be created from the underlying data
-in two ways within the \code{dynatopGIS} package. The first method, *spliting*
-allows the landscep to be divided up based on breaks in the values of
-landscape feature values. The second *burning* enforeces classes onto distinct
+## Splitting into Hydrological response units
+Hill slope hydrological response units can be created from the underlying data
+in two ways within the ```dynatopGIS``` package. The first method, *splitting*
+allows the landscape to be divided up based on breaks in the values of
+landscape feature values. The second *burning* enforces classes onto distinct
 area. It is presumed that burnt classes will always be imposed upon an initial
-characterisation through splitting.
+characterization through splitting.
 
 To split a catchment into HRUs the breaks between the classes need to be
-specified. This is done by forming a named \code{list} of cuts. the names
-correspond to GeoTiff files within the project directory while teh values of
+specified. This is done by forming a named ```list``` of cuts. the names
+correspond to GeoTiff files within the project directory while the values of
 the variables should be numeric and define either the number of bands (single
 value) or breaks between split classes (multiple values).
 
 For example to generate HRUs for Swindale by dividing the topographic index
-into 21 classes and sve the output classes as \code{atb_split.tif} in the
+into 21 classes and save the output classes as "atb_split.tif" in the
 project folder:
 ```{r, atb_split}
 cuts <- list(atb=20)
@@ -191,12 +204,12 @@ raster::plot( raster::raster(file.path(project_path,'atb_split.tif')))
 
 # Generating a dynamic TOPMODEL
 As final stage dynamic TOPMODELs can be generated from the GIS data for use
-with the code{dynatop} package for simulation. The required model structure is given
-in the vignettes of \code{dynatop}, here we show that an appropriate models
-can be generated with the \code{compute_model} function for a specified set of
+with the ```dynatop``` package for simulation. The required model structure is
+given in the vignettes of ```dynatop```, here we show that an appropriate models
+can be generated with the ```compute_model``` function for a specified set of
 HRUs. 
 
-For example in the case of the division of Swindale by togographic index into
+For example in the case of the division of Swindale by topographic index into
 21 classes the resulting model can be generated and displayed by
 ```{r, model_atb_split}
 create_model(project_path,'atb_split')

@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.0.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.1</span>
       </span>
     </div>
 
@@ -81,49 +81,51 @@
 
     
     
-<p>The purpose of this vignette is to provide an outline of the steps needed to build a dynamic TOPMODEL implimentation using the dynatopGIS package.</p>
+<p>The purpose of this vignette is to provide an outline of the steps needed to build a dynamic TOPMODEL implementation using the dynatopGIS package.</p>
 <div id="principles-behind-dynatopgis" class="section level1">
 <h1 class="hasAnchor">
 <a href="#principles-behind-dynatopgis" class="anchor"></a>Principles behind dynatopGIS</h1>
-<p>The dynatopGIS package is designed to work with a structured data flow, where by GIS data are processed through intermediate stages until one or more dynamic TOPMODEL implimentations are produced. The process GIS data of the intermediate stages are written into files with a common directory that acts as record of the work undertaken. Coupling this with a document such as this vignette which documents the workflow should significantly enhance the chances of ensuring the work is reproducable.</p>
-<p>The basis of the analysis is presumed to be a rasterised Digital Elevation Model (DEM) of the catchment and a vectorised representation of the river network with attributes. Current these can be in any format supported by the  and  libraries.</p>
-<p>There are however a number of limitations * Within the calculations of the gradient used within the sink filling, flow routing and topographic index calculation the raster DEM is presumed to be in a projection that is has square or rectangular cells such that the difference between the cells centers (in meters) does not alter. * Intermediate files are written in GeoTIFF and shapefile format. The GeoTIFF does not keep projection information, however the dimensions asn projection of the original DEM are maintained</p>
+<p>The dynatopGIS package is designed to work with a structured data flow, where by GIS data are processed through intermediate stages until one or more dynamic TOPMODEL implementations are produced. The process GIS data of the intermediate stages are written into files with a common directory that acts as record of the work undertaken. Coupling this with a document such as this vignette which documents the work flow should significantly enhance the chances of ensuring the work is reproducible.</p>
+<p>The basis of the analysis is presumed to be a rasterised Digital Elevation Model (DEM) of the catchment and a vectorised representation of the river network with attributes. Current these can be in any format supported by the <code>raster</code> and <code>sp</code> libraries.</p>
+<p>There are however a number of limitations - Within the calculations of the gradient used within the sink filling, flow routing and topographic index calculation the raster DEM is presumed to be in a projection that is has square or rectangular cells such that the difference between the cells centers (in meters) does not alter. - Intermediate files are written in GeoTIFF and shapefile format. The GeoTIFF does not keep projection information, however the dimensions and projection of the original DEM are maintained</p>
 </div>
 <div id="swindale" class="section level1">
 <h1 class="hasAnchor">
 <a href="#swindale" class="anchor"></a>Swindale</h1>
 <p>The use of the dynatopGIS package is demonstrated using data from the Swindale catchment in the UK.</p>
 </div>
+<div id="getting-the-data" class="section level1">
+<h1 class="hasAnchor">
+<a href="#getting-the-data" class="anchor"></a>Getting the data</h1>
+<p>Due to the recommended limitations on package sizes for CRAN repositories the data for creating this vignette is not contained within the <code>dynatopGIS</code> package. It can be downloaded from the github repository for the package <a href="https://%E2%80%8Bgithub.com/%E2%80%8Bwaternumbers/%E2%80%8BdynatopGIS">here</a>.</p>
+<p>Start the analysis by loading the <code>dynatopGIS</code> package and specifying a paths for both the initial data and the project to which the files generated will be written.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(dynatopGIS)
+initial_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(<span class="st">"../vignette_data"</span>)
+project_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(<span class="st">"../vignette_data/processed"</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/files2">dir.create</a></span>(project_path)</code></pre></div>
+</div>
 <div id="reading-the-dem-and-river-network" class="section level1">
 <h1 class="hasAnchor">
 <a href="#reading-the-dem-and-river-network" class="anchor"></a>Reading the DEM and River network</h1>
-<p>Start the analysis by loading the  package and specifying a path for the project to which the intermediate files will be written.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">##devtools::load_all()
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(dynatopGIS)
-project_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/tempfile">tempdir</a></span>(),<span class="st">'vig'</span>) <span class="co">#'../../gis_vig' #tmpDir()</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/files2">dir.create</a></span>(project_path)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(project_path)
-<span class="co">#&gt; [1] "/tmp/RtmpPKRHOQ/vig"</span></code></pre></div>
 <p>The package contains helper functions for reading the DEM and river network. These read in the specified files and outputs them to the project directory in a standard format. For the DEM this is straight forward</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dem_file &lt;-<span class="st"> </span>
-<span class="kw"><a href="../reference/load_dem.html">load_dem</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/system.file">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"SwindaleDTM4mFilled.tif"</span>, <span class="dt">package =</span> <span class="st">"dynatopGIS"</span>, <span class="dt">mustWork =</span> <span class="ot">TRUE</span>),
-         project_path)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dem_file &lt;-<span class="st"> </span><span class="kw"><a href="../reference/load_dem.html">load_dem</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(initial_path, <span class="st">"SwindaleDTM4mFilled.tif"</span>),
+                     project_path)
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'dem.tif'</span>)) )</code></pre></div>
-<p><img src="dynatopGIS_files/figure-html/load_dem-1.png" width="700"> As with most of the  functions the value  is returned is the function completes successfully.</p>
-<p>Reading the river channel data is more complex since each vector object in the GIS file is treated as a length of river reach and requires the following properties * <em>chanel_id</em> - the identifier of which model dynamic TOPMODEL channel HRU the vector object belongs to * <em>width</em> - the width of the channel length * <em>endNode</em> - a label for the downstream end of the river length * <em>startNode</em> - a label for the upstream end of the river length * <em>length</em> - the length in meters</p>
+<p><img src="dynatopGIS_files/figure-html/load_dem-1.png" width="700"> As with most of the <code>dynatopGIS</code> functions the value TRUE is returned is the function completes successfully.</p>
+<p>Reading the river channel data is more complex since each vector object in the GIS file is treated as a length of river reach and requires the following properties - <em>chanel_id</em> - the identifier of which model dynamic TOPMODEL channel HRU the vector object belongs to - <em>width</em> - the width of the channel length - <em>endNode</em> - a label for the downstream end of the river length - <em>startNode</em> - a label for the upstream end of the river length - <em>length</em> - the length in meters</p>
 <p>Currently only the channel_id and width properties are used, but it is considered in later releases that the remaining properties will describe the connectivity of the river network and distance from outlet.</p>
-<p>These properties are provided to the  function as a named vector, in the case of Swindale</p>
+<p>These properties are provided to the <code>load_channel</code> function as a named vector, in the case of Swindale</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">property_names &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dt">chanel_id=</span><span class="st">"identifier"</span>,
                     <span class="dt">endNode=</span><span class="st">"endNode"</span>,
                     <span class="dt">startNode=</span><span class="st">"startNode"</span>,
                     <span class="dt">length=</span><span class="st">"length"</span>)</code></pre></div>
-<p>Since the underlying data set for Swindale does not contain a channel width we use the default width of 2m in . The river network to be imported by calling</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/load_channel.html">load_channel</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/system.file">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, <span class="dt">package =</span> <span class="st">"dynatopGIS"</span>, <span class="dt">mustWork =</span> <span class="ot">TRUE</span>),
+<p>Since the underlying data set for Swindale does not contain a channel width we use the default width of 2m in <code>load_channel</code>. The river network to be imported by calling</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/load_channel.html">load_channel</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(initial_path, <span class="st">"SwindaleRiverNetwork.shp"</span>),
              property_names,project_path)
-<span class="co">#&gt; Warning in load_channel(system.file("extdata",</span>
-<span class="co">#&gt; "SwindaleRiverNetwork.shp", : Using default width of 2m</span>
+<span class="co">#&gt; Warning in load_channel(file.path(initial_path,</span>
+<span class="co">#&gt; "SwindaleRiverNetwork.shp"), : Using default width of 2m</span>
 <span class="co">#&gt; OGR data source with driver: ESRI Shapefile </span>
-<span class="co">#&gt; Source: "/home/paul/R/x86_64-suse-linux-gnu-library/3.6/dynatopGIS/extdata/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span>
+<span class="co">#&gt; Source: "/home/paul/Documents/Software/dynatop/dynatop/dynatopGIS/vignette_data/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span>
 <span class="co">#&gt; with 19 features</span>
 <span class="co">#&gt; It has 11 fields</span>
 <span class="co">#&gt; Integer64 fields read as strings:  length</span>
@@ -135,21 +137,25 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/shapefile">shapefile</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'channel'</span>)) )</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/channel_load-1.png" width="700"></p>
 </div>
-<div id="combing-the-channel-to-the-river-network" class="section level1">
+<div id="combining-the-river-network-and-dem" class="section level1">
 <h1 class="hasAnchor">
-<a href="#combing-the-channel-to-the-river-network" class="anchor"></a>Combing the channel to the River network</h1>
-<p>Having loaded the channel and DEM the next stage is to combine the channel network and the DEM. the  function acheives this by intersecting the DEM and river network to determine which of the raster DEM cells contain parts of the river network. From this three raster maps are produced containing: * the area in the DEM cell covered by land * the area in the DEM cell covered by channel * the id of the channel If multiple river lengths intersect a DEM cell the id of that with the largest intersection is used.</p>
-<p>For Swindale an indication of the intersected DEM cells is given int he follwoing plot.is case combing the DEM and river network</p>
+<a href="#combining-the-river-network-and-dem" class="anchor"></a>Combining the river network and DEM</h1>
+<p>Having loaded the channel and DEM the next stage is to combine them. The <code>add_channel</code> function achieves this by intersecting the DEM and river network to determine which of the raster DEM cells contain parts of the river network. From this three raster maps are produced containing: - the area in the DEM cell covered by land - the area in the DEM cell covered by channel - the id of the channel If multiple river lengths intersect a DEM cell the id of that with the largest intersection is used.</p>
+<p>For Swindale an indication of the intersected DEM cells is given in the following plot.is case combing the DEM and river network</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list.files">list.files</a></span>(project_path))
 <span class="co">#&gt; [1] "channel.dbf" "channel.prj" "channel.shp" "channel.shx" "dem.tif"</span>
 <span class="kw"><a href="../reference/add_channel.html">add_channel</a></span>(project_path)
 <span class="co">#&gt; Warning in .local(x, ...): This function is only useful for Raster* objects</span>
 <span class="co">#&gt; with a longitude/latitude coordinates</span>
 <span class="co">#&gt; [1] TRUE</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list.files">list.files</a></span>(project_path))
+<span class="co">#&gt; [1] "channel_area.tif" "channel_id.tif"   "channel.dbf"     </span>
+<span class="co">#&gt; [4] "channel.prj"      "channel.shp"      "channel.shx"     </span>
+<span class="co">#&gt; [7] "dem.tif"          "land_area.tif"</span>
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'channel_id.tif'</span>)) )</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/add_channel-1.png" width="700"> # Filling sinks</p>
-<p>For the hillslope to be connected to the rivernework the hillslope parts of the DEM but drain to the DEM cells which intersect with the river network.</p>
-<p>While no check is enforced on the full connectivity ofthe catchment a basic requirement is that there are no sinks: that is DEM pixels which are lower then their neighbours and not intersected by the network. The algorithm implimented in the  function tries to ensure this using a relatively simple iterative algorithm. te execution time of the function is limited by capping the number of iterations of the algorithm, howver the algorithm can be restarted and the minimum gradient adjuest from the default of 1m in 1km.</p>
+<p>For the hill slope to be connected to the river network the hill slope parts of the DEM must drain to the DEM cells which intersect with the river network.</p>
+<p>While no check is enforced on the full connectivity of the catchment a basic requirement is that there are no sinks: that is DEM pixels which are lower then their neighbors and not intersected by the network. The algorithm implemented in the <code>sink_fill</code> function tries to ensure this using a relatively simple iterative algorithm. The execution time of the function is limited by capping the number of iterations of the algorithm, however the algorithm can be restarted and the minimum gradient adjust from the default of 1m in 1km.</p>
 <p>For Swindale, where the example DEM is already partially filled the algorithm finishes quickly and the changes in the DEM are minor</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/sink_fill.html">sink_fill</a></span>(project_path,<span class="dt">max_iter =</span> <span class="dv">1000</span>)
 <span class="co">#&gt; The number of sinks handled in iteration 1 is 6984</span>
@@ -202,8 +208,8 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 <div id="computing-topographic-index" class="section level2">
 <h2 class="hasAnchor">
 <a href="#computing-topographic-index" class="anchor"></a>Computing topographic index</h2>
-<p>The basis of seperation of the hydrological response units in TOPMODEL is the topographic index, which is computeed from the upstream area and gradient.</p>
-<p>The upstream area is computed by routing down slope with the fraction of the area being routed to the next downstream pixel being proportional to the gradient. Ths can be evaluated with</p>
+<p>The basis of separation of the hydrological response units in TOPMODEL is the topographic index, which is computed from the upstream area and gradient.</p>
+<p>The upstream area is computed by routing down slope with the fraction of the area being routed to the next downstream pixel being proportional to the gradient. This can be evaluated with</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/upslope_area.html">upslope_area</a></span>(project_path,<span class="dt">max_iter =</span> <span class="dv">2000</span>)
 <span class="co">#&gt; The number of cells left to propogate after iteration 1 is 949281</span>
 <span class="co">#&gt; The number of cells left to propogate after iteration 2 is 947590</span>
@@ -1842,7 +1848,7 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 <span class="co">#&gt; [1] TRUE</span>
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'upslope_area.tif'</span>)))</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/calc_area-1.png" width="700"> This shows clearly an area of flow accumulation where no channel is defined.</p>
-<p>The local value of the gradient (tanb) if computed using the average of a subset of between pixel gradients. For a normal ‘hillslope’ cell these are the gradients to downslope pixels. In the case of pixels which contain river channels, or fall on the edge of the catchment with  neighbours it is the average of the gradients from upslope pixels.</p>
+<p>The local value of the gradient (tanb) if computed using the average of a subset of between pixel gradients. For a normal ‘hill slope’ cell these are the gradients to downslope pixels. In the case of pixels which contain river channels, or fall on the edge of the catchment with neighbors whose values is NA it is the average of the gradients from upslope pixels.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/tanb.html">tanb</a></span>(project_path)
 <span class="co">#&gt; [1] TRUE</span>
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'tanb.tif'</span>)))</code></pre></div>
@@ -1853,12 +1859,12 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'atb.tif'</span>)))</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/calc_atb-1.png" width="700"></p>
 </div>
-<div id="spliting-into-hydrological-response-units" class="section level2">
+<div id="splitting-into-hydrological-response-units" class="section level2">
 <h2 class="hasAnchor">
-<a href="#spliting-into-hydrological-response-units" class="anchor"></a>Spliting into Hydrological response units</h2>
-<p>Hillslope hydrological response units can be created from the underlying data in two ways within the  package. The first method, <em>spliting</em> allows the landscep to be divided up based on breaks in the values of landscape feature values. The second <em>burning</em> enforeces classes onto distinct area. It is presumed that burnt classes will always be imposed upon an initial characterisation through splitting.</p>
-<p>To split a catchment into HRUs the breaks between the classes need to be specified. This is done by forming a named  of cuts. the names correspond to GeoTiff files within the project directory while teh values of the variables should be numeric and define either the number of bands (single value) or breaks between split classes (multiple values).</p>
-<p>For example to generate HRUs for Swindale by dividing the topographic index into 21 classes and sve the output classes as  in the project folder:</p>
+<a href="#splitting-into-hydrological-response-units" class="anchor"></a>Splitting into Hydrological response units</h2>
+<p>Hill slope hydrological response units can be created from the underlying data in two ways within the <code>dynatopGIS</code> package. The first method, <em>splitting</em> allows the landscape to be divided up based on breaks in the values of landscape feature values. The second <em>burning</em> enforces classes onto distinct area. It is presumed that burnt classes will always be imposed upon an initial characterization through splitting.</p>
+<p>To split a catchment into HRUs the breaks between the classes need to be specified. This is done by forming a named <code>list</code> of cuts. the names correspond to GeoTiff files within the project directory while the values of the variables should be numeric and define either the number of bands (single value) or breaks between split classes (multiple values).</p>
+<p>For example to generate HRUs for Swindale by dividing the topographic index into 21 classes and save the output classes as “atb_split.tif” in the project folder:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cuts &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">atb=</span><span class="dv">20</span>)
 <span class="kw"><a href="../reference/split_to_class.html">split_to_class</a></span>(project_path,<span class="st">'atb_split'</span>,cuts)
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'atb_split.tif'</span>)))</code></pre></div>
@@ -1868,8 +1874,8 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 <div id="generating-a-dynamic-topmodel" class="section level1">
 <h1 class="hasAnchor">
 <a href="#generating-a-dynamic-topmodel" class="anchor"></a>Generating a dynamic TOPMODEL</h1>
-<p>As final stage dynamic TOPMODELs can be generated from the GIS data for use with the code{dynatop} package for simulation. The required model structure is given in the vignettes of , here we show that an appropriate models can be generated with the  function for a specified set of HRUs.</p>
-<p>For example in the case of the division of Swindale by togographic index into 21 classes the resulting model can be generated and displayed by</p>
+<p>As final stage dynamic TOPMODELs can be generated from the GIS data for use with the <code>dynatop</code> package for simulation. The required model structure is given in the vignettes of <code>dynatop</code>, here we show that an appropriate models can be generated with the <code>compute_model</code> function for a specified set of HRUs.</p>
+<p>For example in the case of the division of Swindale by topographic index into 21 classes the resulting model can be generated and displayed by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/create_model.html">create_model</a></span>(project_path,<span class="st">'atb_split'</span>)
 <span class="co">#&gt; Start of function</span>
 <span class="co">#&gt; Computed valid sources and downsteams</span>
@@ -1884,11 +1890,12 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#principles-behind-dynatopgis">Principles behind dynatopGIS</a></li>
       <li><a href="#swindale">Swindale</a></li>
+      <li><a href="#getting-the-data">Getting the data</a></li>
       <li><a href="#reading-the-dem-and-river-network">Reading the DEM and River network</a></li>
       <li>
-<a href="#combing-the-channel-to-the-river-network">Combing the channel to the River network</a><ul class="nav nav-pills nav-stacked">
+<a href="#combining-the-river-network-and-dem">Combining the river network and DEM</a><ul class="nav nav-pills nav-stacked">
 <li><a href="#computing-topographic-index">Computing topographic index</a></li>
-      <li><a href="#spliting-into-hydrological-response-units">Spliting into Hydrological response units</a></li>
+      <li><a href="#splitting-into-hydrological-response-units">Splitting into Hydrological response units</a></li>
       </ul>
 </li>
       <li><a href="#generating-a-dynamic-topmodel">Generating a dynamic TOPMODEL</a></li>
