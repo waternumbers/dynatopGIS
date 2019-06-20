@@ -87,7 +87,11 @@
 <a href="#principles-behind-dynatopgis" class="anchor"></a>Principles behind dynatopGIS</h1>
 <p>The dynatopGIS package is designed to work with a structured data flow, where by GIS data are processed through intermediate stages until one or more dynamic TOPMODEL implementations are produced. The process GIS data of the intermediate stages are written into files with a common directory that acts as record of the work undertaken. Coupling this with a document such as this vignette which documents the work flow should significantly enhance the chances of ensuring the work is reproducible.</p>
 <p>The basis of the analysis is presumed to be a rasterised Digital Elevation Model (DEM) of the catchment and a vectorised representation of the river network with attributes. Current these can be in any format supported by the <code>raster</code> and <code>sp</code> libraries.</p>
-<p>There are however a number of limitations - Within the calculations of the gradient used within the sink filling, flow routing and topographic index calculation the raster DEM is presumed to be in a projection that is has square or rectangular cells such that the difference between the cells centers (in meters) does not alter. - Intermediate files are written in GeoTIFF and shapefile format. The GeoTIFF does not keep projection information, however the dimensions and projection of the original DEM are maintained</p>
+<p>There are however a number of limitations</p>
+<ul>
+<li>Within the calculations of the gradient used within the sink filling, flow routing and topographic index calculation the raster DEM is presumed to be in a projection that is has square or rectangular cells such that the difference between the cells centers (in meters) does not alter.</li>
+<li>Intermediate files are written in GeoTIFF and shapefile format. The GeoTIFF does not keep projection information, however the dimensions and projection of the original DEM are maintained</li>
+</ul>
 </div>
 <div id="swindale" class="section level1">
 <h1 class="hasAnchor">
@@ -112,7 +116,19 @@ project_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www
                      project_path)
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'dem.tif'</span>)) )</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/load_dem-1.png" width="700"> As with most of the <code>dynatopGIS</code> functions the value TRUE is returned is the function completes successfully.</p>
-<p>Reading the river channel data is more complex since each vector object in the GIS file is treated as a length of river reach and requires the following properties - <em>chanel_id</em> - the identifier of which model dynamic TOPMODEL channel HRU the vector object belongs to - <em>width</em> - the width of the channel length - <em>endNode</em> - a label for the downstream end of the river length - <em>startNode</em> - a label for the upstream end of the river length - <em>length</em> - the length in meters</p>
+<p>Reading the river channel data is more complex since each vector object in the GIS file is treated as a length of river reach and requires the following properties</p>
+<ul>
+<li>
+<em>chanel_id</em> - the identifier of which model dynamic TOPMODEL channel HRU the vector object belongs to</li>
+<li>
+<em>width</em> - the width of the channel length</li>
+<li>
+<em>endNode</em> - a label for the downstream end of the river length</li>
+<li>
+<em>startNode</em> - a label for the upstream end of the river length</li>
+<li>
+<em>length</em> - the length in meters</li>
+</ul>
 <p>Currently only the channel_id and width properties are used, but it is considered in later releases that the remaining properties will describe the connectivity of the river network and distance from outlet.</p>
 <p>These properties are provided to the <code>load_channel</code> function as a named vector, in the case of Swindale</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">property_names &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dt">chanel_id=</span><span class="st">"identifier"</span>,

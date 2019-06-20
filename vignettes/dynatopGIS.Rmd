@@ -32,6 +32,7 @@ attributes. Current these can be in any format supported by the ```raster``` and
 libraries.
 
 There are however a number of limitations
+
 -    Within the calculations of the gradient used within the sink filling,
      flow routing and topographic index calculation the raster DEM is presumed
      to be in a projection that is has square or rectangular cells such that
@@ -84,6 +85,7 @@ returned is the function completes successfully.
 Reading the river channel data is more complex since each vector object in the
 GIS file is treated as a length of river reach and requires the following
 properties
+
 -   *chanel_id* - the identifier of which model dynamic TOPMODEL channel HRU the
 vector object belongs to
 -   *width* - the width of the channel length
