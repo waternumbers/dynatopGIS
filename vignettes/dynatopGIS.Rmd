@@ -167,7 +167,7 @@ This shows clearly an area of flow accumulation where no channel is defined.
 The local value of the gradient (tanb) if computed using the average of a
 subset of between pixel gradients. For a normal 'hill slope' cell these are the
 gradients to downslope pixels. In the case of pixels which contain river
-channels, or fall on the edge of the catchment with neighbors whose values is
+channels, or fall on the edge of the catchment with neighbors whose value is
 `r NA` it is
 the average of the gradients from upslope pixels.
 ```{r, calc_tanb}

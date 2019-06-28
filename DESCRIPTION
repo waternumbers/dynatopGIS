@@ -1,12 +1,12 @@
 Package: dynatopGIS
-Title: GIS tools for helping build dynamic TOPMODEL implimentations
+Title: GIS tools for helping build dynamic TOPMODEL implementations
 Version: 0.0.1
 Authors@R: 
     person(given = "Paul",
            family = "Smith",
            role = c("aut", "cre"),
            email = "paul@waternumbers.co.uk",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+           comment = c(ORCID = "0000-0002-0034-3412"))
 Description: This package assists in building implimentations of dynamic TOPMODEL for use with the dynatop package.
 License: GPL-2
 Encoding: UTF-8
