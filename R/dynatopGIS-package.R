@@ -7,5 +7,5 @@
 #' @docType package
 #' @import raster
 #' @importFrom Rcpp evalCpp
-#' @exportPattern "^[[:alpha:]]+" 
+# #' @exportPattern "^[[:alpha:]]+" 
 NULL
