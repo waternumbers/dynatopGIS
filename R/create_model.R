@@ -10,7 +10,7 @@
 create_model <- function(project_path,hillslope_class){
 
     ## check we have all the files we need
-    layer_names <- c('dem','land_area','atb','channel_area','channel_id',hillslope_class)
+    layer_names <- c('dem','land_area','tanb','atb','channel_area','channel_id',hillslope_class)
     file_names <- file.path( project_path, paste0(layer_names,'.tif') )
     if( !all(file.exists(file_names)) ){
         stop("Missing files for: ",paste(layer_names[!file.exists(file_names)],collapse=" "))
@@ -29,6 +29,8 @@ create_model <- function(project_path,hillslope_class){
                                            'sum',digits=4)[,2],
                       atb_bar = raster::zonal(brck[['atb']],brck[[hillslope_class]],
                                               'mean',digits=4)[,2],
+                      s_bar = raster::zonal(brck[['tanb']],brck[[hillslope_class]],
+                                              'mean',digits=4)[,2],
                       precip_input="unknown",
                       pet_input="unknown",
                       srz_max="srz_max_default",
@@ -36,21 +38,23 @@ create_model <- function(project_path,hillslope_class){
                       ln_t0="ln_t0_default",
                       m="m_default",
                       td="td_default",
-                      tex="tex_default"
+                      tex="tex_default",
+                      stringsAsFactors=FALSE
                   ),
                   channel = data.frame(
                       id = raster::unique(brck[['channel_id']]),
                       area = raster::zonal(brck[['channel_area']],brck[['channel_id']],
                                            'sum',digits=4)[,2],
                       precip_input="unknown",
-                      pet_input="unknown"
+                      pet_input="unknown",
+                      stringsAsFactors=FALSE
                   ),
-                  param <- c(srz_max_default=0.05,
-                             srz_0_default=0.99,
-                             ln_t0_default=19,
-                             m_default=0.004,
-                             td_default=20,
-                             tex_default=100)
+                  param = c(srz_max_default=0.05,
+                            srz_0_default=0.99,
+                            ln_t0_default=19,
+                            m_default=0.004,
+                            td_default=20,
+                            tex_default=100)
                   )
 
     ## make distance for computing the weighting matrices
