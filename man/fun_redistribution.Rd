@@ -19,6 +19,8 @@ fun_redistribution(dem, land_area, hillslope, channel,
 \item{number_hillslope_class}{number of hill slope classes}
 
 \item{number_channel_class}{number of channel classes}
+
+\item{dist}{3x3 matrix of distances to ajoining cells}
 }
 \value{
 list of hillslope and channel properties
