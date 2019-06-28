@@ -1,8 +1,14 @@
-// Sink filling algorithm applied using Rcpp //
-
 #include <Rcpp.h>
 using namespace Rcpp;
-
+//' cpp wrapper function for filling of sinks
+//' 
+//' @param dem Digital elevation model
+//' @param is_channel TRUE is a channel pixel
+//' @param delta 3x3 matrix of minimum evelation drop to each adjacent pixel
+//' @param max_iter maximum number of iterations
+//'
+//' @return matrix containing filled dem
+//'
 // [[Rcpp::export]]
 NumericMatrix fun_sink_fill(NumericMatrix dem, LogicalMatrix is_channel,
 			    NumericMatrix delta, int max_iter){

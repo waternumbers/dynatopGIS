@@ -1,8 +1,13 @@
-// Sink filling algorithm applied using Rcpp //
-
 #include <Rcpp.h>
 using namespace Rcpp;
-
+//' cpp wrapper function for computing average gradient
+//' 
+//' @param dem Digital elevation model
+//' @param is_channel TRUE if pixel contains a channel
+//' @param dist 3x3 matrix of distance to adjacent pixels
+//'
+//' @return matrix of average gradients
+//'
 // [[Rcpp::export]]
 NumericMatrix fun_tanb(NumericMatrix dem, LogicalMatrix is_channel,
 		       NumericMatrix dist){

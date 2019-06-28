@@ -1,8 +1,17 @@
-// Sink filling algorithm applied using Rcpp //
-
 #include <Rcpp.h>
 using namespace Rcpp;
-
+//' cpp wrapper function for computation of redistribution matrices
+//' 
+//' @param dem Digital elevation model
+//' @param land_area Area of land surface in pixel
+//' @param hillslope hillslope class of each pixel
+//' @param channel channel class of each pixel
+//' @param number_hillslope_class number of hill slope classes
+//' @param number_channel_class number of channel classes
+//' @param dist 3x3 matrix of distances to ajoining cells
+//'
+//' @return list of hillslope and channel properties
+//'
 // [[Rcpp::export]]
 List fun_redistribution(NumericMatrix dem, NumericMatrix land_area,
 			IntegerMatrix hillslope, IntegerMatrix channel,

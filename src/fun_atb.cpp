@@ -1,8 +1,16 @@
-// Sink filling algorithm applied using Rcpp //
-
 #include <Rcpp.h>
 using namespace Rcpp;
-
+//' cpp wrapper function for computation of atb topographic wetness index
+//' 
+//' @param dem Digital elevation model
+//' @param area Area of land surface in pixel
+//' @param is_channel TRUE is a channel pixel
+//' @param dist 3x3 matrix of distances to each adjacent pixel
+//' @param max_iter maximum number of iterations
+//'
+//' @return list of hillslope and channel properties
+//'
+//' @details Computes topographic index area divided by tan(beta)
 // [[Rcpp::export]]
 NumericMatrix fun_atb(NumericMatrix dem, NumericMatrix area, LogicalMatrix is_channel,
 		      NumericMatrix dist, int max_iter){

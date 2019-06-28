@@ -1,8 +1,15 @@
-// Sink filling algorithm applied using Rcpp //
-
 #include <Rcpp.h>
 using namespace Rcpp;
-
+//' cpp wrapper function for computation of upslope area
+//' 
+//' @param dem Digital elevation model
+//' @param area Area of land surface in pixel
+//' @param is_channel TRUE if pixel contains a channel
+//' @param dist 3x3 matrix of distance to adjacent pixels
+//' @param max_iter maximum number of iterations
+//'
+//' @return matrix of upslope area
+//'
 // [[Rcpp::export]]
 NumericMatrix fun_upslope_area(NumericMatrix dem, NumericMatrix area, LogicalMatrix is_channel,
 				NumericMatrix dist, int max_iter){

@@ -34,7 +34,7 @@ burn_in_class <- function(project_path,class_name,output_name,burns){
     burn_brck <- raster::brick(list(burn_files))
 
     ## process if new class
-    for(ii in 1:nlayer(burn_brck)){
+    for(ii in 1:raster::nlayers(burn_brck)){
         class <- overlay(class, burn_brck[[ii]], fun = function(x, y) {
             x[!is.na(y[])] <- y[]
             return(x)
@@ -42,7 +42,7 @@ burn_in_class <- function(project_path,class_name,output_name,burns){
     }
 
     ## write out raster
-    raster::writeRaster(hrus,file.path(project_path,paste0(output_name,'.tif')))
+    raster::writeRaster(class,file.path(project_path,paste0(output_name,'.tif')))
 
     ## make json
     tmp <- jsonlite::fromJSON( file.path(project_path,paste0(class_name,'.json')), simplifyVector=FALSE )
