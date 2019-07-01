@@ -30,7 +30,7 @@ List fun_redistribution(NumericMatrix dem, NumericMatrix land_area,
   
   double na_test_val = -10000; // test for NAN against this - if NAN will return false
   
-  Rcout << "Start of function" << std::endl;
+  //Rcout << "Start of function" << std::endl;
   
   // loop to determin cells can be drained from
   for(int i=0;i < dem.nrow(); i++){
@@ -63,7 +63,7 @@ List fun_redistribution(NumericMatrix dem, NumericMatrix land_area,
     }
   }
 
-  Rcout << "Computed valid sources and downsteams" << std::endl;
+  //Rcout << "Computed valid sources and downsteams" << std::endl;
   
   // the see how cells redistribute
   for(int i=0;i < dem.nrow(); i++){

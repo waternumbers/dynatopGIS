@@ -40,8 +40,6 @@ upslope_area <- function(project_path,use_filled_dem=TRUE,max_iter=10000){
                        as.matrix(brck[['land_area']]),
                        is.finite(as.matrix(brck[['channel_id']])),
                        dist, max_iter)
-
-    print("returned mat_upslope_area")
         
     upslope_area <- raster::raster(brck,layer=0)
     upslope_area <- raster::setValues(upslope_area,mat_upslope_area)
