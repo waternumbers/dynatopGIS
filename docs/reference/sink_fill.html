@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.2</span>
       </span>
     </div>
 
@@ -116,7 +116,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>sink_fill</span>(<span class='no'>project_path</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>10</span>, <span class='kw'>minimum_tangent</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
+    <pre class="usage"><span class='fu'>sink_fill</span>(<span class='no'>project_path</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>minimum_tangent</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
   <span class='kw'>use_filled_dem</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -124,7 +124,7 @@
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>project_path</th>
-      <td><p>folder whcih is being used for the analysis</p></td>
+      <td><p>folder which is being used for the analysis</p></td>
     </tr>
     <tr>
       <th>max_iter</th>
@@ -136,7 +136,7 @@
     </tr>
     <tr>
       <th>use_filled_dem</th>
-      <td><p>logical indicating if the analysis should start with the filled DEM</p></td>
+      <td><p>logical indicating if the analysis should start with the filled DEM. If set this option will overwrite the current filled dem with the final output</p></td>
     </tr>
     </table>
     

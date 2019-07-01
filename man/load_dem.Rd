@@ -9,7 +9,7 @@ load_dem(dem_file, project_path = ".")
 \arguments{
 \item{dem_file}{name of file to load as the dem}
 
-\item{project_path}{the path of the project to which to write dem file}
+\item{project_path}{folder which is being used for the analysis}
 }
 \value{
 TRUE if successful

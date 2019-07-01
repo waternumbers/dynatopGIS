@@ -319,6 +319,6 @@ raster::writeRaster(Greater_500, file.path(project_path,'Greater_500.tif'))
 then burn it in and generate a new model
 ```{r burn_in_burn}
 burn_in_class(project_path, 'atb_split','atb_split_500',list('Greater_500'))
-plot( raster::raster(file.path(project_path,'atb_split_500.tif')) )
+raster::plot( raster::raster(file.path(project_path,'atb_split_500.tif')) )
 create_model(project_path,'atb_split_500')
 ```

@@ -30,7 +30,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.2</span>
       </span>
     </div>
 
@@ -106,7 +106,9 @@
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(dynatopGIS)
 initial_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(<span class="st">"../vignette_data"</span>)
 project_path &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(<span class="st">"../vignette_data/processed"</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/files2">dir.create</a></span>(project_path)</code></pre></div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/files2">dir.create</a></span>(project_path)
+<span class="co">#&gt; Warning in dir.create(project_path): '../vignette_data/processed' already</span>
+<span class="co">#&gt; exists</span></code></pre></div>
 </div>
 <div id="reading-the-dem-and-river-network" class="section level1">
 <h1 class="hasAnchor">
@@ -1864,7 +1866,7 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 <span class="co">#&gt; [1] TRUE</span>
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'upslope_area.tif'</span>)))</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/calc_area-1.png" width="700"> This shows clearly an area of flow accumulation where no channel is defined.</p>
-<p>The local value of the gradient (tanb) if computed using the average of a subset of between pixel gradients. For a normal ‘hill slope’ cell these are the gradients to downslope pixels. In the case of pixels which contain river channels, or fall on the edge of the catchment with neighbors whose values is NA it is the average of the gradients from upslope pixels.</p>
+<p>The local value of the gradient (tanb) if computed using the average of a subset of between pixel gradients. For a normal ‘hill slope’ cell these are the gradients to downslope pixels. In the case of pixels which contain river channels, or fall on the edge of the catchment with neighbors whose value is NA it is the average of the gradients from upslope pixels.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/tanb.html">tanb</a></span>(project_path)
 <span class="co">#&gt; [1] TRUE</span>
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'tanb.tif'</span>)))</code></pre></div>
@@ -1883,6 +1885,7 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 <p>For example to generate HRUs for Swindale by dividing the topographic index into 21 classes and save the output classes as “atb_split.tif” in the project folder:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cuts &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">atb=</span><span class="dv">20</span>)
 <span class="kw"><a href="../reference/split_to_class.html">split_to_class</a></span>(project_path,<span class="st">'atb_split'</span>,cuts)
+<span class="co">#&gt; [1] TRUE</span>
 raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'atb_split.tif'</span>)))</code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_split-1.png" width="700"></p>
 </div>
@@ -1891,8 +1894,147 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
 <h1 class="hasAnchor">
 <a href="#generating-a-dynamic-topmodel" class="anchor"></a>Generating a dynamic TOPMODEL</h1>
 <p>As final stage dynamic TOPMODELs can be generated from the GIS data for use with the <code>dynatop</code> package for simulation. The required model structure is given in the vignettes of <code>dynatop</code>, here we show that an appropriate models can be generated with the <code>compute_model</code> function for a specified set of HRUs.</p>
-<p>For example in the case of the division of Swindale by topographic index into 21 classes the resulting model can be generated and displayed by</p>
+<p>For example in the case of the division of Swindale by topographic index into 21 classes the resulting model can be generated by</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/create_model.html">create_model</a></span>(project_path,<span class="st">'atb_split'</span>)
+<span class="co">#&gt; Start of function</span>
+<span class="co">#&gt; Computed valid sources and downsteams</span>
+<span class="co">#&gt; [1] TRUE</span></code></pre></div>
+</div>
+<div id="running-a-dynamic-topmodel" class="section level1">
+<h1 class="hasAnchor">
+<a href="#running-a-dynamic-topmodel" class="anchor"></a>Running a dynamic TOPMODEL</h1>
+<p>To finish this introduction we use the <code>dynatop</code> package to run the above model using data from its internal example.</p>
+<p>First we load and process the data, see the <code>dynatop</code> vignettes for details.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## load brompton data within dynatop and take observed inputs
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(<span class="st">"brompton"</span>,<span class="dt">package=</span><span class="st">'dynatop'</span>)
+obs &lt;-<span class="st"> </span>dynatop<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/dynatop/topics/resample_xts">resample_xts</a></span>(brompton<span class="op">$</span>rain, <span class="dt">dt =</span> <span class="dv">15</span><span class="op">/</span><span class="dv">60</span>)
+<span class="co">#&gt; Registered S3 method overwritten by 'xts':</span>
+<span class="co">#&gt;   method     from</span>
+<span class="co">#&gt;   as.zoo.xts zoo</span>
+<span class="co">#&gt; Warning in dynatop::resample_xts(brompton$rain, dt = 15/60): Irregularly</span>
+<span class="co">#&gt; spaced time series supplied to resample_xts - proceding with modal</span>
+<span class="co">#&gt; timestep, results are questionable</span>
+obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/merge">merge</a></span>(obs,brompton<span class="op">$</span>pet,<span class="dt">all=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="ot">TRUE</span>,<span class="ot">FALSE</span>))
+obs[<span class="op">!</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/is.finite">is.finite</a></span>(obs)] &lt;-<span class="st"> </span><span class="dv">0</span></code></pre></div>
+<p>Next we will load the model and check it</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/readRDS">readRDS</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">'atb_split'</span>,<span class="st">'.rds'</span>)))
+dynatop<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/dynatop/topics/check_model">check_model</a></span>(model)
+<span class="co">#&gt; Error in dynatop::check_model(model): Saturated flow redistribution fractions sum to greater then 1 for HRUs: 13, 17, 18, 20</span></code></pre></div>
+<p>It fails the checks but the totals are very close to 1 so the exceedance is likely to be due to a rounding error and is readily fixed.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">current_total_frac_sat &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colSums">colSums</a></span>( <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">rbind</a></span>(model<span class="op">$</span>Wsat,model<span class="op">$</span>Fsat) )
+current_total_frac_sat
+<span class="co">#&gt;         1         2         3         4         5         6         7 </span>
+<span class="co">#&gt; 1.0000000 1.0000000 0.7977198 0.8337827 0.9126679 0.9808949 0.9971050 </span>
+<span class="co">#&gt;         8         9        10        11        12        13        14 </span>
+<span class="co">#&gt; 0.9992618 0.9997226 0.9990521 0.9996782 0.9998324 1.0000000 1.0000000 </span>
+<span class="co">#&gt;        15        16        17        18        19        20 </span>
+<span class="co">#&gt; 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000</span>
+current_total_frac_ex &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colSums">colSums</a></span>( <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">rbind</a></span>(model<span class="op">$</span>Wex,model<span class="op">$</span>Fex) )
+current_total_frac_ex
+<span class="co">#&gt;         1         2         3         4         5         6         7 </span>
+<span class="co">#&gt; 1.0000000 1.0000000 0.7977198 0.8337827 0.9126679 0.9808949 0.9971050 </span>
+<span class="co">#&gt;         8         9        10        11        12        13        14 </span>
+<span class="co">#&gt; 0.9992618 0.9997226 0.9990521 0.9996782 0.9998324 1.0000000 1.0000000 </span>
+<span class="co">#&gt;        15        16        17        18        19        20 </span>
+<span class="co">#&gt; 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000 1.0000000</span>
+
+<span class="cf">for</span>(ii <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(current_total_frac_sat[current_total_frac_sat<span class="op">&gt;</span><span class="dv">1</span>])){
+    model<span class="op">$</span>Wsat[,ii] &lt;-<span class="st"> </span>model<span class="op">$</span>Wsat[,ii]<span class="op">/</span>current_total_frac_sat[ii]
+    model<span class="op">$</span>Fsat[,ii] &lt;-<span class="st"> </span>model<span class="op">$</span>Fsat[,ii]<span class="op">/</span>current_total_frac_sat[ii]
+}
+<span class="cf">for</span>(ii <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(current_total_frac_sat[current_total_frac_ex<span class="op">&gt;</span><span class="dv">1</span>])){
+    model<span class="op">$</span>Wex[,ii] &lt;-<span class="st"> </span>model<span class="op">$</span>Wex[,ii]<span class="op">/</span>current_total_frac_ex[ii]
+    model<span class="op">$</span>Fex[,ii] &lt;-<span class="st"> </span>model<span class="op">$</span>Fex[,ii]<span class="op">/</span>current_total_frac_ex[ii]
+}
+dynatop<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/dynatop/topics/check_model">check_model</a></span>(model)
+<span class="co">#&gt; NULL</span></code></pre></div>
+<p>The available input series must match the names in the model. The observed series names are</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(obs)
+<span class="co">#&gt; Warning: timezone of object (GMT) is different than current timezone ().</span>
+<span class="co">#&gt;                     rain pet</span>
+<span class="co">#&gt; 2012-09-01 00:00:00    0   0</span>
+<span class="co">#&gt; 2012-09-01 00:15:00    0   0</span>
+<span class="co">#&gt; 2012-09-01 00:30:00    0   0</span>
+<span class="co">#&gt; 2012-09-01 00:45:00    0   0</span>
+<span class="co">#&gt; 2012-09-01 01:00:00    0   0</span>
+<span class="co">#&gt; 2012-09-01 01:15:00    0   0</span></code></pre></div>
+<p>while the default value of unknown is set in the model</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">## model input
+model<span class="op">$</span>hillslope[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'precip_input'</span>,<span class="st">'pet_input'</span>)]
+<span class="co">#&gt;    precip_input pet_input</span>
+<span class="co">#&gt; 1       unknown   unknown</span>
+<span class="co">#&gt; 2       unknown   unknown</span>
+<span class="co">#&gt; 3       unknown   unknown</span>
+<span class="co">#&gt; 4       unknown   unknown</span>
+<span class="co">#&gt; 5       unknown   unknown</span>
+<span class="co">#&gt; 6       unknown   unknown</span>
+<span class="co">#&gt; 7       unknown   unknown</span>
+<span class="co">#&gt; 8       unknown   unknown</span>
+<span class="co">#&gt; 9       unknown   unknown</span>
+<span class="co">#&gt; 10      unknown   unknown</span>
+<span class="co">#&gt; 11      unknown   unknown</span>
+<span class="co">#&gt; 12      unknown   unknown</span>
+<span class="co">#&gt; 13      unknown   unknown</span>
+<span class="co">#&gt; 14      unknown   unknown</span>
+<span class="co">#&gt; 15      unknown   unknown</span>
+<span class="co">#&gt; 16      unknown   unknown</span>
+<span class="co">#&gt; 17      unknown   unknown</span>
+<span class="co">#&gt; 18      unknown   unknown</span>
+<span class="co">#&gt; 19      unknown   unknown</span>
+<span class="co">#&gt; 20      unknown   unknown</span>
+## channel inputs
+model<span class="op">$</span>channel[,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'precip_input'</span>,<span class="st">'pet_input'</span>)]
+<span class="co">#&gt;    precip_input pet_input</span>
+<span class="co">#&gt; 1       unknown   unknown</span>
+<span class="co">#&gt; 2       unknown   unknown</span>
+<span class="co">#&gt; 3       unknown   unknown</span>
+<span class="co">#&gt; 4       unknown   unknown</span>
+<span class="co">#&gt; 5       unknown   unknown</span>
+<span class="co">#&gt; 6       unknown   unknown</span>
+<span class="co">#&gt; 7       unknown   unknown</span>
+<span class="co">#&gt; 8       unknown   unknown</span>
+<span class="co">#&gt; 9       unknown   unknown</span>
+<span class="co">#&gt; 10      unknown   unknown</span>
+<span class="co">#&gt; 11      unknown   unknown</span>
+<span class="co">#&gt; 12      unknown   unknown</span>
+<span class="co">#&gt; 13      unknown   unknown</span>
+<span class="co">#&gt; 14      unknown   unknown</span>
+<span class="co">#&gt; 15      unknown   unknown</span>
+<span class="co">#&gt; 16      unknown   unknown</span>
+<span class="co">#&gt; 17      unknown   unknown</span>
+<span class="co">#&gt; 18      unknown   unknown</span>
+<span class="co">#&gt; 19      unknown   unknown</span></code></pre></div>
+<p>The values are changed to allow the model to run</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model<span class="op">$</span>channel<span class="op">$</span>precip_input &lt;-<span class="st"> </span>model<span class="op">$</span>hillslope<span class="op">$</span>precip_input &lt;-<span class="st"> "rain"</span>
+model<span class="op">$</span>channel<span class="op">$</span>pet_input &lt;-<span class="st"> </span>model<span class="op">$</span>hillslope<span class="op">$</span>pet_input &lt;-<span class="st"> "pet"</span>
+sim &lt;-<span class="st"> </span>dynatop<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/dynatop/topics/dynatop">dynatop</a></span>(model,obs,<span class="fl">0.00012</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(sim<span class="op">$</span>channel_input)</code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/run_model-1.png" width="700"></p>
+</div>
+<div id="addendum---burning-in-classes" class="section level1">
+<h1 class="hasAnchor">
+<a href="#addendum---burning-in-classes" class="anchor"></a>Addendum - Burning in classes</h1>
+<p>The addendum demonstrates the burning in of additional HRU classes. Suppose in the above example we want to burn in an additional HRU class for all areas above 500m that aren’t channels.</p>
+<p>Firstly load the filled dem, channel index and current classification rasters</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">filled_dem &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'filled_dem.tif'</span>))
+channel_index &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'channel_id.tif'</span>))
+atb_split &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'atb_split.tif'</span>))</code></pre></div>
+<p>Next we will create a blank raster (populated bu NA values) to which we will add the class to be burnt in. It is important this has the same project and cell sizes as the original raster. The easiest way to acheive this is to simply copy one.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Greater_<span class="dv">500</span> &lt;-<span class="st"> </span>filled_dem
+Greater_<span class="dv">500</span>[] &lt;-<span class="st"> </span><span class="ot">NA</span></code></pre></div>
+<p>Now we will assign the value of the new class to all the cells in blank raster which belong to it. There is no checking that the class number you use is not already in use, so we take the value to be ten greater then the maximum already in use.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Greater_<span class="dv">500</span>[filled_dem <span class="op">&gt;</span><span class="st"> </span><span class="dv">500</span> <span class="op">&amp;</span><span class="st"> </span><span class="op">!</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/is.finite">is.finite</a></span>(channel_index)] &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/cellStats">cellStats</a></span>(atb_split,<span class="st">'max'</span>)<span class="op">+</span><span class="dv">10</span>
+raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>(Greater_<span class="dv">500</span>)
+raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>(channel_index,<span class="dt">add=</span><span class="ot">TRUE</span>,<span class="dt">legend=</span><span class="ot">FALSE</span>)</code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/burn_in_spec-1.png" width="700"></p>
+<p>Next save the new classification to the project directory</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/writeRaster">writeRaster</a></span>(Greater_<span class="dv">500</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'Greater_500.tif'</span>))</code></pre></div>
+<p>then burn it in and generate a new model</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/burn_in_class.html">burn_in_class</a></span>(project_path, <span class="st">'atb_split'</span>,<span class="st">'atb_split_500'</span>,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="st">'Greater_500'</span>))
+<span class="co">#&gt; [1] TRUE</span>
+raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/plot">plot</a></span>( raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumentation.org/packages/raster/topics/raster">raster</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/file.path">file.path</a></span>(project_path,<span class="st">'atb_split_500.tif'</span>)) )</code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/burn_in_burn-1.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="../reference/create_model.html">create_model</a></span>(project_path,<span class="st">'atb_split_500'</span>)
 <span class="co">#&gt; Start of function</span>
 <span class="co">#&gt; Computed valid sources and downsteams</span>
 <span class="co">#&gt; [1] TRUE</span></code></pre></div>
@@ -1915,6 +2057,8 @@ raster<span class="op">::</span><span class="kw"><a href="https://www.rdocumenta
       </ul>
 </li>
       <li><a href="#generating-a-dynamic-topmodel">Generating a dynamic TOPMODEL</a></li>
+      <li><a href="#running-a-dynamic-topmodel">Running a dynamic TOPMODEL</a></li>
+      <li><a href="#addendum---burning-in-classes">Addendum - Burning in classes</a></li>
       </ul>
 </div>
       </div>

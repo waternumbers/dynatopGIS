@@ -12,7 +12,7 @@ load_channel(file_name, property_names, project_path = ".",
 
 \item{property_names}{named vector of columns of the spatial data frame to use for channel properties}
 
-\item{project_path}{path to the project folder}
+\item{project_path}{folder which is being used for the analysis}
 
 \item{default_width}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
 }

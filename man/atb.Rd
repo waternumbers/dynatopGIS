@@ -7,7 +7,7 @@
 atb(project_path)
 }
 \arguments{
-\item{project_path}{the path to the folder used for the analysis}
+\item{project_path}{folder which is being used for the analysis}
 }
 \description{
 Compute the Topographic Index \code{log(area / tanb)}

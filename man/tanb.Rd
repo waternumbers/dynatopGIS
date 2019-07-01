@@ -7,7 +7,7 @@
 tanb(project_path, use_filled_dem = TRUE)
 }
 \arguments{
-\item{project_path}{folder whcih is being used for the analysis}
+\item{project_path}{folder which is being used for the analysis}
 
 \item{use_filled_dem}{logical, shouldthe filled DEM be used?}
 }
