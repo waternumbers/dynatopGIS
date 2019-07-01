@@ -2,9 +2,9 @@
 #'
 #' @description Adds a chanel to the DEM by working out the land and channel areas and channel id
 #'
-#' @param project_path the path to the folder used for the analysis
+#' @param project_path folder which is being used for the analysis
 #'
-#' @details intersects the DEM and river network to determine which of the raster DEM cells contain parts of the river network. From this three raster maps are produced containing:
+#' @details Intersects the DEM and river network to determine which of the raster DEM cells contain parts of the river network. From this three raster maps are produced containing:
 #' * the area in the DEM cell covered by land
 #' * the area in the DEM cell covered by channel
 #' * the id of the channel

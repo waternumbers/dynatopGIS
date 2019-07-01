@@ -2,7 +2,7 @@
 #'
 #' @description Computes the upslope area of a pixel for use in topographic index calculations
 #' 
-#' @param project_path folder whcih is being used for the analysis
+#' @param project_path folder which is being used for the analysis
 #' @param use_filled_dem logical, shouldthe filled DEM be used?
 #' @param max_iter Maximum number of iterations
 #'

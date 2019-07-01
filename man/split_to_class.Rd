@@ -7,7 +7,7 @@
 split_to_class(project_path, output_name, cuts)
 }
 \arguments{
-\item{project_path}{Directory of the project}
+\item{project_path}{folder which is being used for the analysis}
 
 \item{output_name}{name to give the output files}
 

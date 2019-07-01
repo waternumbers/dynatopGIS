@@ -7,7 +7,7 @@
 create_model(project_path, hillslope_class)
 }
 \arguments{
-\item{project_path}{directory of the project being worked on}
+\item{project_path}{folder which is being used for the analysis}
 
 \item{hillslope_class}{Name of the existing hillslope classification to use to generate the model}
 }

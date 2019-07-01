@@ -1,3 +1,16 @@
+# dynatopGIS 0.0.2
+
+## New features
+- Added ability to continue a run of sink_fill by starting with previous
+  filled dem 
+  
+## Bug fixes
+- Model generation - missing sbar added and class of data frame columns altered
+- Linking Rcpp function - alter NAMESPACE so should be included
+
+## Other changes
+- Vignette know includes running of model and burning in a class
+
 # dynatopGIS 0.0.1
 
 ## Other changes

@@ -3,7 +3,7 @@
 #' @description Reads the DEM file and writes it to the project directory
 #'
 #' @param dem_file name of file to load as the dem
-#' @param project_path the path of the project to which to write dem file
+#' @param project_path folder which is being used for the analysis
 #'
 #' @return TRUE if successful
 #'

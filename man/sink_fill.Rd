@@ -4,17 +4,17 @@
 \alias{sink_fill}
 \title{function to fill sinks}
 \usage{
-sink_fill(project_path, max_iter = 10, minimum_tangent = 0.001,
+sink_fill(project_path, max_iter = 1000, minimum_tangent = 0.001,
   use_filled_dem = FALSE)
 }
 \arguments{
-\item{project_path}{folder whcih is being used for the analysis}
+\item{project_path}{folder which is being used for the analysis}
 
 \item{max_iter}{maximum number of iterations of the algorithm}
 
 \item{minimum_tangent}{minimum value of the gradient to the next cell downstream}
 
-\item{use_filled_dem}{logical indicating if the analysis should start with the filled DEM}
+\item{use_filled_dem}{logical indicating if the analysis should start with the filled DEM. If set this option will overwrite the current filled dem with the final output}
 }
 \description{
 Fills sinks so that they have a slope of at least the minimum_tangent to the downstream cell

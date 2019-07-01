@@ -7,7 +7,7 @@
 burn_in_class(project_path, class_name, output_name, burns)
 }
 \arguments{
-\item{project_path}{Directory of the project}
+\item{project_path}{folder which is being used for the analysis}
 
 \item{class_name}{Name of the existing classification onto which to burn the new classes}
 

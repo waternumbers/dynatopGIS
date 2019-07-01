@@ -2,7 +2,7 @@
 #'
 #' @description Burn in distinct regions to a classification map
 #' 
-#' @param project_path Directory of the project
+#' @param project_path folder which is being used for the analysis
 #' @param class_name Name of the existing classification onto which to burn the new classes
 #' @param output_name name to give the output files
 #' @param burns list  Named list of geometries (supplied as rasters) to burn into discretisation of HRUs that will be stamped onto the classification. Overrides any classification already defined
@@ -36,7 +36,7 @@ burn_in_class <- function(project_path,class_name,output_name,burns){
     ## process if new class
     for(ii in 1:raster::nlayers(burn_brck)){
         class <- overlay(class, burn_brck[[ii]], fun = function(x, y) {
-            x[!is.na(y[])] <- y[]
+            x[is.finite(y)] <- y[is.finite(y)]
             return(x)
         })
     }

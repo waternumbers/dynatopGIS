@@ -5,21 +5,6 @@
 
 using namespace Rcpp;
 
-// fun_atb
-NumericMatrix fun_atb(NumericMatrix dem, NumericMatrix area, LogicalMatrix is_channel, NumericMatrix dist, int max_iter);
-RcppExport SEXP _dynatopGIS_fun_atb(SEXP demSEXP, SEXP areaSEXP, SEXP is_channelSEXP, SEXP distSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type area(areaSEXP);
-    Rcpp::traits::input_parameter< LogicalMatrix >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_atb(dem, area, is_channel, dist, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
 // fun_redistribution
 List fun_redistribution(NumericMatrix dem, NumericMatrix land_area, IntegerMatrix hillslope, IntegerMatrix channel, int number_hillslope_class, int number_channel_class, NumericMatrix dist);
 RcppExport SEXP _dynatopGIS_fun_redistribution(SEXP demSEXP, SEXP land_areaSEXP, SEXP hillslopeSEXP, SEXP channelSEXP, SEXP number_hillslope_classSEXP, SEXP number_channel_classSEXP, SEXP distSEXP) {
@@ -81,7 +66,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_dynatopGIS_fun_atb", (DL_FUNC) &_dynatopGIS_fun_atb, 5},
     {"_dynatopGIS_fun_redistribution", (DL_FUNC) &_dynatopGIS_fun_redistribution, 7},
     {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 4},
     {"_dynatopGIS_fun_tanb", (DL_FUNC) &_dynatopGIS_fun_tanb, 3},
