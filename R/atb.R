@@ -2,7 +2,7 @@
 #'
 #' @description Compute the Topographic Index \code{log(area / tanb)}
 #' 
-#' @param project_path the path to the folder used for the analysis
+#' @param project_path folder which is being used for the analysis
 #'
 #' @details The algorithm computes the topographic index from the upslope_area and tanb raster files in the project directory.
 #' @export

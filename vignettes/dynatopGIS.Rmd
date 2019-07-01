@@ -233,13 +233,13 @@ obs[!is.finite(obs)] <- 0
 ```
 
 Next we will load the model and check it
-```{r, load_model}
+```{r, load_model, error=TRUE, purl=FALSE}
 model <- readRDS(file.path(project_path,paste0('atb_split','.rds')))
 dynatop::check_model(model)
 
 ```
-It fails the checks but the totals are very close to 1 so it likely a rounding
-error and readily fixed.
+It fails the checks but the totals are very close to 1 so the exceedance is
+likely to be due to a rounding error and is readily fixed.
 ```{r check_redistribution}
 current_total_frac_sat <- colSums( rbind(model$Wsat,model$Fsat) )
 current_total_frac_sat
@@ -266,15 +266,59 @@ head(obs)
 while the default value of unknown is set in the model
 ```{r }
 ## model input
-model$hillslope[,c('precip_input','pet_input')],
+model$hillslope[,c('precip_input','pet_input')]
 ## channel inputs
-model$channel$precip_input)
+model$channel[,c('precip_input','pet_input')]
 ```
 
-The value are changed to allow the model to run
+The values are changed to allow the model to run
 ```{r, run_model}
 model$channel$precip_input <- model$hillslope$precip_input <- "rain"
-model$hillslope$pet_input <- "pet"
+model$channel$pet_input <- model$hillslope$pet_input <- "pet"
 sim <- dynatop::dynatop(model,obs,0.00012)
 plot(sim$channel_input)
+```
+
+# Addendum - Burning in classes
+
+The addendum demonstrates the burning in of additional HRU classes. Suppose in
+the above example we want to burn in an additional HRU class for all areas
+above 500m that aren't channels.
+
+Firstly load the filled dem, channel index and current classification rasters
+
+```{r burn_in_set}
+filled_dem <- raster::raster(file.path(project_path,'filled_dem.tif'))
+channel_index <- raster::raster(file.path(project_path,'channel_id.tif'))
+atb_split <- raster::raster(file.path(project_path,'atb_split.tif'))
+```
+
+Next we will create a blank raster (populated bu NA values) to which we will
+add the class to be burnt in. It is important this has the same project and
+cell sizes as the original raster. The easiest way to acheive this is to
+simply copy one.
+```{r burn_in_blank}
+Greater_500 <- filled_dem
+Greater_500[] <- NA
+```
+
+Now we will assign the value of the new class to all the cells in blank raster
+which belong to it. There is no checking that the class number you use is not
+already in use, so we take the value to be ten greater then the maximum
+already in use.
+```{r burn_in_spec}
+Greater_500[filled_dem > 500 & !is.finite(channel_index)] <- raster::cellStats(atb_split,'max')+10
+raster::plot(Greater_500)
+raster::plot(channel_index,add=TRUE,legend=FALSE)
+```
+
+Next save the new classification to the project directory
+```{r burn_in_save}
+raster::writeRaster(Greater_500, file.path(project_path,'Greater_500.tif'))
+```
+then burn it in and generate a new model
+```{r burn_in_burn}
+burn_in_class(project_path, 'atb_split','atb_split_500',list('Greater_500'))
+plot( raster::raster(file.path(project_path,'atb_split_500.tif')) )
+create_model(project_path,'atb_split_500')
 ```

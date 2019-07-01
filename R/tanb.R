@@ -2,7 +2,7 @@
 #'
 #' @description Computes the average downslope gradient for use in topographic index calculations
 #' 
-#' @param project_path folder whcih is being used for the analysis
+#' @param project_path folder which is being used for the analysis
 #' @param use_filled_dem logical, shouldthe filled DEM be used?
 #'
 #' @details The algorithm computes the area draining to a cell from those upstream presuming the flow is split between the downsteam (lower)  neighbouring cells proportional to the gradient.

@@ -4,7 +4,7 @@
 #'
 #' @param file_name name of file to read in
 #' @param property_names named vector of columns of the spatial data frame to use for channel properties
-#' @param project_path path to the project folder
+#' @param project_path folder which is being used for the analysis
 #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
 #' @return TRUE if runs otherwise an error message.
 #'

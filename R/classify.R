@@ -2,7 +2,7 @@
 #'
 #' @description Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layers and cuts
 #' 
-#' @param project_path Directory of the project
+#' @param project_path folder which is being used for the analysis
 #' @param output_name name to give the output files
 #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
 #'
@@ -64,5 +64,7 @@ split_to_class <- function(project_path,output_name,cuts){
     ## make and write json
     tmp <- list(cuts=cuts)
     writeLines( jsonlite::toJSON(tmp,pretty=TRUE), file.path(project_path,paste0(output_name,'.json')) )
+
+    return(TRUE)
 }
 
