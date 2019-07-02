@@ -28,5 +28,6 @@ RoxygenNote: 6.1.1
 Suggests: 
     knitr,
     rmarkdown,
-    dynatop
+    dynatop,
+    covr
 VignetteBuilder: knitr

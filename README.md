@@ -1,5 +1,12 @@
 # dynatopGIS
 
+<!-- badges: start -->
+  [![Travis build
+  status](https://travis-ci.org/waternumbers/dynatop_gis.svg?branch=master)](https://travis-ci.org/waternumbers/dynatop_gis)
+  [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/waternumbers/dynatopGIS?branch=master&svg=true)](https://ci.appveyor.com/project/waternumbers/dynatopGIS)
+[![Coveralls test coverage](https://coveralls.io/repos/github/waternumbers/dynatop_gis/badge.svg)](https://coveralls.io/r/waternumbers/dynatop_gis?branch=master)
+<!-- badges: end -->
+
 This R package contains the code to generate a dynamic TOPMODEL from GIS
 data. A related package for computing dynamic TOPMODEL simulations can be found
 [here](https://waternumbers.github.io/dynatop).
