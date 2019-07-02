@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
   [![Travis build
-  status](https://travis-ci.org/waternumbers/dynatop_gis.svg?branch=master)](https://travis-ci.org/waternumbers/dynatop_gis)
+  status](https://travis-ci.org/waternumbers/dynatopGIS.svg?branch=master)](https://travis-ci.org/waternumbers/dynatopGIS)
   [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/waternumbers/dynatopGIS?branch=master&svg=true)](https://ci.appveyor.com/project/waternumbers/dynatopGIS)
 [![Coveralls test coverage](https://coveralls.io/repos/github/waternumbers/dynatop_gis/badge.svg)](https://coveralls.io/r/waternumbers/dynatop_gis?branch=master)
 <!-- badges: end -->
