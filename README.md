@@ -23,7 +23,8 @@ maintainers directly in the first instance.
 
 Thanks goes to:
 * Peter Metcalfe who developed the original port of Dynamic TOPMODEL to R
-during his PhD sponsored by the [JBA Trust](https://www.jbatrust.org). 
+during his PhD sponsored by the [JBA Trust](https://www.jbatrust.org).
+* The [NERC Q-NFM project (NE/R004722/1)](https://www.lancaster.ac.uk/lec/sites/qnfm/) at Lancaster University for supporting this update to dynatop.
 * The original developers of Dynamic TOPMODEL, [Keith
 Beven](https://www.lancaster.ac.uk/lec/about-us/people/keith-beven) and [Jim
 Freer](http://www.bristol.ac.uk/geography/people/jim-e-freer/index.html), who
