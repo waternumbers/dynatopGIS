@@ -15,5 +15,5 @@ create_model(project_path, hillslope_class)
 Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 }
 \description{
-take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL
+take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL.
 }

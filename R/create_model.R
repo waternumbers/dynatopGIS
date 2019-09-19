@@ -1,6 +1,6 @@
 #' Create a dynamic TOPMODEL suitabel more model evaluation
 #'
-#' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL
+#' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL.
 #' 
 #' @param project_path folder which is being used for the analysis
 #' @param hillslope_class Name of the existing hillslope classification to use to generate the model
@@ -9,20 +9,64 @@
 #' @export
 create_model <- function(project_path,hillslope_class){
 
-    ## check we have all the files we need
+    ## ####################################
+    ##  Check required inputs are available
+    ## ####################################
+    
+    ## check we have all the raster files we need
     layer_names <- c('dem','land_area','tanb','atb','channel_area','channel_id',hillslope_class)
     file_names <- file.path( project_path, paste0(layer_names,'.tif') )
     if( !all(file.exists(file_names)) ){
         stop("Missing files for: ",paste(layer_names[!file.exists(file_names)],collapse=" "))
     }
+
+    ## check we have the channel shape file
+    if( !file.exists(file.path( project_path, 'channel.shp' )) ){
+        stop("Missing channel shape file")
+    }
+
+    ## ###############################
+    ## Load the data
+    ## ###############################
     
-    ## load files
+    ## load raster files
     brck <- raster::brick(as.list(file_names))
     ## alter names so valid R names which appear in brck
     names(brck) <- make.names(layer_names)
     hillslope_class <- make.names(hillslope_class)
 
-    ## initialise the hillslope
+    ## load the channel shape file
+    channel_shp <- raster::shapefile(file.path(project_path,'channel'))
+
+    ## ###############################################################
+    ## Sanity checks that :
+    ##   - Channel shape and raster file are consistent
+    ##   - Shape file contains all information
+    ##   - No river connectivity situations that aren't handled occur
+    ## ###############################################################
+    
+    ## check channel shape file values are not missing
+    for(ii in c('endNode','startNode','length')){
+        nm <- sum( is.na(channel_shp[[ii]]) )
+        max_mn <- ifelse(ii=="endNode",1,0)
+        if(nm > max_mn){
+            warning(paste("To many missing values (",nm,") in channel", ii, "variable - channels and gauges may be wrong"))
+        }
+    }
+    
+    ## check there are no channel bifurcations..since these aren't handled
+    if( length(unique(channel_shp[['startNode']])) != nrow(channel_shp) ){
+        stop("There are channel bifurcations which are not handled in the code")
+    }
+    ## check all channels in raster and in channel_shp
+    if( !all( raster::unique(brck[['channel_id']]) %in% channel_shp[['id']] ) ){
+        stop("Channels in raster file that are not in the shape file")
+    }
+
+    ## #######################################
+    ## Basic computations and setting up model
+    ## #######################################
+    
     model <- list(hillslope = data.frame(
                       id = raster::unique(brck[[hillslope_class]]),
                       area = raster::zonal(brck[['land_area']],brck[[hillslope_class]],
@@ -45,8 +89,11 @@ create_model <- function(project_path,hillslope_class){
                       id = raster::unique(brck[['channel_id']]),
                       area = raster::zonal(brck[['channel_area']],brck[['channel_id']],
                                            'sum',digits=4)[,2],
+                      length=NA,
+                      next_id=NA,                
                       precip_input="unknown",
                       pet_input="unknown",
+                      v_ch="v_ch_default",
                       stringsAsFactors=FALSE
                   ),
                   param = c(srz_max_default=0.05,
@@ -54,9 +101,14 @@ create_model <- function(project_path,hillslope_class){
                             ln_t0_default=19,
                             m_default=0.004,
                             td_default=20,
-                            tex_default=100)
+                            tex_default=100,
+                            v_ch_default=100)
                   )
 
+    ## ########################
+    ## Process the redistirbution matrices
+    ## ########################
+    
     ## make distance for computing the weighting matrices
     dist <- matrix(sqrt(raster::xres(brck)^2 + raster::yres(brck)^2),3,3)
     dist[2,1] <- dist[2,3] <- raster::xres(brck)
@@ -88,6 +140,48 @@ create_model <- function(project_path,hillslope_class){
     model$Wsat <- model$Wex <- tmp$hillslope
     model$Fsat <- model$Fex <- tmp$channel
 
+    
+    ## #######################################
+    ## Add information channel routing information
+    ## #######################################
+    for(ii in 1:nrow(model$channel)){
+        idx <- which(channel_shp[['id']]==model$channel$id[ii])
+        if(length(idx) != 1){
+            stop("Inconsitency between channel raster and shapefile")
+        }
+        ## set length
+        model$channel$length[ii] <- channel_shp[['length']][idx]
+        ## work out next id
+        jdx <- which(channel_shp[['startNode']]==channel_shp[['endNode']][idx])
+        if( length(jdx) ==1 ){ # case of jdx>1 handled in bifurcation check
+            model$channel$next_id[ii] <- channel_shp[['id']][jdx]
+        }
+        
+    }
+
+    ## ############################################
+    ## Add gauges at all outlets from river network
+    ## ############################################
+    idx <- which(!is.finite(model$channel$next_id))
+    model$gauge <- data.frame(
+        name = paste("channel",idx,sep="_"),
+        channel_id = idx,
+        fraction = rep(1,length(idx)),
+        stringsAsFactors=FALSE
+    )
+
+    ## ##################################
+    ## Add point inflow table
+    ## ##################################
+    ## blank point inflow table
+    model$point_inflow <- data.frame(
+        name = character(0),
+        channel_id = numeric(0),
+        fraction = numeric(0),
+        stringsAsFactors=FALSE
+    )
+
+    ## Save model
     saveRDS(model,file=file.path(project_path,paste0(hillslope_class,'.rds')))
 
     return(TRUE)
