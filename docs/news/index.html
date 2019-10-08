@@ -60,7 +60,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.3</span>
       </span>
     </div>
 
@@ -106,37 +106,58 @@
       <small>Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="dynatopgis-0-0-1" class="section level1">
+    <div id="dynatopgis-002" class="section level1">
 <h1 class="page-header">
-<a href="#dynatopgis-0-0-1" class="anchor"></a>dynatopGIS 0.0.1</h1>
+<a href="#dynatopgis-002" class="anchor"></a>dynatopGIS 0.0.2</h1>
+<div id="new-features" class="section level2">
+<h2 class="hasAnchor">
+<a href="#new-features" class="anchor"></a>New features</h2>
+<ul>
+<li>Added ability to continue a run of sink_fill by starting with previous filled dem</li>
+</ul>
+</div>
+<div id="bug-fixes" class="section level2">
+<h2 class="hasAnchor">
+<a href="#bug-fixes" class="anchor"></a>Bug fixes</h2>
+<ul>
+<li>Model generation - missing sbar added and class of data frame columns altered</li>
+<li>Linking Rcpp function - alter NAMESPACE so should be included</li>
+</ul>
+</div>
 <div id="other-changes" class="section level2">
 <h2 class="hasAnchor">
 <a href="#other-changes" class="anchor"></a>Other changes</h2>
+<ul>
+<li>Vignette know includes running of model and burning in a class</li>
+</ul>
+</div>
+</div>
+    <div id="dynatopgis-001" class="section level1">
+<h1 class="page-header">
+<a href="#dynatopgis-001" class="anchor"></a>dynatopGIS 0.0.1</h1>
+<div id="other-changes-1" class="section level2">
+<h2 class="hasAnchor">
+<a href="#other-changes-1" class="anchor"></a>Other changes</h2>
 <ul>
 <li>Removed vignette data from package to reduce size. Now on github</li>
 <li>Minor spelling and format changes to vignette</li>
 </ul>
 </div>
 </div>
-    <div id="dynatopgis-0-0-0-9000" class="section level1">
+    <div id="dynatopgis-0009000" class="section level1">
 <h1 class="page-header">
-<a href="#dynatopgis-0-0-0-9000" class="anchor"></a>dynatopGIS 0.0.0.9000</h1>
+<a href="#dynatopgis-0009000" class="anchor"></a>dynatopGIS 0.0.0.9000</h1>
 <div id="context" class="section level2">
 <h2 class="hasAnchor">
 <a href="#context" class="anchor"></a>Context</h2>
 <p>This package is the result of an almost complete rewrite of the dynatopmodel package formally on CRAN and the associated development code (not in the public domain).</p>
 <p>This package contains the code for extracting teh GIS summaries required for dynamic TOPMODEL and helpers for inserting default parameters. The package [dynatop]{<a href="http://bbc.co.uk" class="uri">http://bbc.co.uk</a>} contains the code for performing simulations.</p>
 </div>
-<div id="new-features" class="section level2">
+<div id="new-features-1" class="section level2">
 <h2 class="hasAnchor">
-<a href="#new-features" class="anchor"></a>New Features</h2>
+<a href="#new-features-1" class="anchor"></a>New Features</h2>
 <ul>
-<li>Change in approach to wrting all intermediate files to
-<ul>
-<li>produce a record of analysis</li>
-<li>allow for future developments with larger size GIS data</li>
-</ul>
-</li>
+<li>Change in approach to wrting all intermediate files to - produce a record of analysis - allow for future developments with larger size GIS data</li>
 <li>Porting of sink_fill and atb calculations from orginal topmodel CRAN package to Rcpp</li>
 <li>Improved method of determining river network intersection with DEM from shape files</li>
 <li>Changes to sink filling and atb calculations to recognise burnt in river network and correctly split flow by gradient</li>
@@ -158,8 +179,9 @@
     <div id="tocnav">
       <h2>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
-        <li><a href="#dynatopgis-0-0-1">0.0.1</a></li>
-        <li><a href="#dynatopgis-0-0-0-9000">0.0.0.9000</a></li>
+        <li><a href="#dynatopgis-002">0.0.2</a></li>
+        <li><a href="#dynatopgis-001">0.0.1</a></li>
+        <li><a href="#dynatopgis-0009000">0.0.0.9000</a></li>
       </ul>
     </div>
   </div>
