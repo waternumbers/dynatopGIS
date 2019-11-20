@@ -11,6 +11,48 @@
 #' @export
 sink_fill<- function(project_path,max_iter=1000,minimum_tangent=0.001,use_filled_dem=FALSE){
 
+    ## make sure all values in the dem area are finite
+    dem_raster <- file.path(project_path,'dem.tif')
+    dem <- raster(dem_raster)
+    na_clumps <- clump(is.na(dem)) # clumps of na values
+    edge_values <- setdiff( unique(c(na_clumps[1,],
+                                     na_clumps[nrow(tmp),],
+                                     na_clumps[,1],
+                                     na_clumps[,ncol(tmp)])),
+                           NA) #those clumps on the edge to be ignored
+    na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
+
+    for(ii in setdiff( unique(tmp), NA)){
+        print(paste("Fill clump",ii))
+        print("whoops not implimented")
+    }
+
+    ## check all non river cells have at least one lower cell
+    f_less <- function(x){ ifelse(is.na(x[5]),NA,sum(x[-5]<x[5],na.rm=TRUE)) }
+    f_fill <- function(x){
+        x <- x[-5]
+        if(all(is.na(x))){
+            out <- NA
+        }else{
+            x <- sort(x)
+            out <- ifelse(length(x)==1,x+1e-3,0.5*(x[1]+x[2]))
+        }
+        return(out)
+    }
+    
+    
+    n_less <- focal(dem,w = matrix(1,3,3),fun=f_less)
+    idx <- Which(n_less==0,cells=TRUE)
+    df <- dem
+    while(length(idx) > 0){
+        print(paste("Filling",length(idx),"cells"))
+        df[idx] <- NA
+        df <- focal(df,w = matrix(1,3,3),fun=f_fill,NAonly=TRUE )
+        n_less <- focal(df,w = matrix(1,3,3),fun=f_less)
+        idx <- Which(n_less==0,cells=TRUE)
+    }
+    
+
     
     ## load dem and channel id
     file_list <- list()
@@ -31,7 +73,10 @@ sink_fill<- function(project_path,max_iter=1000,minimum_tangent=0.001,use_filled
         stop("Currently only works for projected DEM")
     }
    
+
+    ## remove na value from dem
     
+     values f
     ## convert to correct type
     mat_dem <- as.matrix(brck[['dem']])
     is_channel <- is.finite( as.matrix(brck[['channel_id']]) )
