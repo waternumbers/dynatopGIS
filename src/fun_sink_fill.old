@@ -10,62 +10,17 @@ using namespace Rcpp;
 //' @return matrix containing filled dem
 //'
 // [[Rcpp::export]]
-NumericMatrix fun_sink_fill(NumericVector dem, LogicalVector is_channel,
-			    NumericVector delta, int max_iter){
+NumericMatrix fun_sink_fill(NumericMatrix dem, LogicalMatrix is_channel,
+			    NumericMatrix delta, int max_iter){
 
-  
   int n_sink = 0;
   int n_finite = 0;
   int niter = 0;
-  LogicalVector is_sink(dem.length(),true);
+  LogicalMatrix can_eval(dem.nrow(),dem.ncol());
 
   double na_test_val = -10000; // test the for NAN against this - if NAN will return false
     
-  // loop
-  n_iter = 1;
-  while( any(is_sink) && n_iter < max_iter ){
-    n_sink=0;
-    for(int i=0;i < dem.length(); i++){
-      if( is_sink(i) ){
-	if( dem(i) > na_test_val & not is_channel(i) ){
-	  // work out index of neighbours
-	  ngh(0) = i-nc-1;
-	  ngh(1) = i-nc;
-	  ngh(2) = i-nc+1;
-	  ngh(3) = i-1;
-	  ngh(4) = i+1;
-	  ngh(5) = i+nc-1;
-	  ngh(6) = i+nc;
-	  ngh(7) = i+nc+1;
-	  
-	  // set the lowest neighbout value and number of finite neighbours
-	  min_ngh = 1e32;
-	  n_finite = 0;
-	  // loop neighbours
-	  for(int j=0; j < 8; j++){
-	    if( ngh(j) < dem.length() &&
-		ngh(j) > -1 &&
-		dem(ngh(j)) > na_test_val &&
-		dem(ngh(j)) < dem(i) ){
-	      // increase number of finite values
-	      n_finite = n_finite + 1;
-	      // compute new lowest neighbour
-	      n_lower(i) = n_lower(i) + 1;
-	    }
-	  }
-
-	  // work out if changed
-
-	  // set new value and neighbours to is_sink=true
-	  
-      if( (n_finite < 8) && (n_lower(i)==0) ){
-	// potential edge drain set order to 1
-	order(i) = 1;
-      }
-    }else{
-      can_eval(i)=false;
-    }
-    
+  // determine if we can fill a cell if it is a sink
   for(int i=0;i < dem.nrow(); i++){
     for(int j=0; j < dem.ncol(); j++){
       // set to can't be filled
