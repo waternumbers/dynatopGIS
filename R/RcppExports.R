@@ -52,8 +52,8 @@ fun_redistribution <- function(dem, land_area, hillslope, channel, number_hillsl
 #'
 #' @return matrix containing filled dem
 #'
-fun_sink_fill <- function(dem, is_channel, delta, max_iter) {
-    .Call('_dynatopGIS_fun_sink_fill', PACKAGE = 'dynatopGIS', dem, is_channel, delta, max_iter)
+fun_sink_fill <- function(dem, is_channel, delta, nc, max_iter) {
+    .Call('_dynatopGIS_fun_sink_fill', PACKAGE = 'dynatopGIS', dem, is_channel, delta, nc, max_iter)
 }
 
 #' cpp wrapper function for computing average gradient

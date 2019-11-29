@@ -18,6 +18,8 @@ IntegerVector fun_increase_order(NumericVector dem, IntegerVector order, int nc 
   double na_test_val = -10000; // test the for NAN against this - if NAN will return false
   int cnt = 0, dp=0, n_finite=0;
 
+  double delta_min = 0.00;
+  
   // work out number of lower cells
   for(int i=0;i < dem.length(); i++){
     if( dem(i) > na_test_val ){
@@ -38,14 +40,20 @@ IntegerVector fun_increase_order(NumericVector dem, IntegerVector order, int nc 
       for(int j=0; j < 8; j++){
 	if( ngh(j) < dem.length() &&
 	    ngh(j) > -1 &&
-	    dem(ngh(j)) > na_test_val &&
-	    dem(ngh(j)) < dem(i) ){
-	  n_lower(i) = n_lower(i) + 1;
+	    dem(ngh(j)) > na_test_val){
+	  n_finite = n_finite + 1;
+	  if( (dem(ngh(j)) + delta_min) < dem(i) ){
+	    n_lower(i) = n_lower(i) + 1;
+	  }
 	}
       }
       if( (n_finite < 8) && (n_lower(i)==0) ){
 	// potential edge drain set order to 1
 	order(i) = 1;
+      }
+      if( (n_finite == 8) && (n_lower(i)==0) ){
+	// potential sink drain set order to 1
+	Rcout << "Sink at cell number " << i << "\n";
       }
       
     }
@@ -77,7 +85,7 @@ IntegerVector fun_increase_order(NumericVector dem, IntegerVector order, int nc 
 	  if( ngh(j) < dem.length() &&
 	      ngh(j) > -1 &&
 	      dem(ngh(j)) > na_test_val &&
-	      dem(ngh(j)) > dem(i) ){
+	      (dem(ngh(j))+delta_min) > dem(i) ){
 	    // cell has finite dem and is higher then cell i
 	    // take one of the n_lower value
 	    n_lower(ngh(j)) = n_lower(ngh(j)) - 1;
@@ -92,7 +100,7 @@ IntegerVector fun_increase_order(NumericVector dem, IntegerVector order, int nc 
       }
     }
     dp = dp +1;
-    Rcout << "Evaluated depth " << dp+1 << " and set " << cnt << " cells " <<"\n";
+    Rcout << "Evaluated depth " << dp << " and set " << cnt << " cells " <<"\n";
   }
   
   return order; 

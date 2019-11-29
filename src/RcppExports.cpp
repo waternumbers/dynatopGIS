@@ -48,16 +48,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // fun_sink_fill
-NumericMatrix fun_sink_fill(NumericVector dem, LogicalVector is_channel, NumericVector delta, int max_iter);
-RcppExport SEXP _dynatopGIS_fun_sink_fill(SEXP demSEXP, SEXP is_channelSEXP, SEXP deltaSEXP, SEXP max_iterSEXP) {
+NumericVector fun_sink_fill(NumericVector dem, LogicalVector is_channel, NumericVector delta, int nc, int max_iter);
+RcppExport SEXP _dynatopGIS_fun_sink_fill(SEXP demSEXP, SEXP is_channelSEXP, SEXP deltaSEXP, SEXP ncSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
     Rcpp::traits::input_parameter< LogicalVector >::type is_channel(is_channelSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type delta(deltaSEXP);
+    Rcpp::traits::input_parameter< int >::type nc(ncSEXP);
     Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_sink_fill(dem, is_channel, delta, max_iter));
+    rcpp_result_gen = Rcpp::wrap(fun_sink_fill(dem, is_channel, delta, nc, max_iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -94,7 +95,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dynatopGIS_fun_increase_order", (DL_FUNC) &_dynatopGIS_fun_increase_order, 3},
     {"_dynatopGIS_fun_is_sink", (DL_FUNC) &_dynatopGIS_fun_is_sink, 2},
     {"_dynatopGIS_fun_redistribution", (DL_FUNC) &_dynatopGIS_fun_redistribution, 7},
-    {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 4},
+    {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 5},
     {"_dynatopGIS_fun_tanb", (DL_FUNC) &_dynatopGIS_fun_tanb, 3},
     {"_dynatopGIS_fun_upslope_area", (DL_FUNC) &_dynatopGIS_fun_upslope_area, 5},
     {NULL, NULL, 0}

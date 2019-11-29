@@ -13,7 +13,7 @@ sink_fill<- function(project_path,max_iter=1000,minimum_tangent=0.001,use_filled
 
 #rm(list=ls())
 #library(raster)
-#project_path <- "../vignette_data/processed"
+    project_path <- "./dynatopGIS/vignette_data/processed"
 
     ## load dem
     dem_raster <- file.path(project_path,'dem.tif')
