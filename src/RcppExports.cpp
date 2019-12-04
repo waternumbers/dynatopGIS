@@ -5,99 +5,40 @@
 
 using namespace Rcpp;
 
-// fun_increase_order
-IntegerVector fun_increase_order(NumericVector dem, IntegerVector order, int nc);
-RcppExport SEXP _dynatopGIS_fun_increase_order(SEXP demSEXP, SEXP orderSEXP, SEXP ncSEXP) {
+// fun_downslope_pass
+List fun_downslope_pass(NumericVector dem, IntegerVector order, IntegerVector seq, IntegerVector offset, NumericVector area, NumericVector dx, NumericVector cl);
+RcppExport SEXP _dynatopGIS_fun_downslope_pass(SEXP demSEXP, SEXP orderSEXP, SEXP seqSEXP, SEXP offsetSEXP, SEXP areaSEXP, SEXP dxSEXP, SEXP clSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type order(orderSEXP);
-    Rcpp::traits::input_parameter< int >::type nc(ncSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_increase_order(dem, order, nc));
+    Rcpp::traits::input_parameter< IntegerVector >::type seq(seqSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type area(areaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_downslope_pass(dem, order, seq, offset, area, dx, cl));
     return rcpp_result_gen;
 END_RCPP
 }
-// fun_is_sink
-LogicalVector fun_is_sink(NumericVector dem, int nc);
-RcppExport SEXP _dynatopGIS_fun_is_sink(SEXP demSEXP, SEXP ncSEXP) {
+// fun_upslope_pass
+List fun_upslope_pass(NumericVector dem, IntegerVector order, IntegerVector offset);
+RcppExport SEXP _dynatopGIS_fun_upslope_pass(SEXP demSEXP, SEXP orderSEXP, SEXP offsetSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< int >::type nc(ncSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_is_sink(dem, nc));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_redistribution
-List fun_redistribution(NumericMatrix dem, NumericMatrix land_area, IntegerMatrix hillslope, IntegerMatrix channel, int number_hillslope_class, int number_channel_class, NumericMatrix dist);
-RcppExport SEXP _dynatopGIS_fun_redistribution(SEXP demSEXP, SEXP land_areaSEXP, SEXP hillslopeSEXP, SEXP channelSEXP, SEXP number_hillslope_classSEXP, SEXP number_channel_classSEXP, SEXP distSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type land_area(land_areaSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type hillslope(hillslopeSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type channel(channelSEXP);
-    Rcpp::traits::input_parameter< int >::type number_hillslope_class(number_hillslope_classSEXP);
-    Rcpp::traits::input_parameter< int >::type number_channel_class(number_channel_classSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_redistribution(dem, land_area, hillslope, channel, number_hillslope_class, number_channel_class, dist));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_sink_fill
-NumericVector fun_sink_fill(NumericVector dem, LogicalVector is_channel, NumericVector delta, int nc, int max_iter);
-RcppExport SEXP _dynatopGIS_fun_sink_fill(SEXP demSEXP, SEXP is_channelSEXP, SEXP deltaSEXP, SEXP ncSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< LogicalVector >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< int >::type nc(ncSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_sink_fill(dem, is_channel, delta, nc, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_tanb
-NumericMatrix fun_tanb(NumericMatrix dem, LogicalMatrix is_channel, NumericMatrix dist);
-RcppExport SEXP _dynatopGIS_fun_tanb(SEXP demSEXP, SEXP is_channelSEXP, SEXP distSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< LogicalMatrix >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_tanb(dem, is_channel, dist));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_upslope_area
-NumericMatrix fun_upslope_area(NumericMatrix dem, NumericMatrix area, LogicalMatrix is_channel, NumericMatrix dist, int max_iter);
-RcppExport SEXP _dynatopGIS_fun_upslope_area(SEXP demSEXP, SEXP areaSEXP, SEXP is_channelSEXP, SEXP distSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type area(areaSEXP);
-    Rcpp::traits::input_parameter< LogicalMatrix >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_upslope_area(dem, area, is_channel, dist, max_iter));
+    Rcpp::traits::input_parameter< IntegerVector >::type order(orderSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_upslope_pass(dem, order, offset));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_dynatopGIS_fun_increase_order", (DL_FUNC) &_dynatopGIS_fun_increase_order, 3},
-    {"_dynatopGIS_fun_is_sink", (DL_FUNC) &_dynatopGIS_fun_is_sink, 2},
-    {"_dynatopGIS_fun_redistribution", (DL_FUNC) &_dynatopGIS_fun_redistribution, 7},
-    {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 5},
-    {"_dynatopGIS_fun_tanb", (DL_FUNC) &_dynatopGIS_fun_tanb, 3},
-    {"_dynatopGIS_fun_upslope_area", (DL_FUNC) &_dynatopGIS_fun_upslope_area, 5},
+    {"_dynatopGIS_fun_downslope_pass", (DL_FUNC) &_dynatopGIS_fun_downslope_pass, 7},
+    {"_dynatopGIS_fun_upslope_pass", (DL_FUNC) &_dynatopGIS_fun_upslope_pass, 3},
     {NULL, NULL, 0}
 };
 
