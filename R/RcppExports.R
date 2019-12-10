@@ -21,7 +21,19 @@ fun_downslope_pass <- function(dem, order, seq, offset, area, dx, cl) {
 #' 
 #' @return a list with the filled dem and order
 #'
-fun_upslope_pass <- function(dem, order, offset) {
-    .Call('_dynatopGIS_fun_upslope_pass', PACKAGE = 'dynatopGIS', dem, order, offset)
+fun_single_pass <- function(dem, channel_id, land_area, offset, dx, cl) {
+    .Call('_dynatopGIS_fun_single_pass', PACKAGE = 'dynatopGIS', dem, channel_id, land_area, offset, dx, cl)
+}
+
+#' cpp wrapper function for passing up the catchments from river nodes
+#' 
+#' @param dem Digital elevation model as a vector
+#' @param order initial order values as a vector, internally starts at one and move upstream
+#' @param nc number of columns in the matrix
+#' 
+#' @return a list with the filled dem and order
+#'
+fun_upslope_pass <- function(dem, channel_id, offset) {
+    .Call('_dynatopGIS_fun_upslope_pass', PACKAGE = 'dynatopGIS', dem, channel_id, offset)
 }
 

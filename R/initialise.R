@@ -9,7 +9,7 @@
 #'
 #' @details Currently reads and then writes file using the raster package. No checks as to the projection are enforced. Output is project_path/dem.tif
 #' @export
-initialise <- function(dem,channel,analysis_file="",fill_na=TRUE,...){
+initialise <- function(dem,channel,analysis_file=character(0),fill_na=TRUE,...){
 
     ## read in dem
     if(!("RasterLayer" %in% class(dem))){
@@ -35,7 +35,7 @@ initialise <- function(dem,channel,analysis_file="",fill_na=TRUE,...){
     }
 
     ## initialise the other raster outputs
-    land_area <- raster::area(dem)
+    land_area <- dem; land_area[] <- 4 ##TO DO change back after debugging raster::area(dem)
     channel_area <- dem; channel_area[] <- 0;
     channel_id <- dem; channel_id[] <- NA
 
@@ -70,7 +70,7 @@ initialise <- function(dem,channel,analysis_file="",fill_na=TRUE,...){
     channel_area[ch_cell$cell] <- ch_cell$channel_area
     channel_id[ch_cell$cell]  <- ch_cell$id
     
-
+    browser()
     brck <- raster::brick(list(dem=dem,
                                land_area=raster::mask( land_area, dem ),
                                channel_area=raster::mask( channel_area,dem),

@@ -27,13 +27,16 @@ List fun_downslope_pass(NumericVector dem, IntegerVector order,
   
   // loop down sequence
   for(int s=0;s < seq.length(); s++){
+    //    Rcout << s << "\n";
     
     NumericVector w(8,0.0); // initialise weight
     double sum_w = 0; // number of weights
     int num_w = 0;
 
     int i = seq(s);
-    
+    //Rcout << i << "\n";
+    //Rcout << dem(i) << "\n";
+    //Rcout << order(i) << "\n";
     contour_length(i) = 0;
 	
     ngh = offset + i;
@@ -44,7 +47,7 @@ List fun_downslope_pass(NumericVector dem, IntegerVector order,
 	if( in_range(j) ){
 	  if( !(NumericVector::is_na(dem(ngh(j)))) &&
 	      dem(ngh(j)) < dem(i) ){
-	    w(j) = (dem(i) - dem(ngh(j))) / dx(j);
+	    w(j) = (dem(i) - dem(ngh(j))) / dx(j); // TO DO include contour length in weight??
 	    sum_w += w(j);
 	    num_w += 1;
 	    contour_length(i) += cl(j);
@@ -60,7 +63,8 @@ List fun_downslope_pass(NumericVector dem, IntegerVector order,
 	}
       }
     }else{
-      // for bottom order take upslope garient to work out atanb
+      // for bottom order take upslope gradient to work out atanb
+      //Rcout << "in order 1" << "\n";
       for(int j=0;j<8;j++){
 	if( in_range(j) ){
 	  if( !(NumericVector::is_na(dem(ngh(j)))) &&
@@ -72,7 +76,7 @@ List fun_downslope_pass(NumericVector dem, IntegerVector order,
 	}
       }
       gradient(i) = sum_w/num_w;
-      contour_length(i) = cl(9);
+      contour_length(i) = cl(8);
       atanb(i) = log( (upslope_area(i)/contour_length(i)) / gradient(i) );
     }
   }

@@ -22,22 +22,39 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fun_upslope_pass
-List fun_upslope_pass(NumericVector dem, IntegerVector order, IntegerVector offset);
-RcppExport SEXP _dynatopGIS_fun_upslope_pass(SEXP demSEXP, SEXP orderSEXP, SEXP offsetSEXP) {
+// fun_single_pass
+List fun_single_pass(NumericVector dem, IntegerVector channel_id, NumericVector land_area, IntegerVector offset, NumericVector dx, NumericVector cl);
+RcppExport SEXP _dynatopGIS_fun_single_pass(SEXP demSEXP, SEXP channel_idSEXP, SEXP land_areaSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type order(orderSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type land_area(land_areaSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_upslope_pass(dem, order, offset));
+    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_single_pass(dem, channel_id, land_area, offset, dx, cl));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fun_upslope_pass
+List fun_upslope_pass(NumericVector dem, IntegerVector channel_id, IntegerVector offset);
+RcppExport SEXP _dynatopGIS_fun_upslope_pass(SEXP demSEXP, SEXP channel_idSEXP, SEXP offsetSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_upslope_pass(dem, channel_id, offset));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
     {"_dynatopGIS_fun_downslope_pass", (DL_FUNC) &_dynatopGIS_fun_downslope_pass, 7},
+    {"_dynatopGIS_fun_single_pass", (DL_FUNC) &_dynatopGIS_fun_single_pass, 6},
     {"_dynatopGIS_fun_upslope_pass", (DL_FUNC) &_dynatopGIS_fun_upslope_pass, 3},
     {NULL, NULL, 0}
 };
