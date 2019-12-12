@@ -49,7 +49,8 @@ List fun_single_pass(NumericVector dem,
 	  if( !(NumericVector::is_na(dem(ngh(j)))) ){
 	    n_finite += 1;
 	    if( dem(ngh(j)) > dem(i) &&
-		!(IntegerVector::is_na(channel_id(ngh(j))))){
+		(IntegerVector::is_na(channel_id(ngh(j))))){
+	      //Rcout << "incriment higher" << "\n";
 	      n_higher(i) += 1;
 	    }
 	  }
@@ -62,14 +63,14 @@ List fun_single_pass(NumericVector dem,
 	seq_loc += 1;
 	order(i) = 1 ;
 	if( n_finite < 8 ){
-	  Rcout << "Boundary peak at cell" << i << "\n";
+	  Rcout << "Boundary peak at cell " << i << "\n";
 	}
       }
     }
   }
 
   Rcout << "got to populate" << "\n";
-  
+  Rcout << seq_loc << "\n";
   // loop to populate all of order
   for(int s=0;s < seq.length(); s++){
     
@@ -86,7 +87,8 @@ List fun_single_pass(NumericVector dem,
 
       // initialise the weights
       NumericVector gl(8,0.0); // gradient
-
+      contour_length(i) = 0;
+      
       // see if the cell is a river cell
       if( !(IntegerVector::is_na(channel_id(i))) ){
 	// this cell has partial land area and parital channel
@@ -98,14 +100,14 @@ List fun_single_pass(NumericVector dem,
 	    if( !(NumericVector::is_na(dem(ngh(j)))) &&
 		(land_area(i) > 0) &&
 		dem(ngh(j)) > dem(i) ){
-	      gl(j) = cl(j)*( (dem(i) - dem(ngh(j))) / dx(j) ); //tan(beta)*L
+	      gl(j) = cl(j)*( (dem(ngh(j))-dem(i)) / dx(j) ); //tan(beta)*L
 	      contour_length(i) += cl(j); // Sum{L}
 	    }
 	  }
 	}
 	double sum_gl = sum(gl); 
 	gradient(i) = sum_gl/contour_length(i);
-	atanb(i) = upslope_area(i) / (cl(8)*gradient(i));
+	atanb(i) = log(upslope_area(i) / (cl(8)*gradient(i)));
 	// all goes to river so no need to pass on
 
       }else{

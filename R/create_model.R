@@ -7,37 +7,20 @@
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(project_path,hillslope_class){
+create_model <- function(brk,chn,hillslope_class){
 
     ## ####################################
     ##  Check required inputs are available
     ## ####################################
     
     ## check we have all the raster files we need
-    layer_names <- c('dem','land_area','tanb','atb','channel_area','channel_id',hillslope_class)
-    file_names <- file.path( project_path, paste0(layer_names,'.tif') )
-    if( !all(file.exists(file_names)) ){
-        stop("Missing files for: ",paste(layer_names[!file.exists(file_names)],collapse=" "))
+    layer_names <- c('dem','land_area','channel_area','channel_id',hillslope_class)
+    if( !all(layer_names %in% names(brck)) ){
+        stop(paste( "Missing layers:",
+                   paste(setdiff(layer_names,names(brck)),collapse=" ")))
     }
 
-    ## check we have the channel shape file
-    if( !file.exists(file.path( project_path, 'channel.shp' )) ){
-        stop("Missing channel shape file")
-    }
-
-    ## ###############################
-    ## Load the data
-    ## ###############################
     
-    ## load raster files
-    brck <- raster::brick(as.list(file_names))
-    ## alter names so valid R names which appear in brck
-    names(brck) <- make.names(layer_names)
-    hillslope_class <- make.names(hillslope_class)
-
-    ## load the channel shape file
-    channel_shp <- raster::shapefile(file.path(project_path,'channel'))
-
     ## ###############################################################
     ## Sanity checks that :
     ##   - Channel shape and raster file are consistent
@@ -63,10 +46,24 @@ create_model <- function(project_path,hillslope_class){
         stop("Channels in raster file that are not in the shape file")
     }
 
+    ## check all hillslope id numbers anr unique to channels
+    if( any( raster::unique(brck[[hillslope_class]]) %in% channel_shp[['id']] ) ){
+        stop("Hillslope class has the saem number as the channel id")
+    }
+    
     ## #######################################
     ## Basic computations and setting up model
     ## #######################################
-    
+    out <- fun_hru(as.vector(brck[['dem']]),
+                   as.vector(brck[['channel_id']]),
+                   as.vector(brck[['land_area']]),
+                   as.vector(brck[[hillslope_class]]),
+                   
+                   as.matrix(seq_hillslope),
+                              as.matrix(seq_channel),
+                              length(model$hillslope$id),
+                              length(model$channel$id),
+                              dist)
     model <- list(hillslope = data.frame(
                       id = raster::unique(brck[[hillslope_class]]),
                       area = raster::zonal(brck[['land_area']],brck[[hillslope_class]],

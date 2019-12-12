@@ -12,42 +12,36 @@
 #' @details Replaces exisiting classes with those from the specified classification maps to be burnt in. burns are applied in the order theya are input.
 #' 
 #' @export
-burn_in_class <- function(project_path,class_name,output_name,burns){
+burn_in_class <- function(brck,class_name,output_name,burns){
     
     ## check burns are valid
     burns <- as.vector(burns)
     burns <- as.character(burns)
 
-    ## load original classification
-    class_file <- file.path(project_path,paste0(class_name,'.tif'))
-    if( !file.exists(class_file) ){
-        stop("File ",class_file," is missing")
-    }
-    class <- raster::raster(class_file)
-
-    ## check the files for basing the burns on exist
-    burn_files <- file.path(project_path,paste0(burns,'.tif'))
-    burn_files_exist <- file.exists(burn_files)
-    if(!all(burn_files_exist)){
-        stop("Missing files for: ",paste(burns[!burn_files_exist],collapse=" "))
-    }
-    burn_brck <- raster::brick(list(burn_files))
-
-    ## process if new class
-    for(ii in 1:raster::nlayers(burn_brck)){
-        class <- overlay(class, burn_brck[[ii]], fun = function(x, y) {
-            x[is.finite(y)] <- y[is.finite(y)]
-            return(x)
-        })
+    ## check layers exist
+    if( !all(c(class_name,burns) %in% names(brck)) ){
+        stop("Missing layers used to perform burn")
     }
 
-    ## write out raster
-    raster::writeRaster(class,file.path(project_path,paste0(output_name,'.tif')))
+    ## check output name isn;t already in use
+    if( output_name %in% names(brck) ){
+        stop("Output name already used")
+    }
 
+    ## process in new class
+    nc <- brck[[class_name]]
+    for(ii in burns){
+        idx <- Which(is.finite(brck[[ii]]),cells=TRUE)
+        nc[idx] <- brck[[ii]][idx]
+    }
+
+    nc <- raster::mask(nc,brck[['dem']])
+    brck[[output_name]] <- nc
+    
     ## make json
-    tmp <- jsonlite::fromJSON( file.path(project_path,paste0(class_name,'.json')), simplifyVector=FALSE )
+    tmp <- jsonlite::fromJSON( file.path(json_path,paste0(class_name,'.json')), simplifyVector=FALSE )
     tmp$burns <- burns
-    writeLines( jsonlite::toJSON(tmp,pretty=TRUE), file.path(project_path,paste0(output_name,'.json')) )
-
-    return(TRUE)
+    writeLines( jsonlite::toJSON(tmp,pretty=TRUE), file.path(json_path,paste0(output_name,'.json')) )
+    
+    return(brck)
 }

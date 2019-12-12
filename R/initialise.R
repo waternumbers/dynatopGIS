@@ -70,7 +70,6 @@ initialise <- function(dem,channel,analysis_file=character(0),fill_na=TRUE,...){
     channel_area[ch_cell$cell] <- ch_cell$channel_area
     channel_id[ch_cell$cell]  <- ch_cell$id
     
-    browser()
     brck <- raster::brick(list(dem=dem,
                                land_area=raster::mask( land_area, dem ),
                                channel_area=raster::mask( channel_area,dem),

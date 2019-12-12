@@ -10,61 +10,54 @@
 #'
 #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. These are numbered using a cantor pairing scheme. In theory you could reverse out the class of each layer if required but this isn't implimented.
 #' @export
-split_to_class <- function(project_path,output_name,cuts){
+split_to_class <- function(brck,output_name,cuts,json_path=getwd()){
 
     ## check cuts are valid
     cuts <- as.list(cuts)
     cuts <- lapply(cuts,FUN=function(x){as.numeric(x)})
     cut_names<- names(cuts)
-    if(length(cut_names)!=length(unique(cut_names))){
+    if( length(cut_names) != length(cuts) ){
+        stop("Unnamed cuts")
+    }
+    if( length(cut_names)!=length(unique(cut_names)) ){
         stop("Replicated names in the cuts list")
     }
 
-    ## check the files for basing the cuts on exist
-    cut_files <- file.path(project_path,paste0(cut_names,'.tif'))
-    cut_files_exist <- file.exists(cut_files)
-    if(!all(cut_files_exist)){
-        stop("Missing files for: ",paste(cut_names[!cut_files_exist],collapse=" "))
+    ## check output name is valid
+    if( output_name %in% names(brck) ){
+        stop("Output name already used")
     }
-
     
-    ## load files for cuts and apply cuts
-    cut_brck <- raster::brick(as.list(cut_files))
-    names(cut_brck) <- cut_names
-    for(ii in cut_names){
-        if( length(cuts[[ii]]) > 1 ){
-            cut_brck[[ii]] <- raster::cut(cut_brck[[ii]],breaks=cuts[[ii]])
+    ## check the layers exist
+    if( !all(cut_names %in% names(brck)) ){
+        stop(paste( "Missing layers:",
+                   paste(setdiff(cut_names,names(brck)),collapse=" ")))
+    }
+
+    ## work out new cuts by cantor_pairing
+    for(ii in 1:length(cuts)){
+        x <- raster::cut(brck[[cut_names[ii]]],breaks=cuts[[ii]])
+        if(ii == 1){
+            cp <- x
         }else{
-            cut_brck[[ii]] <- raster::cut(cut_brck[[ii]],cuts[[ii]])
+            cp <- 0.5*(cp+x)*(cp+x+1)+x
         }
     }
 
-    ## compute single raster of classes
-    cantor_pairing <- function(x){
-        if(any(!is.finite(x))){
-            return(NA)
-        }else{
-            
-            for(ii in 1:length(x)){
-                if(ii==1){
-                    o <- x[ii]
-                }else{
-                    o <- 0.5*(o+x[ii])*(o+x[ii]+1) + x[ii]
-                }
-            }
-            return(o)
-        }
-    }
-    ## calculate the HRU numbers
-    hrus <- calc(cut_brck,fun=cantor_pairing)
+    ## renumber from cantour paring to get sequential values
+    ucp <- unique(cp)
+    ucp <- data.frame(ucp,cellStats(brck[['channel_id']],max) + (1:length(ucp)))
+    cp <- raster::subs(cp,ucp)
 
-    ## write out raster
-    raster::writeRaster(hrus,file.path(project_path,paste0(output_name,'.tif')))
+    ## add back into brick
+    cp <- raster::mask(cp,brck[['dem']])
+    brck[[output_name]] <- cp
 
     ## make and write json
     tmp <- list(cuts=cuts)
-    writeLines( jsonlite::toJSON(tmp,pretty=TRUE), file.path(project_path,paste0(output_name,'.json')) )
+    writeLines( jsonlite::toJSON(tmp,pretty=TRUE),
+               file.path(json_path,paste0(output_name,'.json')) )
 
-    return(TRUE)
+    return(brck)
 }
 
