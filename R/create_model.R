@@ -71,7 +71,7 @@ create_model <- function(brck,chn,hillslope_class,out_path=getwd()){
     }
     mres <- (raster::xres(brck) + raster::yres(brck))/2
     cl <- c(rep( mres /(1+sqrt(2)),8),mres) # TO DO this is based on a n octogan - but other papers return a different ratio
-    out <- fun_hru(as.vector(brck[['dem']]),
+    out <- fun_hru(as.vector(brck[['filled_dem']]),
                    as.vector(brck[['gradient']]),
                    as.vector(brck[['land_area']]),
                    as.vector(brck[['channel_area']]),
