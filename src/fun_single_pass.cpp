@@ -128,23 +128,25 @@ List fun_single_pass(NumericVector dem,
 	}
 	double sum_gl = sum(gl); 
 	double C = upslope_area(i)/sum_gl; //label as per Quinn 1991
-	gradient(i) = sum_gl/contour_length(i);
-	atanb(i) = log(C);
-      
-	// loop neighbours to distribute downstream
-	for(int j=0;j<ngh.length();j++){	
-	  if( in_range(j) ){
-	    if( !(NumericVector::is_na(dem(ngh(j)))) &&
-		dem(ngh(j)) < dem(i) ){
-	      // spread area downstream
-	      upslope_area(ngh(j)) += C*gl(j);
-	      // update number of higher points
-	      n_higher(ngh(j)) -= 1;
-	      // add to list and assign order
-	      if( n_higher(ngh(j)) == 0 ){
-		order(ngh(j)) = order(i) + 1;
-		seq(seq_loc) = ngh(j);
-		seq_loc += 1;
+	if( contour_length(i) > 0.0 ){
+	  gradient(i) = sum_gl/contour_length(i);
+	  atanb(i) = log(C);
+	  
+	  // loop neighbours to distribute downstream
+	  for(int j=0;j<ngh.length();j++){	
+	    if( in_range(j) ){
+	      if( !(NumericVector::is_na(dem(ngh(j)))) &&
+		  dem(ngh(j)) < dem(i) ){
+		// spread area downstream
+		upslope_area(ngh(j)) += C*gl(j);
+		// update number of higher points
+		n_higher(ngh(j)) -= 1;
+		// add to list and assign order
+		if( n_higher(ngh(j)) == 0 ){
+		  order(ngh(j)) = order(i) + 1;
+		  seq(seq_loc) = ngh(j);
+		  seq_loc += 1;
+		}
 	      }
 	    }
 	  }

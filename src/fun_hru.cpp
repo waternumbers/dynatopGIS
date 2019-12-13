@@ -13,108 +13,72 @@ using namespace Rcpp;
 //' @return list of hillslope and channel properties
 //'
 // [[Rcpp::export]]
-List fun_redistribution(NumericMatrix dem, NumericMatrix land_area,
-			IntegerMatrix hillslope, IntegerMatrix channel,
-			int number_hillslope_class,
-			int number_channel_class,
-			NumericMatrix dist){
+List fun_hru(NumericVector dem,
+	     NumericVector grad,
+	     NumericVector land_area,
+	     NumericVector channel_area,
+	     IntegerVector channel_id,
+	     IntegerVector hillslope_id,
+	     IntegerVector offset,
+	     NumericVector dx,
+	     NumericVector cl,
+	     int max_index){
   
-  // initialise the output
-  NumericMatrix slope_redist(number_hillslope_class,number_hillslope_class);
-  NumericMatrix channel_redist(number_channel_class,number_hillslope_class);
-  // logical test matrix
-  LogicalMatrix can_eval(dem.nrow(),dem.ncol());
-  int uc, dc, n_finite;
-  NumericMatrix W(3,3);
-  double sW;
-  
-  double na_test_val = -10000; // test for NAN against this - if NAN will return false
-  
-  //Rcout << "Start of function" << std::endl;
-  
-  // loop to determin cells can be drained from
-  for(int i=0;i < dem.nrow(); i++){
-    for(int j=0; j < dem.ncol(); j++){
-      // to be drained froma pixle must have:
-      // - a  hillslope class
-      // - have a positive land area
-      // - either:
-      //     - a channel class
-      //     - or 9 finite values in the block around i,j
-            
-      // work out finite neighbours
-      n_finite = 0;
-      for(int ii=-1;ii<2;ii++){
-	for(int jj=-1;jj<2;jj++){
-	  if( i+ii > -1 && i+ii < dem.nrow() && 
-	      j+jj > -1 && j+jj < dem.ncol() ){
-	    if( dem(i+ii,j+jj) > na_test_val ){
-	      n_finite = n_finite + 1;
+  // initialise the output - default filled with zeros
+  NumericVector area(max_index);
+  NumericVector av_grad(max_index);
+  NumericMatrix W(max_index,max_index);
+
+  for( int i=0; i<dem.length(); i++){
+    if( !(IntegerVector::is_na(hillslope_id(i))) ){
+      // then a hillslope element
+      area( hillslope_id(i) ) += land_area(i); // add area
+      av_grad( hillslope_id(i) ) += land_area(i)*grad(i); //weighted sum of average gradient
+      // redistribute downstream
+      if( !(IntegerVector::is_na(channel_id(i))) ){
+	// then part cell with channel - all flow to channel
+	W( channel_id(i), hillslope_id(i) ) += land_area(i);
+      }else{
+	// work out downslope gradients
+	IntegerVector ngh = offset + i;
+	LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
+	NumericVector gl(8,0.0); // gradient
+	for(int j=0;j<ngh.length();j++){	
+	  if( in_range(j) ){
+	    if( !(NumericVector::is_na(dem(ngh(j)))) &&
+		(land_area(i) > 0) &&
+		dem(ngh(j)) < dem(i) ){
+	      gl(j) = cl(j)*( (dem(i) - dem(ngh(j))) / dx(j) ); //tan(beta)*L
 	    }
 	  }
 	}
-      }
-      // see if tests passed
-      if( (n_finite==9 || channel(i,j)>na_test_val) &&
-	  land_area(i,j)>0 &&
-	  hillslope(i,j) > na_test_val ){
-	can_eval(i,j) = true;
-      }
-    }
-  }
-
-  //Rcout << "Computed valid sources and downsteams" << std::endl;
-  
-  // the see how cells redistribute
-  for(int i=0;i < dem.nrow(); i++){
-    for(int j=0; j < dem.ncol(); j++){
-      // check it can be propogaed
-      if( can_eval(i,j)==true ){
-	
-	if( channel(i,j) > na_test_val ){
-	  // drains straight to the channel
-	  uc = hillslope(i,j);
-	  dc = channel(i,j);
-	  channel_redist( dc,uc ) = channel_redist( dc,uc ) + land_area(i,j) ;
-	}else{
-	  // drains to various areas
-
-	  // work out weights in each direction
-	  sW = 0; 
-	  for(int ii=-1;ii<2;ii++){
-	    for(int jj=-1;jj<2;jj++){
-	      W(ii+1,jj+1) = (dem(i,j)-dem(i+ii,j+jj))/dist(ii+1,jj+1);
-	      if( W(ii+1,jj+1) > 0 ){
-		sW=sW+W(ii+1,jj+1);
-	      }
-	    }
-	  }
-
-	  // propogate
-	  for(int ii=-1;ii<2;ii++){
-	    for(int jj=-1;jj<2;jj++){
-	      if( W(ii+1,jj+1) > 0 ){
-		if( hillslope(i+ii,j+jj) > na_test_val ){
-		  uc = hillslope(i,j);
-		  dc = hillslope(i+ii,j+jj);
-		  // pass to hillslope class
-		  slope_redist(dc,uc) = slope_redist(dc,uc) + 
-		    land_area(i,j)*W(ii+1,jj+1)/sW;
-		}else{
-		  if( channel(i+ii,j+jj) > na_test_val ){
-		    uc = hillslope(i,j);
-		    dc = channel(i+ii,j+jj);
-		    channel_redist(dc,uc) = channel_redist(dc,uc) + 
-		      land_area(i,j)*W(ii+1,jj+1)/sW;
-		  }
-		}
+	double sum_gl = sum(gl);
+	// distribute downstream
+	for(int j=0;j<ngh.length();j++){	
+	  if( in_range(j) ){
+	    // drain to hillslope if next downstream has hillslope_id
+	    if( !(IntegerVector::is_na(hillslope_id(ngh(j)))) &&
+		dem(ngh(j)) < dem(i) ){
+	      W( hillslope_id(ngh(j)), hillslope_id(i) ) += gl(j)*land_area(i)/sum_gl;
+	    }else{
+	      // if not got a hillslope_id then drain to channel if available
+	      if( !(IntegerVector::is_na(channel_id(ngh(j)))) &&
+		  dem(ngh(j)) < dem(i) ){
+		W( channel_id(ngh(j)), hillslope_id(i) ) += gl(j)*land_area(i)/sum_gl;
 	      }
 	    }
 	  }
 	}
       }
     }
+    // handle if has a channel_id
+    if( !(IntegerVector::is_na(channel_id(i))) ) {
+      // then a hillslope element
+      area( channel_id(i) ) += channel_area(i); // add area
+    }
   }
-
-  return List::create(Named("hillslope") = slope_redist , Named("channel") = channel_redist);
+  
+  return List::create(Named("area") = area,
+		      Named("av_grad") = av_grad,
+		      Named("W") = W);
 }

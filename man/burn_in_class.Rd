@@ -4,16 +4,16 @@
 \alias{burn_in_class}
 \title{Burn in distinct classes of hydrological response units (HRUs)}
 \usage{
-burn_in_class(project_path, class_name, output_name, burns)
+burn_in_class(brck, class_name, output_name, burns)
 }
 \arguments{
-\item{project_path}{folder which is being used for the analysis}
-
 \item{class_name}{Name of the existing classification onto which to burn the new classes}
 
 \item{output_name}{name to give the output files}
 
 \item{burns}{list  Named list of geometries (supplied as rasters) to burn into discretisation of HRUs that will be stamped onto the classification. Overrides any classification already defined}
+
+\item{project_path}{folder which is being used for the analysis}
 }
 \value{
 Logical indicating it has run. Outputs a raster of classifications and a json of HRU properties to the project directory.

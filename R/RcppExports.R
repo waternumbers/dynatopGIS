@@ -13,6 +13,22 @@ fun_downslope_pass <- function(dem, order, seq, offset, area, dx, cl) {
     .Call('_dynatopGIS_fun_downslope_pass', PACKAGE = 'dynatopGIS', dem, order, seq, offset, area, dx, cl)
 }
 
+#' cpp wrapper function for computation of redistribution matrices
+#' 
+#' @param dem Digital elevation model
+#' @param land_area Area of land surface in pixel
+#' @param hillslope hillslope class of each pixel
+#' @param channel channel class of each pixel
+#' @param number_hillslope_class number of hill slope classes
+#' @param number_channel_class number of channel classes
+#' @param dist 3x3 matrix of distances to ajoining cells
+#'
+#' @return list of hillslope and channel properties
+#'
+fun_hru <- function(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index) {
+    .Call('_dynatopGIS_fun_hru', PACKAGE = 'dynatopGIS', dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index)
+}
+
 #' cpp wrapper function for passing up the catchments from river nodes
 #' 
 #' @param dem Digital elevation model as a vector

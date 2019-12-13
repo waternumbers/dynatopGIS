@@ -4,7 +4,8 @@
 \alias{initialise}
 \title{Initialise the analysis by loading a dem}
 \usage{
-initialise(dem, channel, analysis_file = "", fill_na = TRUE, ...)
+initialise(dem, channel, analysis_file = character(0), fill_na = TRUE,
+  ...)
 }
 \arguments{
 \item{analysis_file}{file to save the analysis to}

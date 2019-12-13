@@ -22,6 +22,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fun_hru
+List fun_hru(NumericVector dem, NumericVector grad, NumericVector land_area, NumericVector channel_area, IntegerVector channel_id, IntegerVector hillslope_id, IntegerVector offset, NumericVector dx, NumericVector cl, int max_index);
+RcppExport SEXP _dynatopGIS_fun_hru(SEXP demSEXP, SEXP gradSEXP, SEXP land_areaSEXP, SEXP channel_areaSEXP, SEXP channel_idSEXP, SEXP hillslope_idSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP, SEXP max_indexSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type grad(gradSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type land_area(land_areaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type channel_area(channel_areaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type hillslope_id(hillslope_idSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
+    Rcpp::traits::input_parameter< int >::type max_index(max_indexSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_hru(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fun_single_pass
 List fun_single_pass(NumericVector dem, IntegerVector channel_id, NumericVector land_area, IntegerVector offset, NumericVector dx, NumericVector cl);
 RcppExport SEXP _dynatopGIS_fun_single_pass(SEXP demSEXP, SEXP channel_idSEXP, SEXP land_areaSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP) {
@@ -54,6 +74,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_dynatopGIS_fun_downslope_pass", (DL_FUNC) &_dynatopGIS_fun_downslope_pass, 7},
+    {"_dynatopGIS_fun_hru", (DL_FUNC) &_dynatopGIS_fun_hru, 10},
     {"_dynatopGIS_fun_single_pass", (DL_FUNC) &_dynatopGIS_fun_single_pass, 6},
     {"_dynatopGIS_fun_upslope_pass", (DL_FUNC) &_dynatopGIS_fun_upslope_pass, 3},
     {NULL, NULL, 0}

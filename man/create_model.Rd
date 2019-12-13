@@ -4,12 +4,12 @@
 \alias{create_model}
 \title{Create a dynamic TOPMODEL suitabel more model evaluation}
 \usage{
-create_model(project_path, hillslope_class)
+create_model(brck, chn, hillslope_class, out_path = getwd())
 }
 \arguments{
-\item{project_path}{folder which is being used for the analysis}
-
 \item{hillslope_class}{Name of the existing hillslope classification to use to generate the model}
+
+\item{project_path}{folder which is being used for the analysis}
 }
 \value{
 Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.

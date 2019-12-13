@@ -4,14 +4,14 @@
 \alias{split_to_class}
 \title{Split a catchment into hydrological response units (HRUs)}
 \usage{
-split_to_class(project_path, output_name, cuts)
+split_to_class(brck, output_name, cuts, json_path = getwd())
 }
 \arguments{
-\item{project_path}{folder which is being used for the analysis}
-
 \item{output_name}{name to give the output files}
 
 \item{cuts}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)}
+
+\item{project_path}{folder which is being used for the analysis}
 }
 \value{
 Logical imdicating it has run. Outputs a raster of classifications and a json of HRU properties to the project directory.
