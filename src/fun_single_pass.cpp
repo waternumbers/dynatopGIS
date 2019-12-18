@@ -3,10 +3,13 @@ using namespace Rcpp;
 //' cpp wrapper function for passing up the catchments from river nodes
 //' 
 //' @param dem Digital elevation model as a vector
-//' @param order initial order values as a vector, internally starts at one and move upstream
-//' @param nc number of columns in the matrix
+//' @param channel_id UID of channel present in the pixel
+//' @param land_area Area of land surface in pixel
+//' @param offset - difference between cell index of adjacent cells and current cell index - clockwise from top left
+//' @param dx distance between cell centres - from top left in clockwise direction
+//' @param cl contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel
 //' 
-//' @return a list with the filled dem and order
+//' @return a list with the filled dem, order, upslope_area, contour_length, gradient and atanb
 //'
 // [[Rcpp::export]]
 List fun_single_pass(NumericVector dem,

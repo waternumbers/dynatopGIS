@@ -9,12 +9,18 @@ fun_single_pass(dem, channel_id, land_area, offset, dx, cl)
 \arguments{
 \item{dem}{Digital elevation model as a vector}
 
-\item{order}{initial order values as a vector, internally starts at one and move upstream}
+\item{channel_id}{UID of channel present in the pixel}
 
-\item{nc}{number of columns in the matrix}
+\item{land_area}{Area of land surface in pixel}
+
+\item{offset}{- difference between cell index of adjacent cells and current cell index - clockwise from top left}
+
+\item{dx}{distance between cell centres - from top left in clockwise direction}
+
+\item{cl}{contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel}
 }
 \value{
-a list with the filled dem and order
+a list with the filled dem, order, upslope_area, contour_length, gradient and atanb
 }
 \description{
 cpp wrapper function for passing up the catchments from river nodes

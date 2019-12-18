@@ -2,11 +2,12 @@
 #'
 #' @description Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layers and cuts
 #' 
-#' @param project_path folder which is being used for the analysis
+#' @param brck a RasterBrick as created by create_brick
 #' @param output_name name to give the output files
 #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
+#' @param json_path the folder to write out json file containing the summary of splits to
 #'
-#' @return Logical imdicating it has run. Outputs a raster of classifications and a json of HRU properties to the project directory.
+#' @return as for brck but containing an additional layer with the split classes
 #'
 #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. These are numbered using a cantor pairing scheme. In theory you could reverse out the class of each layer if required but this isn't implimented.
 #' @export

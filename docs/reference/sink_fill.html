@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>function to fill sinks — sink_fill • dynatopGIS</title>
+<title>Fill the sinks with a dem — sink_fill • dynatopGIS</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="function to fill sinks — sink_fill" />
+<meta property="og:title" content="Fill the sinks with a dem — sink_fill" />
 
-<meta property="og:description" content="Fills sinks so that they have a slope of at least the minimum_tangent to the downstream cell" />
+<meta property="og:description" content="TO DO" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -105,44 +105,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>function to fill sinks</h1>
+    <h1>Fill the sinks with a dem</h1>
     <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/sink_fill.R'><code>R/sink_fill.R</code></a></small>
     <div class="hidden name"><code>sink_fill.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>Fills sinks so that they have a slope of at least the minimum_tangent to the downstream cell</p>
+    <p>TO DO</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>sink_fill</span>(<span class='no'>project_path</span>, <span class='kw'>max_iter</span> <span class='kw'>=</span> <span class='fl'>1000</span>, <span class='kw'>minimum_tangent</span> <span class='kw'>=</span> <span class='fl'>0.001</span>,
-  <span class='kw'>use_filled_dem</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+    <pre class="usage"><span class='fu'>sink_fill</span>(<span class='no'>brck</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>project_path</th>
-      <td><p>folder which is being used for the analysis</p></td>
+      <th>brck</th>
+      <td><p>a rasterBrick object or whatever</p></td>
     </tr>
     <tr>
-      <th>max_iter</th>
-      <td><p>maximum number of iterations of the algorithm</p></td>
-    </tr>
-    <tr>
-      <th>minimum_tangent</th>
-      <td><p>minimum value of the gradient to the next cell downstream</p></td>
-    </tr>
-    <tr>
-      <th>use_filled_dem</th>
-      <td><p>logical indicating if the analysis should start with the filled DEM. If set this option will overwrite the current filled dem with the final output</p></td>
+      <th>...</th>
+      <td><p>additional varaibles passed to raster::brick if brck is a file name</p></td>
     </tr>
     </table>
     
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>a rasterBrick object</p>
+    
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>the algotithm works by looping over all the cells in the DEM and is relavitley robust but inefficent. If the maximum number of iterations is exceeded and there are still sinks the <code>use_filled_dem</code> flag can be used to restart from the final state.</p>
+    <p>TO DO</p>
     
 
   </div>
@@ -151,6 +146,8 @@
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
       
+      <li><a href="#value">Value</a></li>
+
       <li><a href="#details">Details</a></li>
           </ul>
 

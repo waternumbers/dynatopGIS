@@ -1,13 +1,14 @@
 #' Create a dynamic TOPMODEL suitabel more model evaluation
 #'
 #' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL.
-#' 
-#' @param project_path folder which is being used for the analysis
-#' @param hillslope_class Name of the existing hillslope classification to use to generate the model
+#'
+#' @param brck a RasterBrick as created by create_brick
+#' @param chn a channel object as created by create_channel
+#' @param hillslope_class Name of the existing hillslope classification to use to generate the model - a layer in brck
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(brck,chn,hillslope_class,out_path=getwd()){
+create_model <- function(brck,chn,hillslope_class){
 
     ## ####################################
     ##  Check required inputs are available

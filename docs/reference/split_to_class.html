@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -116,14 +116,14 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>split_to_class</span>(<span class='no'>project_path</span>, <span class='no'>output_name</span>, <span class='no'>cuts</span>)</pre>
+    <pre class="usage"><span class='fu'>split_to_class</span>(<span class='no'>brck</span>, <span class='no'>output_name</span>, <span class='no'>cuts</span>, <span class='kw'>json_path</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/getwd'>getwd</a></span>())</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>project_path</th>
-      <td><p>folder which is being used for the analysis</p></td>
+      <th>brck</th>
+      <td><p>a RasterBrick as created by create_brick</p></td>
     </tr>
     <tr>
       <th>output_name</th>
@@ -133,11 +133,15 @@
       <th>cuts</th>
       <td><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)</p></td>
     </tr>
+    <tr>
+      <th>json_path</th>
+      <td><p>the folder to write out json file containing the summary of splits to</p></td>
+    </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>Logical imdicating it has run. Outputs a raster of classifications and a json of HRU properties to the project directory.</p>
+    <p>as for brck but containing an additional layer with the split classes</p>
     
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 

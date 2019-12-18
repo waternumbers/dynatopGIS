@@ -55,8 +55,12 @@ create_channel <- function(shp,
     chn <- shp
     chn <- chn[,property_names]
     names(chn) <- names(property_names)
-    chanel[['id']] <- 1:length(chn)
-
+    chn[['id']] <- 1:length(chn)
+    
+    ## convert factors to strings
+    idx <- sapply(chn@data, is.factor)
+    chn@data[idx] <- lapply(chn@data[idx], as.character)
+    
     if(!is(chn,"SpatialPolygonsDataFrame")){
         if(!("width" %in% names(chn))){
             warning("Modifying to spatial polygons using default width")

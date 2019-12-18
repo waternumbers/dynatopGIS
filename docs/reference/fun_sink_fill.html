@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>cpp wrapper function for filling of sinks — fun_sink_fill • dynatopGIS</title>
+<title>cpp wrapper function for passing up the catchments from river nodes — fun_sink_fill • dynatopGIS</title>
 
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
@@ -30,9 +30,9 @@
 
 
 
-<meta property="og:title" content="cpp wrapper function for filling of sinks — fun_sink_fill" />
+<meta property="og:title" content="cpp wrapper function for passing up the catchments from river nodes — fun_sink_fill" />
 
-<meta property="og:description" content="cpp wrapper function for filling of sinks" />
+<meta property="og:description" content="cpp wrapper function for passing up the catchments from river nodes" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -105,43 +105,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>cpp wrapper function for filling of sinks</h1>
+    <h1>cpp wrapper function for passing up the catchments from river nodes</h1>
     <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/RcppExports.R'><code>R/RcppExports.R</code></a></small>
     <div class="hidden name"><code>fun_sink_fill.Rd</code></div>
     </div>
 
     <div class="ref-description">
     
-    <p>cpp wrapper function for filling of sinks</p>
+    <p>cpp wrapper function for passing up the catchments from river nodes</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>fun_sink_fill</span>(<span class='no'>dem</span>, <span class='no'>is_channel</span>, <span class='no'>delta</span>, <span class='no'>max_iter</span>)</pre>
+    <pre class="usage"><span class='fu'>fun_sink_fill</span>(<span class='no'>dem</span>, <span class='no'>channel_id</span>, <span class='no'>offset</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>dem</th>
-      <td><p>Digital elevation model</p></td>
+      <td><p>Digital elevation model as a vector</p></td>
     </tr>
     <tr>
-      <th>is_channel</th>
-      <td><p>TRUE is a channel pixel</p></td>
+      <th>channel_id</th>
+      <td><p>UID of channel in the pixel (id any) as a vector</p></td>
     </tr>
     <tr>
-      <th>delta</th>
-      <td><p>3x3 matrix of minimum evelation drop to each adjacent pixel</p></td>
-    </tr>
-    <tr>
-      <th>max_iter</th>
-      <td><p>maximum number of iterations</p></td>
+      <th>offset</th>
+      <td><p>difference between index of neighbours and current cell - clockwise from top left</p></td>
     </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>matrix containing filled dem</p>
+    <p>a list with the filled dem</p>
     
 
   </div>

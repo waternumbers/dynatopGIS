@@ -7,14 +7,16 @@
 split_to_class(brck, output_name, cuts, json_path = getwd())
 }
 \arguments{
+\item{brck}{a RasterBrick as created by create_brick}
+
 \item{output_name}{name to give the output files}
 
 \item{cuts}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)}
 
-\item{project_path}{folder which is being used for the analysis}
+\item{json_path}{the folder to write out json file containing the summary of splits to}
 }
 \value{
-Logical imdicating it has run. Outputs a raster of classifications and a json of HRU properties to the project directory.
+as for brck but containing an additional layer with the split classes
 }
 \description{
 Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layers and cuts

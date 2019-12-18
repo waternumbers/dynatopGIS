@@ -2,9 +2,10 @@
 #'
 #' @description Computes statistics e.g. log(a/tanb) for raster cells
 #' 
-#' @param brck rasterBrick or file containing teh raster brick
-#'
-#' @details The algorithm works in two passes. the first computed the number fo upstream pixels. The second sequences downslope to compute values.
+#' @param brck rasterBrick or file containing the raster brick (as generated using create_brick)
+#' @param ... additional parameters passed to raster::brick if brck is a file name
+#' 
+#' @details The algorithm works in two passes. The first computes the number of upstream pixels. The second sequences downslope to compute values.
 #' @export
 compute_properties <- function(brck,...){
 
@@ -48,6 +49,7 @@ compute_properties <- function(brck,...){
     
 
     for(ii in names(out)){
+        print(ii)
         brck[[ii]][] <- out[[ii]]
     }
     

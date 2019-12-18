@@ -10,17 +10,23 @@ fun_hru(dem, grad, land_area, channel_area, channel_id, hillslope_id,
 \arguments{
 \item{dem}{Digital elevation model}
 
+\item{grad}{average downslope gradient}
+
 \item{land_area}{Area of land surface in pixel}
 
-\item{hillslope}{hillslope class of each pixel}
+\item{channel_area}{Area of channel surface in pixel}
 
-\item{channel}{channel class of each pixel}
+\item{channel_id}{UID of channel present in the pixel}
 
-\item{number_hillslope_class}{number of hill slope classes}
+\item{hillslope_id}{hillslope class of each pixel}
 
-\item{number_channel_class}{number of channel classes}
+\item{offset}{- difference between cell index of adjacent cells and current cell index - clockwise from top left}
 
-\item{dist}{3x3 matrix of distances to ajoining cells}
+\item{dx}{distance between cell centres - from top left in clockwise direction}
+
+\item{cl}{contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel}
+
+\item{max_index}{maximum value of the hillslope and channel id's}
 }
 \value{
 list of hillslope and channel properties
