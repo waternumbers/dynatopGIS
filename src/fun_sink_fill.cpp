@@ -1,96 +1,114 @@
 #include <Rcpp.h>
 using namespace Rcpp;
-//' cpp wrapper function for filling of sinks
+//' cpp wrapper function for passing up the catchments from river nodes
 //' 
-//' @param dem Digital elevation model
-//' @param is_channel TRUE is a channel pixel
-//' @param delta 3x3 matrix of minimum evelation drop to each adjacent pixel
-//' @param max_iter maximum number of iterations
-//'
-//' @return matrix containing filled dem
+//' @param dem Digital elevation model as a vector
+//' @param channel_id UID of channel in the pixel (id any) as a vector
+//' @param offset difference between index of neighbours and current cell - clockwise from top left
+//' 
+//' @return a list with the filled dem
 //'
 // [[Rcpp::export]]
-NumericMatrix fun_sink_fill(NumericMatrix dem, LogicalMatrix is_channel,
-			    NumericMatrix delta, int max_iter){
+List fun_sink_fill(NumericVector dem,
+		   IntegerVector channel_id,
+		   IntegerVector offset){
 
-  int n_sink = 0;
-  int n_finite = 0;
-  int niter = 0;
-  LogicalMatrix can_eval(dem.nrow(),dem.ncol());
-
-  double na_test_val = -10000; // test the for NAN against this - if NAN will return false
+  // store of the order
+  IntegerVector order(dem.length(),NA_INTEGER);
+  // store the computational sequenence
+  IntegerVector seq(dem.length(),NA_INTEGER);
+  int seq_loc = 0;
     
-  // determine if we can fill a cell if it is a sink
-  for(int i=0;i < dem.nrow(); i++){
-    for(int j=0; j < dem.ncol(); j++){
-      // set to can't be filled
-      can_eval(i,j) = false;
-      // to fill it there must be 9 finite values in the block centred on i,j
-      n_finite = 0;
-      for(int ii=-1;ii<2;ii++){
-	for(int jj=-1;jj<2;jj++){
-	  if( i+ii > -1 && i+ii < dem.nrow() && 
-	      j+jj > -1 && j+jj < dem.ncol() ){
-	    if( dem(i+ii,j+jj) > na_test_val ){
-	      n_finite = n_finite + 1;
-	    }
-	  }
-	}
-      }
-      // see if there are 9 finite values
-      if(n_finite==9){
-	can_eval(i,j) = true;
-      }
-    }
-  }
+  IntegerVector ngh(offset.length());
+  IntegerVector n_lower(dem.length(),NA_INTEGER);
+
+  int n_finite = 0;
   
-  // loop to fill
-  n_sink = 1;
-  while( n_sink > 0 && niter < max_iter){
-    n_sink = 0;
-    // remember cpp is 0 base
-    for(int i=0;i < dem.nrow(); i++){
-      for(int j=0; j < dem.ncol(); j++){
-	// check it can be filled and isn't a channel
-	if( can_eval(i,j)==true && is_channel(i,j)==false){
-	  // presume it is a sink
-	  bool is_sink = true;
-	  double lowest_neighbour = 1e32;
-	  
-	  // check its status
-	  for(int ii=-1;ii<2;ii++){
-	    for(int jj=-1;jj<2;jj++){
-	      if( i+ii > -1 && i+ii < dem.nrow() && 
-		  j+jj > -1 && j+jj < dem.ncol() &&
-		  !(ii == 0 && jj == 0) ){
-		// value that dem(i,j) but excedd if the gradient in greater then min required
-		double neighbour = dem(i+ii,j+jj) + delta(ii+1,jj+1);
-		// see if this neighbour is low enough
-		if( neighbour <= dem(i,j) ){
-		  is_sink = false;
-		}
-		// if it is a sink then update the possible value
-		if( is_sink==true && neighbour < lowest_neighbour ){
-		  lowest_neighbour = neighbour;
-		}
+  // work out number of lower cells
+  for(int i=0;i < dem.length(); i++){
+    if( !(NumericVector::is_na(dem(i))) ){
+      // has finite dem value
+      
+      // check if cell is in a channel channel
+      if( !(IntegerVector::is_na(channel_id(i))) ){
+	// then a channel - set order to 1 ans n_lower so not evaluated again
+	order(i) = 1;
+	n_lower(i) = -99;
+      }else{
+	// then not a channel so wokr out how many lower cells
+	n_lower(i) = 0;
+	n_finite = 0;
+      
+	// neighbours
+	ngh = offset + i;
+	LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
+
+	for(int j=0;j<ngh.length();j++){
+	  if( in_range(j) ){
+	    if( !(NumericVector::is_na(dem(ngh(j)))) ){
+	      n_finite += n_finite;
+	      if( dem(ngh(j)) < dem(i) ){
+		n_lower(i) = n_lower(i) + 1;
 	      }
 	    }
 	  }
-	  
-	  // if it is still a sink
-	  if(is_sink==true){
-	    dem(i,j) = lowest_neighbour;
-	    n_sink = n_sink + 1 ;
+	}
+	
+	// if there are no lower values then either sinkor  edge drain
+	if( n_lower(i) == 0 ){
+	  if( n_finite == 8 ){
+	    //sink....
+	    Rcout << "Sink at pixel" << i << "\n";
+	  }else{
+	    Rcout << "Edge drain at pixel" << i << "\n";
+	    order(i) = 1;
 	  }
 	}
-	Rcpp::checkUserInterrupt();
       }
     }
-    niter = niter + 1;
-    Rcpp::checkUserInterrupt();
-    Rcout << "The number of sinks handled in iteration " << niter << " is " << n_sink << std::endl;
-    
   }
+
+  Rcout << "got to seq_loc" << "\n";
   
-  return dem; 
+  // loop order to get sequence vector
+  seq_loc = 0;
+  for(int i=0;i < dem.length(); i++){
+    if( order(i) == 1 ){
+      seq(seq_loc) = i;
+      seq_loc += 1;
+    }
+  }
+
+  Rcout << "got to populate" << "\n";
+  
+  // loop to populate all of order
+  for(int i=0;i < seq.length(); i++){
+    //Rcout << i << "\n";
+    if( !(IntegerVector::is_na(seq(i))) ){
+      // work out neighbours and if they are in range
+      ngh = offset + seq(i);
+      LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
+      // loop neighbours
+      for(int j=0;j<ngh.length();j++){	
+	if( in_range(j) ){
+	  if( !(NumericVector::is_na(dem(ngh(j)))) &&
+	      dem(ngh(j)) > dem(seq(i)) ){
+	    n_lower(ngh(j)) = n_lower(ngh(j)) - 1;
+	    if( n_lower(ngh(j))==0 ){
+	      order(ngh(j)) = order(seq(i))+1;
+	      seq(seq_loc) = ngh(j);
+	      seq_loc += 1;
+	    }
+	  }
+	}
+      }
+    }
+  }
+  Rcout << "got to output" << "\n";
+  // create output list
+  List out=List::create(Named("dem_filled")=dem,
+			Named("order")=order,
+			Named("seq")=seq);
+  
+  return out; 
 }

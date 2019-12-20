@@ -2,23 +2,21 @@
 % Please edit documentation in R/sink_fill.R
 \name{sink_fill}
 \alias{sink_fill}
-\title{function to fill sinks}
+\title{Fill the sinks with a dem}
 \usage{
-sink_fill(project_path, max_iter = 1000, minimum_tangent = 0.001,
-  use_filled_dem = FALSE)
+sink_fill(brck, ...)
 }
 \arguments{
-\item{project_path}{folder which is being used for the analysis}
+\item{brck}{a rasterBrick object or whatever}
 
-\item{max_iter}{maximum number of iterations of the algorithm}
-
-\item{minimum_tangent}{minimum value of the gradient to the next cell downstream}
-
-\item{use_filled_dem}{logical indicating if the analysis should start with the filled DEM. If set this option will overwrite the current filled dem with the final output}
+\item{...}{additional varaibles passed to raster::brick if brck is a file name}
+}
+\value{
+a rasterBrick object
 }
 \description{
-Fills sinks so that they have a slope of at least the minimum_tangent to the downstream cell
+TO DO
 }
 \details{
-the algotithm works by looping over all the cells in the DEM and is relavitley robust but inefficent. If the maximum number of iterations is exceeded and there are still sinks the \code{use_filled_dem} flag can be used to restart from the final state.
+TO DO
 }

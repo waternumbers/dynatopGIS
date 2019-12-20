@@ -63,7 +63,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -116,18 +116,22 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>create_model</span>(<span class='no'>project_path</span>, <span class='no'>hillslope_class</span>)</pre>
+    <pre class="usage"><span class='fu'>create_model</span>(<span class='no'>brck</span>, <span class='no'>chn</span>, <span class='no'>hillslope_class</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>project_path</th>
-      <td><p>folder which is being used for the analysis</p></td>
+      <th>brck</th>
+      <td><p>a RasterBrick as created by create_brick</p></td>
+    </tr>
+    <tr>
+      <th>chn</th>
+      <td><p>a channel object as created by create_channel</p></td>
     </tr>
     <tr>
       <th>hillslope_class</th>
-      <td><p>Name of the existing hillslope classification to use to generate the model</p></td>
+      <td><p>Name of the existing hillslope classification to use to generate the model - a layer in brck</p></td>
     </tr>
     </table>
     

@@ -4,55 +4,45 @@
 #' cpp wrapper function for computation of redistribution matrices
 #' 
 #' @param dem Digital elevation model
+#' @param grad average downslope gradient
 #' @param land_area Area of land surface in pixel
-#' @param hillslope hillslope class of each pixel
-#' @param channel channel class of each pixel
-#' @param number_hillslope_class number of hill slope classes
-#' @param number_channel_class number of channel classes
-#' @param dist 3x3 matrix of distances to ajoining cells
-#'
+#' @param channel_area Area of channel surface in pixel
+#' @param channel_id UID of channel present in the pixel
+#' @param hillslope_id hillslope class of each pixel
+#' @param offset - difference between cell index of adjacent cells and current cell index - clockwise from top left
+#' @param dx distance between cell centres - from top left in clockwise direction
+#' @param cl contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel
+#' @param max_index maximum value of the hillslope and channel id's
 #' @return list of hillslope and channel properties
 #'
-fun_redistribution <- function(dem, land_area, hillslope, channel, number_hillslope_class, number_channel_class, dist) {
-    .Call('_dynatopGIS_fun_redistribution', PACKAGE = 'dynatopGIS', dem, land_area, hillslope, channel, number_hillslope_class, number_channel_class, dist)
+fun_hru <- function(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index) {
+    .Call('_dynatopGIS_fun_hru', PACKAGE = 'dynatopGIS', dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index)
 }
 
-#' cpp wrapper function for filling of sinks
+#' cpp wrapper function for passing up the catchments from river nodes
 #' 
-#' @param dem Digital elevation model
-#' @param is_channel TRUE is a channel pixel
-#' @param delta 3x3 matrix of minimum evelation drop to each adjacent pixel
-#' @param max_iter maximum number of iterations
+#' @param dem Digital elevation model as a vector
+#' @param channel_id UID of channel present in the pixel
+#' @param land_area Area of land surface in pixel
+#' @param offset - difference between cell index of adjacent cells and current cell index - clockwise from top left
+#' @param dx distance between cell centres - from top left in clockwise direction
+#' @param cl contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel
+#' 
+#' @return a list with the filled dem, order, upslope_area, contour_length, gradient and atanb
 #'
-#' @return matrix containing filled dem
-#'
-fun_sink_fill <- function(dem, is_channel, delta, max_iter) {
-    .Call('_dynatopGIS_fun_sink_fill', PACKAGE = 'dynatopGIS', dem, is_channel, delta, max_iter)
+fun_single_pass <- function(dem, channel_id, land_area, offset, dx, cl) {
+    .Call('_dynatopGIS_fun_single_pass', PACKAGE = 'dynatopGIS', dem, channel_id, land_area, offset, dx, cl)
 }
 
-#' cpp wrapper function for computing average gradient
+#' cpp wrapper function for passing up the catchments from river nodes
 #' 
-#' @param dem Digital elevation model
-#' @param is_channel TRUE if pixel contains a channel
-#' @param dist 3x3 matrix of distance to adjacent pixels
-#'
-#' @return matrix of average gradients
-#'
-fun_tanb <- function(dem, is_channel, dist) {
-    .Call('_dynatopGIS_fun_tanb', PACKAGE = 'dynatopGIS', dem, is_channel, dist)
-}
-
-#' cpp wrapper function for computation of upslope area
+#' @param dem Digital elevation model as a vector
+#' @param channel_id UID of channel in the pixel (id any) as a vector
+#' @param offset difference between index of neighbours and current cell - clockwise from top left
 #' 
-#' @param dem Digital elevation model
-#' @param area Area of land surface in pixel
-#' @param is_channel TRUE if pixel contains a channel
-#' @param dist 3x3 matrix of distance to adjacent pixels
-#' @param max_iter maximum number of iterations
+#' @return a list with the filled dem
 #'
-#' @return matrix of upslope area
-#'
-fun_upslope_area <- function(dem, area, is_channel, dist, max_iter) {
-    .Call('_dynatopGIS_fun_upslope_area', PACKAGE = 'dynatopGIS', dem, area, is_channel, dist, max_iter)
+fun_sink_fill <- function(dem, channel_id, offset) {
+    .Call('_dynatopGIS_fun_sink_fill', PACKAGE = 'dynatopGIS', dem, channel_id, offset)
 }
 

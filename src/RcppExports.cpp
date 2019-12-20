@@ -5,71 +5,60 @@
 
 using namespace Rcpp;
 
-// fun_redistribution
-List fun_redistribution(NumericMatrix dem, NumericMatrix land_area, IntegerMatrix hillslope, IntegerMatrix channel, int number_hillslope_class, int number_channel_class, NumericMatrix dist);
-RcppExport SEXP _dynatopGIS_fun_redistribution(SEXP demSEXP, SEXP land_areaSEXP, SEXP hillslopeSEXP, SEXP channelSEXP, SEXP number_hillslope_classSEXP, SEXP number_channel_classSEXP, SEXP distSEXP) {
+// fun_hru
+List fun_hru(NumericVector dem, NumericVector grad, NumericVector land_area, NumericVector channel_area, IntegerVector channel_id, IntegerVector hillslope_id, IntegerVector offset, NumericVector dx, NumericVector cl, int max_index);
+RcppExport SEXP _dynatopGIS_fun_hru(SEXP demSEXP, SEXP gradSEXP, SEXP land_areaSEXP, SEXP channel_areaSEXP, SEXP channel_idSEXP, SEXP hillslope_idSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP, SEXP max_indexSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type land_area(land_areaSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type hillslope(hillslopeSEXP);
-    Rcpp::traits::input_parameter< IntegerMatrix >::type channel(channelSEXP);
-    Rcpp::traits::input_parameter< int >::type number_hillslope_class(number_hillslope_classSEXP);
-    Rcpp::traits::input_parameter< int >::type number_channel_class(number_channel_classSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_redistribution(dem, land_area, hillslope, channel, number_hillslope_class, number_channel_class, dist));
+    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type grad(gradSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type land_area(land_areaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type channel_area(channel_areaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type hillslope_id(hillslope_idSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
+    Rcpp::traits::input_parameter< int >::type max_index(max_indexSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_hru(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fun_single_pass
+List fun_single_pass(NumericVector dem, IntegerVector channel_id, NumericVector land_area, IntegerVector offset, NumericVector dx, NumericVector cl);
+RcppExport SEXP _dynatopGIS_fun_single_pass(SEXP demSEXP, SEXP channel_idSEXP, SEXP land_areaSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type land_area(land_areaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_single_pass(dem, channel_id, land_area, offset, dx, cl));
     return rcpp_result_gen;
 END_RCPP
 }
 // fun_sink_fill
-NumericMatrix fun_sink_fill(NumericMatrix dem, LogicalMatrix is_channel, NumericMatrix delta, int max_iter);
-RcppExport SEXP _dynatopGIS_fun_sink_fill(SEXP demSEXP, SEXP is_channelSEXP, SEXP deltaSEXP, SEXP max_iterSEXP) {
+List fun_sink_fill(NumericVector dem, IntegerVector channel_id, IntegerVector offset);
+RcppExport SEXP _dynatopGIS_fun_sink_fill(SEXP demSEXP, SEXP channel_idSEXP, SEXP offsetSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< LogicalMatrix >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type delta(deltaSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_sink_fill(dem, is_channel, delta, max_iter));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_tanb
-NumericMatrix fun_tanb(NumericMatrix dem, LogicalMatrix is_channel, NumericMatrix dist);
-RcppExport SEXP _dynatopGIS_fun_tanb(SEXP demSEXP, SEXP is_channelSEXP, SEXP distSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< LogicalMatrix >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_tanb(dem, is_channel, dist));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_upslope_area
-NumericMatrix fun_upslope_area(NumericMatrix dem, NumericMatrix area, LogicalMatrix is_channel, NumericMatrix dist, int max_iter);
-RcppExport SEXP _dynatopGIS_fun_upslope_area(SEXP demSEXP, SEXP areaSEXP, SEXP is_channelSEXP, SEXP distSEXP, SEXP max_iterSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type area(areaSEXP);
-    Rcpp::traits::input_parameter< LogicalMatrix >::type is_channel(is_channelSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type dist(distSEXP);
-    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_upslope_area(dem, area, is_channel, dist, max_iter));
+    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    rcpp_result_gen = Rcpp::wrap(fun_sink_fill(dem, channel_id, offset));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_dynatopGIS_fun_redistribution", (DL_FUNC) &_dynatopGIS_fun_redistribution, 7},
-    {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 4},
-    {"_dynatopGIS_fun_tanb", (DL_FUNC) &_dynatopGIS_fun_tanb, 3},
-    {"_dynatopGIS_fun_upslope_area", (DL_FUNC) &_dynatopGIS_fun_upslope_area, 5},
+    {"_dynatopGIS_fun_hru", (DL_FUNC) &_dynatopGIS_fun_hru, 10},
+    {"_dynatopGIS_fun_single_pass", (DL_FUNC) &_dynatopGIS_fun_single_pass, 6},
+    {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 3},
     {NULL, NULL, 0}
 };
 

@@ -2,22 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{fun_sink_fill}
 \alias{fun_sink_fill}
-\title{cpp wrapper function for filling of sinks}
+\title{cpp wrapper function for passing up the catchments from river nodes}
 \usage{
-fun_sink_fill(dem, is_channel, delta, max_iter)
+fun_sink_fill(dem, channel_id, offset)
 }
 \arguments{
-\item{dem}{Digital elevation model}
+\item{dem}{Digital elevation model as a vector}
 
-\item{is_channel}{TRUE is a channel pixel}
+\item{channel_id}{UID of channel in the pixel (id any) as a vector}
 
-\item{delta}{3x3 matrix of minimum evelation drop to each adjacent pixel}
-
-\item{max_iter}{maximum number of iterations}
+\item{offset}{difference between index of neighbours and current cell - clockwise from top left}
 }
 \value{
-matrix containing filled dem
+a list with the filled dem
 }
 \description{
-cpp wrapper function for filling of sinks
+cpp wrapper function for passing up the catchments from river nodes
 }

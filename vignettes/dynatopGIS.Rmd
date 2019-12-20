@@ -20,117 +20,141 @@ build a dynamic TOPMODEL implementation using the dynatopGIS package.
 
 The dynatopGIS package is designed to work with a structured data flow, where
 by GIS data are processed through intermediate stages until one or more dynamic
-TOPMODEL implementations are produced. The process GIS data of the intermediate stages are written
-into files with a common directory that acts as record of the work
-undertaken. Coupling this with a document such as this vignette which
-documents the work flow should significantly enhance the chances of ensuring
-the work is reproducible.
+TOPMODEL implementations are produced. The processed GIS data are stored
+within two objects; a rasterBrick and a SpatialPolygonsDataFrame.
 
-The basis of the analysis is presumed to be a rasterised Digital Elevation Model (DEM) of
+At any point in the analysis the these two objects can be written to disk and
+reloaded using the commands within the ```raster``` package. There is no
+formal linkage between the rasterBrick and SpatialPolygonsDataFrame object so
+spurious models may be produced if incorrect file combinations are used. 
+Creating a document such as this vignette which
+documents the work flow used should significantly enhance the chances of
+ensuring the work is reproducible.
+
+# Getting started
+
+The basis of the analysis are a rasterised Digital Elevation Model (DEM) of
 the catchment and a vectorised representation of the river network with
-attributes. Current these can be in any format supported by the ```raster``` and ```sp```
-libraries.
+attributes. Current these can be in any format supported by the ```raster```
+and ```sp``` libraries respectivly.
 
-There are however a number of limitations
+However within the calculations used for sink filling,
+flow routing and topographic index calculations the raster DEM is presumed
+to be projected so that is has square or rectangular cells such that
+the difference between the cells centers (in meters) does not alter.
 
--    Within the calculations of the gradient used within the sink filling,
-     flow routing and topographic index calculation the raster DEM is presumed
-     to be in a projection that is has square or rectangular cells such that
-     the difference between the cells centers (in meters) does not alter.
--    Intermediate files are written in GeoTIFF and shapefile format. The
-     GeoTIFF does not keep projection information, however the dimensions and
-     projection of the original DEM are maintained
-
-# Swindale
+## Swindale
 
 The use of the dynatopGIS package is demonstrated using data from the Swindale
-catchment in the UK.
-
-# Getting the data
-
-Due to the recommended limitations on package sizes for CRAN repositories the
-data for creating this vignette is not contained within the
-```dynatopGIS``` package. It can be downloaded from the github repository for
-the package [here](https://​github.com/​waternumbers/​dynatopGIS).
-
-Start the analysis by loading the ```dynatopGIS``` package and specifying a
-paths for both the initial data and the project to which the files generated will be written.
+catchment in the UK. This is included in the external data directory of the
+package with the following file paths.
 ```{r, initialization}
 library(dynatopGIS)
-initial_path <- file.path("../vignette_data")
-project_path <- file.path("../vignette_data/processed")
-dir.create(project_path)
+dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS")
+channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS")
 ```
 
-```{r, include = FALSE}
-## this stops the code evaluating on CRAN
-knitr::opts_chunk$set(eval = file.exists(file.path(initial_path,"SwindaleDTM4mFilled.tif"))
-)
+<!-- ```{r, include = FALSE} -->
+<!-- ## this stops the code evaluating on CRAN -->
+<!-- knitr::opts_chunk$set(eval = file.exists(file.path(initial_path,"SwindaleDTM4mFilled.tif")) -->
+<!-- ) -->
+<!-- ``` -->
+
+# Initialising the GIS objects
+
+The package contains functions to correctly initialise the GIS objects
+populated during the analysis. 
+
+In the case of the rasterBrick the initialisation function takes the DEM
+(either as a rasterLayer or file name). The brick in initialised by calling
+```create_brick``` as follow
+
+```{r, create_brick}
+brck <- create_brick(dem_file)
 ```
+The returned rasterBrick a number of layers 
+```{r, brck_layers}
+names(brck)
+```
+which are populated in the following steps. Project information is taken from
+the DEM.
 
-# Reading the DEM and River network
-
-The package contains helper functions for reading the DEM and river
+and return for reading the DEM and river
 network. These read in the specified files and outputs them to the project
 directory in a standard format. For the DEM this is straight forward
 
-```{r, load_dem}
-dem_file <- load_dem(file.path(initial_path, "SwindaleDTM4mFilled.tif"),
-                     project_path)
-raster::plot( raster::raster(file.path(project_path,'dem.tif')) )
-```
-As with most of the ```dynatopGIS``` functions the value `r TRUE` is
-returned is the function completes successfully.
+Reading the river channel data data is more complex. Each vector object in the
+GIS file of channel information is treated as a length of river reach and
+requires the following properties
 
-Reading the river channel data is more complex since each vector object in the
-GIS file is treated as a length of river reach and requires the following
-properties
-
--   *chanel_id* - the identifier of which model dynamic TOPMODEL channel HRU the
-vector object belongs to
--   *width* - the width of the channel length
 -   *endNode* - a label for the downstream end of the river length
 -   *startNode* - a label for the upstream end of the river length
 -   *length* - the length in meters
 
-Currently only the channel_id and width properties are used, but it is considered in later
-releases that the remaining properties will describe the connectivity of the
-river network and distance from outlet.
+Additional proporties are currently ignored with two exceptions:
+-   *id* - this is overwrittem with a warning and used internally
+-   *width* - if the channel is specified a line sections then the *width*
+    property is used to buffer the lines to create channle polygons.
+	
+Since it is possible that these properties are present in the current data but
+under different names the ```create_channel``` function allows for
+renaming. To illustrate this let us examine the river network for Swindale
 
-These properties are provided to the ```load_channel``` function as a named
-vector, in the case of Swindale
+```{r, channel_current}
+shp <- rgdal::readOGR(channel_file)
+head(shp)
+```
+
+The main properties are present under appropriate names and a call to
+```create_channel``` with no options would be successful. However if we want to carry over the addition information in the "indentifier" as "channel_id" a
+named vector giving the variable names to be used could be provided. In this
+case:
+
 ```{r, channel_properties}
-property_names <- c(chanel_id="identifier",
+property_names <- c(channel_id="identifier",
                     endNode="endNode",
                     startNode="startNode",
                     length="length")
 ```
-Since the underlying data set for Swindale does not contain a channel width we
-use the default width of 2m in ```load_channel```. The river network to be imported by calling
+
+Since the data set for Swindale does not contain a channel width we
+use the default width of 2m in ```create_channel```. The river network can
+then be created in the correct format by
 ```{r, channel_load}
-load_channel(file.path(initial_path, "SwindaleRiverNetwork.shp"),
-             property_names,project_path)
-raster::plot( raster::shapefile(file.path(project_path,'channel')) )
+chn <- create_channel(shp,property_names)
+head(chn@data)
+```
+
+The resulting data can be plotted using standard ```raster``` package commands
+```{r, plot_raw}
+raster::plot(brck[['dem']])
+raster::plot(chn,add=TRUE)
 ```
 
 # Combining the river network and DEM
 
-Having loaded the channel and DEM the next stage is to combine them. The ```add_channel``` function achieves this by intersecting the
-DEM and river network to determine which of the raster DEM cells contain parts
-of the river network. From this three raster maps are produced containing:
--   the area in the DEM cell covered by land
--   the area in the DEM cell covered by channel
--   the id of the channel
-If multiple river lengths intersect a DEM cell the id of that with the largest
-intersection is used. 
+Having initialised the analysis the next stage is to combine the DEm and
+channel network. The ```add_channel``` function achieves this by intersecting
+the DEM and river network to determine which of the raster cells contain
+parts of the river network. From this three layers of the brick are populated:
+-   land_area - the area in the DEM cell covered by land
+-   channel_area - the area in the DEM cell covered by channel
+-   channel_id - the id of the channel within the cell, corresponding to
+the id in the channel object.
 
-For Swindale an indication of the intersected DEM cells is given in the following plot.is case combing the DEM and river network
+If multiple river lengths intersect a DEM cell the properties of the channel
+length with the largest area of intersection are used. 
+
+The following shows the impact of the properties of the raster brick after
+applying the channel network in Swindale.
+
 ```{r, add_channel}
-print(list.files(project_path))
-add_channel(project_path)
-print(list.files(project_path))
-raster::plot( raster::raster(file.path(project_path,'channel_id.tif')) )
+#print(brck)
+#print(chn)
+brck <- add_channel(brck,chn)
+#print(brck)
 ```
+
 # Filling sinks
 
 For the hill slope to be connected to the river network the hill slope parts of
@@ -147,47 +171,48 @@ minimum gradient adjust from the default of 1m in 1km.
 For Swindale, where the example DEM is already partially filled the algorithm
 finishes quickly and the changes in the DEM are minor
 ```{r, sink_fill}
-sink_fill(project_path,max_iter = 1000)
-raster::plot( raster::raster(file.path(project_path,'filled_dem.tif')) - raster::raster(file.path(project_path,'dem.tif')) )
+brck <- sink_fill(brck)
+raster::plot( brck[['filled_dem']] - brck[['dem']] )
 ```
 
-## Computing topographic index
+## Computing summary properties
+
 The basis of separation of the hydrological response units in TOPMODEL is the
 topographic index, which is computed from the upstream area and gradient.
 
+These are computed using the formulea in Quinn 1991 (TO DO add ref).
+
 The upstream area is computed by routing down slope with the fraction of the
 area being routed to the next downstream pixel being proportional to the
-gradient. This can be evaluated with
-```{r, calc_area}
-upslope_area(project_path,max_iter = 2000)
-raster::plot( raster::raster(file.path(project_path,'upslope_area.tif')))
-```
-This shows clearly an area of flow accumulation where no channel is defined.
+gradient times the contour length. 
 
-The local value of the gradient (tanb) if computed using the average of a
+The local value of the gradient is computed using the average of a
 subset of between pixel gradients. For a normal 'hill slope' cell these are the
-gradients to downslope pixels. In the case of pixels which contain river
-channels, or fall on the edge of the catchment with neighbors whose value is
-`r NA` it is
-the average of the gradients from upslope pixels.
-```{r, calc_tanb}
-tanb(project_path)
-raster::plot( raster::raster(file.path(project_path,'tanb.tif')))
-```
+gradients to downslope pixels weighted by contour length. In the case of
+pixels which contain river channels the average of the gradients from upslope
+pixels weighted by contour length us used.
 
-For Swindale the resulting topographic is calculated as
+These properties (and others) are computed in an algorithm that passes over
+the data twice. First to compute identify 'peaks' in the dem, dsecondly to
+travel downslope. It is called as follows
 ```{r, calc_atb}
-atb(project_path)
-raster::plot( raster::raster(file.path(project_path,'atb.tif')))
+brck <- compute_properties(brck)
+## plot of topographic index (log(a/tan b))
+raster::plot( brck[['atanb']])
+## plot of order of pixels (1 highest)
+raster::plot( brck[['order']] )
 ```
 
 ## Splitting into Hydrological response units
+
 Hill slope hydrological response units can be created from the underlying data
 in two ways within the ```dynatopGIS``` package. The first method, *splitting*
 allows the landscape to be divided up based on breaks in the values of
 landscape feature values. The second *burning* enforces classes onto distinct
 area. It is presumed that burnt classes will always be imposed upon an initial
 characterization through splitting.
+
+### Splitting
 
 To split a catchment into HRUs the breaks between the classes need to be
 specified. This is done by forming a named ```list``` of cuts. the names
@@ -199,9 +224,40 @@ For example to generate HRUs for Swindale by dividing the topographic index
 into 21 classes and save the output classes as "atb_split.tif" in the
 project folder:
 ```{r, atb_split}
-cuts <- list(atb=20)
-split_to_class(project_path,'atb_split',cuts)
-raster::plot( raster::raster(file.path(project_path,'atb_split.tif')))
+cuts <- list(atanb=20)
+brck <- split_to_class(brck,'atb_split',cuts)
+raster::plot( brck[['atb_split']] )
+```
+
+More complex splits can be carried out by specifying all break points. for
+example to divide by topographic index and stream order
+```{r, atb_ord_split}
+cuts <- list(atanb=20,
+             order=0:(raster::cellStats(brck[['order']],'max')+1))
+brck <- split_to_class(brck,'atb_ord_split',cuts)
+raster::plot( brck[['atb_ord_split']] )
+```
+TO DO comment of sequential numbering used
+
+### Burns
+
+Suppose in the above example we want to burn in an additional HRU class for
+all areas above 500m that aren't channels.
+
+Firstly we add an additional layer to the brick to which these locations are
+identified.
+```{r burn_in_set}
+brck[['greater_500']] <- raster::reclassify(brck[['filled_dem']],
+                                            matrix(c(0,500,NA,
+                                                     500,1000,raster::cellStats(brck[['atb_split']],'max')+1),2,byrow=TRUE))
+```
+Note we have given the cells a value of one greater then the maximum value of
+splits we will burn this into to maintain the sequential numbering of the HRUs
+
+It can then be burnt in as follows
+```{r burn_in}
+brck <- burn_in_class(brck,"atb_split","atb_500_split",list("greater_500"))
+raster::plot(brck[["atb_500_split"]])
 ```
 
 # Generating a dynamic TOPMODEL
@@ -214,111 +270,10 @@ HRUs.
 For example in the case of the division of Swindale by topographic index into
 21 classes the resulting model can be generated by
 ```{r, model_atb_split}
-create_model(project_path,'atb_split')
+model <- create_model(brck,chn,'atb_split')
 ```
 
-# Running a dynamic TOPMODEL
-
-To finish this introduction we use the ```dynatop``` package to run the above
-model using data from its internal example.
-
-First we load and process the data, see the ```dynatop``` vignettes for
-details.
-```{r, set_input}
-## load brompton data within dynatop and take observed inputs
-data("brompton",package='dynatop')
-obs <- dynatop::resample_xts(brompton$rain, dt = 15/60)
-obs <- merge(obs,brompton$pet,all=c(TRUE,FALSE))
-obs[!is.finite(obs)] <- 0
-```
-
-Next we will load the model and check it
-```{r, load_model, error=TRUE, purl=FALSE}
-model <- readRDS(file.path(project_path,paste0('atb_split','.rds')))
-dynatop::check_model(model)
-
-```
-It fails the checks but the totals are very close to 1 so the exceedance is
-likely to be due to a rounding error and is readily fixed.
-```{r check_redistribution}
-current_total_frac_sat <- colSums( rbind(model$Wsat,model$Fsat) )
-current_total_frac_sat
-current_total_frac_ex <- colSums( rbind(model$Wex,model$Fex) )
-current_total_frac_ex
-
-for(ii in names(current_total_frac_sat[current_total_frac_sat>1])){
-    model$Wsat[,ii] <- model$Wsat[,ii]/current_total_frac_sat[ii]
-    model$Fsat[,ii] <- model$Fsat[,ii]/current_total_frac_sat[ii]
-}
-for(ii in names(current_total_frac_sat[current_total_frac_ex>1])){
-    model$Wex[,ii] <- model$Wex[,ii]/current_total_frac_ex[ii]
-    model$Fex[,ii] <- model$Fex[,ii]/current_total_frac_ex[ii]
-}
-dynatop::check_model(model)
-```
-
-The available input series must match the names in the model. The observed
-series names are
-```{r }
-head(obs)
-```
-
-while the default value of unknown is set in the model
-```{r }
-## model input
-model$hillslope[,c('precip_input','pet_input')]
-## channel inputs
-model$channel[,c('precip_input','pet_input')]
-```
-
-The values are changed to allow the model to run
-```{r, run_model}
-model$channel$precip_input <- model$hillslope$precip_input <- "rain"
-model$channel$pet_input <- model$hillslope$pet_input <- "pet"
-sim <- dynatop::dynatop(model,obs,0.00012)
-plot(sim$channel_input)
-```
-
-# Addendum - Burning in classes
-
-The addendum demonstrates the burning in of additional HRU classes. Suppose in
-the above example we want to burn in an additional HRU class for all areas
-above 500m that aren't channels.
-
-Firstly load the filled dem, channel index and current classification rasters
-
-```{r burn_in_set}
-filled_dem <- raster::raster(file.path(project_path,'filled_dem.tif'))
-channel_index <- raster::raster(file.path(project_path,'channel_id.tif'))
-atb_split <- raster::raster(file.path(project_path,'atb_split.tif'))
-```
-
-Next we will create a blank raster (populated bu NA values) to which we will
-add the class to be burnt in. It is important this has the same project and
-cell sizes as the original raster. The easiest way to acheive this is to
-simply copy one.
-```{r burn_in_blank}
-Greater_500 <- filled_dem
-Greater_500[] <- NA
-```
-
-Now we will assign the value of the new class to all the cells in blank raster
-which belong to it. There is no checking that the class number you use is not
-already in use, so we take the value to be ten greater then the maximum
-already in use.
-```{r burn_in_spec}
-Greater_500[filled_dem > 500 & !is.finite(channel_index)] <- raster::cellStats(atb_split,'max')+10
-raster::plot(Greater_500)
-raster::plot(channel_index,add=TRUE,legend=FALSE)
-```
-
-Next save the new classification to the project directory
-```{r burn_in_save}
-raster::writeRaster(Greater_500, file.path(project_path,'Greater_500.tif'))
-```
-then burn it in and generate a new model
-```{r burn_in_burn}
-burn_in_class(project_path, 'atb_split','atb_split_500',list('Greater_500'))
-raster::plot( raster::raster(file.path(project_path,'atb_split_500.tif')) )
-create_model(project_path,'atb_split_500')
+We can then use the duynatop package to check the validity of the model
+```{r check_model}
+# dynatop::check_model(model)
 ```
