@@ -40,7 +40,7 @@ NumericVector rcpp_sink_fill(NumericVector dem,
 	  }
 	}
       }
-      Rcout << i<< " " << n_finite << " " << min_ngh << "\n";
+      //Rcout << i<< " " << n_finite << " " << min_ngh << "\n";
       if( n_finite==8 ){
 	lowest_ngh(i) = min_ngh;
       }else{
@@ -53,7 +53,7 @@ NumericVector rcpp_sink_fill(NumericVector dem,
   
   // loop possible sinks
   int iter=0;
-  while(iter<100){
+  while(iter<1e6){
     // find possible sink with lowest neighbour
     int idx=-1;
     double idx_min=R_PosInf;   
@@ -64,7 +64,7 @@ NumericVector rcpp_sink_fill(NumericVector dem,
 	idx_min = lowest_ngh(j);
       }
     }
-    Rcout << "idx " << idx << " " << idx_min << "\n";
+    Rcout << "iter " << idx << " " << idx_min << "\n";
 
     if(idx < 0){
       // if no possible value then set to large numebr to exit
