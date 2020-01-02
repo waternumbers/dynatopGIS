@@ -70,6 +70,7 @@ List rcpp_compute_properties(NumericVector dem,
 	}
       }
     }
+    Rcpp::checkUserInterrupt();
   }
 
   Rcout << "got to populate" << "\n";
@@ -156,6 +157,7 @@ List rcpp_compute_properties(NumericVector dem,
 	}
       }
     }
+    Rcpp::checkUserInterrupt();
   }
   
   Rcout << "got to output" << "\n";

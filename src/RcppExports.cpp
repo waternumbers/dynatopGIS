@@ -41,17 +41,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fun_sink_fill
-NumericVector fun_sink_fill(NumericVector dem, IntegerVector channel_id, IntegerVector offset, NumericVector delta);
-RcppExport SEXP _dynatopGIS_fun_sink_fill(SEXP demSEXP, SEXP channel_idSEXP, SEXP offsetSEXP, SEXP deltaSEXP) {
+// rcpp_sink_fill
+NumericVector rcpp_sink_fill(NumericVector dem, IntegerVector channel_id, IntegerVector offset);
+RcppExport SEXP _dynatopGIS_rcpp_sink_fill(SEXP demSEXP, SEXP channel_idSEXP, SEXP offsetSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type delta(deltaSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_sink_fill(dem, channel_id, offset, delta));
+    rcpp_result_gen = Rcpp::wrap(rcpp_sink_fill(dem, channel_id, offset));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -59,7 +58,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_dynatopGIS_rcpp_compute_properties", (DL_FUNC) &_dynatopGIS_rcpp_compute_properties, 6},
     {"_dynatopGIS_rcpp_hru", (DL_FUNC) &_dynatopGIS_rcpp_hru, 10},
-    {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 4},
+    {"_dynatopGIS_rcpp_sink_fill", (DL_FUNC) &_dynatopGIS_rcpp_sink_fill, 3},
     {NULL, NULL, 0}
 };
 

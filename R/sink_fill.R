@@ -24,10 +24,12 @@ sink_fill <- function(stck,...){
     }
     
     offset <- c(-ncol(stck) + -1:1,-1,1,ncol(stck) + -1:1)
+    #browser()
     out <- rcpp_sink_fill(raster::getValues(stck[["dem"]]),
                           raster::getValues(stck[["channel_id"]]),
                           offset)
-    stck <- setValues(stck, out, layers==which(names(stck)=="filled_dem"))
+    #browser()
+    stck <- raster::setValues(stck, out, layer=which(names(stck)=="filled_dem"))
     
     #warning("Sink filling is not implimented...this just copies the dem")
     #stck[['filled_dem']] <- stck[['dem']]
