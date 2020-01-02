@@ -42,7 +42,7 @@ rcpp_hru <- function(dem, grad, land_area, channel_area, channel_id, hillslope_i
 #' 
 #' @return a list with the filled dem
 #'
-fun_sink_fill <- function(dem, channel_id, offset) {
-    .Call('_dynatopGIS_fun_sink_fill', PACKAGE = 'dynatopGIS', dem, channel_id, offset)
+fun_sink_fill <- function(dem, channel_id, offset, delta) {
+    .Call('_dynatopGIS_fun_sink_fill', PACKAGE = 'dynatopGIS', dem, channel_id, offset, delta)
 }
 

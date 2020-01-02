@@ -9,106 +9,85 @@ using namespace Rcpp;
 //' @return a list with the filled dem
 //'
 // [[Rcpp::export]]
-List fun_sink_fill(NumericVector dem,
+NumericVector fun_sink_fill(NumericVector dem,
 		   IntegerVector channel_id,
-		   IntegerVector offset){
+		   IntegerVector offset,
+		   NumericVector delta){
 
-  // store of the order
-  IntegerVector order(dem.length(),NA_INTEGER);
-  // store the computational sequenence
-  IntegerVector seq(dem.length(),NA_INTEGER);
-  int seq_loc = 0;
-    
-  IntegerVector ngh(offset.length());
-  IntegerVector n_lower(dem.length(),NA_INTEGER);
-
-  int n_finite = 0;
+  // store locations of sinks and lowest finite neighbour
+  LogicalVector is_sink(dem.length(),false);
+  NumericVector min_ngh(dem.length(),NA_REAL);
+  int n_sink = 0;
   
   // work out number of lower cells
   for(int i=0;i < dem.length(); i++){
     if( !(NumericVector::is_na(dem(i))) ){
-      // has finite dem value
+      // has a finite dem value - check if a sink
       
-      // check if cell is in a channel channel
-      if( !(IntegerVector::is_na(channel_id(i))) ){
-	// then a channel - set order to 1 ans n_lower so not evaluated again
-	order(i) = 1;
-	n_lower(i) = -99;
-      }else{
-	// then not a channel so wokr out how many lower cells
-	n_lower(i) = 0;
-	n_finite = 0;
-      
-	// neighbours
-	ngh = offset + i;
-	LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
-
-	for(int j=0;j<ngh.length();j++){
-	  if( in_range(j) ){
-	    if( !(NumericVector::is_na(dem(ngh(j)))) ){
-	      n_finite += n_finite;
-	      if( dem(ngh(j)) < dem(i) ){
-		n_lower(i) = n_lower(i) + 1;
-	      }
-	    }
-	  }
-	}
-	
-	// if there are no lower values then either sinkor  edge drain
-	if( n_lower(i) == 0 ){
-	  if( n_finite == 8 ){
-	    //sink....
-	    Rcout << "Sink at pixel" << i << "\n";
-	  }else{
-	    Rcout << "Edge drain at pixel" << i << "\n";
-	    order(i) = 1;
-	  }
-	}
-      }
-    }
-  }
-
-  Rcout << "got to seq_loc" << "\n";
-  
-  // loop order to get sequence vector
-  seq_loc = 0;
-  for(int i=0;i < dem.length(); i++){
-    if( order(i) == 1 ){
-      seq(seq_loc) = i;
-      seq_loc += 1;
-    }
-  }
-
-  Rcout << "got to populate" << "\n";
-  
-  // loop to populate all of order
-  for(int i=0;i < seq.length(); i++){
-    //Rcout << i << "\n";
-    if( !(IntegerVector::is_na(seq(i))) ){
-      // work out neighbours and if they are in range
-      ngh = offset + seq(i);
+      IntegerVector ngh = offset + i; // all possible neighbours
       LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
-      // loop neighbours
-      for(int j=0;j<ngh.length();j++){	
+
+      int n_finite=0;
+      double min_dem=R_PosInf;
+      
+      for(int j=0;j<ngh.length();j++){
 	if( in_range(j) ){
-	  if( !(NumericVector::is_na(dem(ngh(j)))) &&
-	      dem(ngh(j)) > dem(seq(i)) ){
-	    n_lower(ngh(j)) = n_lower(ngh(j)) - 1;
-	    if( n_lower(ngh(j))==0 ){
-	      order(ngh(j)) = order(seq(i))+1;
-	      seq(seq_loc) = ngh(j);
-	      seq_loc += 1;
+	  int jdx = ngh(j);
+
+	  if( !(NumericVector::is_na(dem(jdx))) ){
+	    n_finite += 1;
+	    if( !(dem(jdx)==R_NegInf) & (dem(jdx) < min_dem) ){
+	      min_dem = dem(jdx);
 	    }
 	  }
 	}
       }
+      min_ngh(i) = min_dem;
+      if( (n_finite == 8) & (min_ngh(i)>dem(i)) ){
+	  //then a sink
+	  is_sink(i) = true;
+	  n_sink += n_sink;
+      }
     }
   }
-  Rcout << "got to output" << "\n";
-  // create output list
-  List out=List::create(Named("dem_filled")=dem,
-			Named("order")=order,
-			Named("seq")=seq);
+
+  // fix sinks
+  for(int i=0;i < n_sink; i++){
+    // find sink with lowest value
+    int idx=-1;
+    double idx_min=R_PosInf;
+    
+    for(int j=0;j<is_sink.length();j++){
+      if( !NumericVector::is_na(min_ngh(j)) & (min_ngh(j) < idx_min) ){
+	idx = j;
+	idx_min = min_ngh(j);
+      }
+    }
+
+    if( idx>-1 ){
+      // then populate sink
+      IntegerVector ngh = offset + idx; // all possible neighbours
+
+      double sum_dem=0;
+      double n_dem =0;
+      for(int j=0;j<ngh.length();j++){
+	int jdx = ngh(j);
+	if( !(dem(jdx)==R_NegInf) ){
+	  sum_dem += dem(jdx);
+	  n_dem += 1;
+	}
+      }
+      dem(idx) = sum_dem / n_dem;
+
+      // change mins for neighbours
+      for(int j=0;j<ngh.length();j++){
+	int jdx = ngh(j);
+	if( is_sink(jdx) and min_ngh(jdx) > dem(idx) ){
+	  min_ngh(jdx) = dem(idx);
+	}
+      }
+    }
+  }
   
-  return out; 
+  return dem; 
 }
