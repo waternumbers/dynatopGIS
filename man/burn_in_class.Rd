@@ -11,11 +11,11 @@ burn_in_class(stck, class_name, output_name, burns, json_path = getwd())
 
 \item{class_name}{Name of the existing classification onto which to burn the new classes - must be a layer in stck}
 
+\item{output_name}{name to give the output layer added to stck}
+
 \item{burns}{Named list of layer in stck to burn into discretisation of HRUs that will be stamped onto the classification. Overrides any classification already defined}
 
 \item{json_path}{Path of folder into which to write the json file identifying which burns were used.}
-
-\item{ouput_name}{name to give the output layer added to stck}
 }
 \value{
 a raster layer as stck but with additional layer added.
