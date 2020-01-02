@@ -11,7 +11,7 @@
 #'
 #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. These are numbered using a cantor pairing scheme. In theory you could reverse out the class of each layer if required but this isn't implimented.
 #' @export
-split_to_class <- function(stck,layer_name,cuts,json_path=getwd()){
+split_to_class <- function(stck,split_name,cuts,json_path=getwd()){
 
         if(!("RasterStack" %in% class(stck))){
         if( is.character(stck) ){
@@ -37,7 +37,7 @@ split_to_class <- function(stck,layer_name,cuts,json_path=getwd()){
     }
 
     ## check output name is valid
-    if( layer_name %in% names(stck) ){
+    if( split_name %in% names(stck) ){
         stop("Output name already used")
     }
 
@@ -64,13 +64,13 @@ split_to_class <- function(stck,layer_name,cuts,json_path=getwd()){
 
     ## add back into brick
     cp <- raster::mask(cp,stck[['dem']])
-    names(cp) <- layer_name
+    names(cp) <- split_name
     stck <- addLayer(stck,cp)
 
     ## make and write json
     tmp <- list(cuts=cuts)
     writeLines( jsonlite::toJSON(tmp,pretty=TRUE),
-               file.path(json_path,paste0(layer_name,'.json')) )
+               file.path(json_path,paste0(split_name,'.json')) )
 
     if(length(stck_file)>0){
         writeRaster(stck,stck_file)
