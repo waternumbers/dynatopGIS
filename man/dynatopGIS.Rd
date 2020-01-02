@@ -3,7 +3,6 @@
 \docType{package}
 \name{dynatopGIS}
 \alias{dynatopGIS}
-\alias{dynatopGIS-package}
 \title{dynatopGIS}
 \description{
 This package contains the code for setting up a dynamic TOPMODEL implimentation

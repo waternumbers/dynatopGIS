@@ -4,13 +4,20 @@
 \alias{create_channel}
 \title{load a chanel file and ensure it has the correct properties}
 \usage{
-create_channel(shp, property_names = c(length = "length", startNode =
-  "startNode", endNode = "endNode", width = "width"), default_width = 2)
+create_channel(
+  shp,
+  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
+    width = "width"),
+  river_file = "",
+  default_width = 2
+)
 }
 \arguments{
 \item{shp}{a spatialLinesDataFrame or path to file to be read by OGR to produce one}
 
 \item{property_names}{named vector of columns of the spatial data frame to use for channel properties}
+
+\item{river_file}{file to save the river network to if required}
 
 \item{default_width}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
 }

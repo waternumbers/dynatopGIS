@@ -1,57 +1,66 @@
-#' Function to compute statistics of brck pixels
+#' Function to compute statistics of catchment pixels
 #'
 #' @description Computes statistics e.g. log(a/tanb) for raster cells
-#' 
-#' @param brck rasterBrick or file containing the raster brick (as generated using create_brick)
-#' @param ... additional parameters passed to raster::brick if brck is a file name
-#' 
+#'
+#' @param stck RasterStack or file containing the raster stack (as generated using create_catchment)
+#' @param ... additional parameters passed to raster::stack if stck is a file name
+#'
 #' @details The algorithm works in two passes. The first computes the number of upstream pixels. The second sequences downslope to compute values.
 #' @export
-compute_properties <- function(brck,...){
+compute_properties <- function(stck,...){
 
-    if(!("RasterBrick" %in% class(brck))){
-        if( is.character(brck) ){
-            brck <- raster::brick(brck,...)
+    if(!("RasterStack" %in% class(stck))){
+        if( is.character(stck) ){
+            stck_file <- stck
+            stck <- raster::stack(stck,...)
         }else{
-            stop("Unknown brck format")
+            stop("Unknown format for input")
         }
+    }else{
+        stck_file <- character(0)
     }
 
-    check_brick(brck)
-    
+    check_catchment(stck)
+
     ## check it is projected
-    if(raster::isLonLat(brck)){
+    if(raster::isLonLat(stck)){
         stop("Currently only works for projected DEM")
     }
 
     ## create other things to go with the call
-    offset <- c(-ncol(brck) + -1:1,-1,1,ncol(brck) + -1:1)
+    offset <- c(-ncol(stck) + -1:1,-1,1,ncol(stck) + -1:1)
 
     ## distance in each direction
-    dx <- rep(sqrt(raster::xres(brck)^2 + raster::yres(brck)^2),8)
-    dx[c(2,7)] <- raster::yres(brck)
-    dx[c(4,5)] <- raster::xres(brck)
-    if( raster::xres(brck) != raster::yres(brck) ){
-        warning("Contour length presumes a square grid")
-    }
+    dx <- rep(sqrt(raster::xres(stck)^2 + raster::yres(stck)^2),8)
+    dx[c(2,7)] <- raster::yres(stck)
+    dx[c(4,5)] <- raster::xres(stck)
 
     ## contour length
-    mres <- (raster::xres(brck) + raster::yres(brck))/2
+    if( raster::xres(stck) != raster::yres(stck) ){
+        warning("Contour length presumes a square grid")
+    }
+    mres <- (raster::xres(stck) + raster::yres(stck))/2
     cl <- c(rep( mres /(1+sqrt(2)),8),mres) # TO DO this is based on a n octogan - but other papers return a different ratio
 
     ## call cpp code
-    out <- fun_single_pass(as.vector(brck[["filled_dem"]]),
-                              as.vector(brck[["channel_id"]]),
-                              as.vector(brck[["land_area"]]),
-                              offset,
-                              dx,
-                              cl)
-    
+    out <- rcpp_compute_properties(raster::getValues(stck[["filled_dem"]]),
+                                   raster::getValues(stck[["channel_id"]]),
+                                   raster::getValues(stck[["land_area"]]),
+                                   offset,
+                                   dx,
+                                   cl)
+
 
     for(ii in names(out)){
-        print(ii)
-        brck[[ii]][] <- out[[ii]]
+        idx <- which( names(stck)==ii )
+        stck <- raster::setValues(stck, out[[ii]], layer=idx)
     }
-    
-    return(brck)
+
+    if(length(stck_file)>0){
+        raster::writeRaster(stck,stck_file)
+        return(stck_file)
+    }else{
+        return(stck)
+    }
+
 }

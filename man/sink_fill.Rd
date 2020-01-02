@@ -4,12 +4,12 @@
 \alias{sink_fill}
 \title{Fill the sinks with a dem}
 \usage{
-sink_fill(brck, ...)
+sink_fill(stck, ...)
 }
 \arguments{
-\item{brck}{a rasterBrick object or whatever}
+\item{stck}{a rasterBrick object or whatever}
 
-\item{...}{additional varaibles passed to raster::brick if brck is a file name}
+\item{...}{additional varaibles passed to raster::brick if stck is a file name}
 }
 \value{
 a rasterBrick object

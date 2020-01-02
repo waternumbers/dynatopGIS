@@ -2,33 +2,56 @@
 #'
 #' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL.
 #'
-#' @param brck a RasterBrick as created by create_brick
+#' @param stck a RasterBrick as created by create_brick
 #' @param chn a channel object as created by create_channel
-#' @param hillslope_class Name of the existing hillslope classification to use to generate the model - a layer in brck
+#' @param hillslope_class Name of the existing hillslope classification to use to generate the model - a layer in stck
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(brck,chn,hillslope_class){
+create_model <- function(stck,chn,hillslope_class){
+
+    if(!("RasterStack" %in% class(stck))){
+        if( is.character(stck) ){
+            stck_file <- stck
+            stck <- raster::stack(stck,...)
+        }else{
+            stop("Unknown format for input")
+        }
+    }else{
+        stck_file <- character(0)
+    }
+
+    if(!is(chn,"SpatialPolygonsDataFrame")){
+        if(is.character(chn)){
+            chn <- rgdal::readOGR(chn,...)
+        }else{
+            stop("Unknown channel format")
+        }
+    }
+
+    check_catchment(stck)
+    check_channel(chn)
+
+
+
+
 
     ## ####################################
     ##  Check required inputs are available
     ## ####################################
-    
-    ## check we have all the raster files we need
-    layer_names <- c('dem','land_area','channel_area','channel_id',hillslope_class)
-    if( !all(layer_names %in% names(brck)) ){
-        stop(paste( "Missing layers:",
-                   paste(setdiff(layer_names,names(brck)),collapse=" ")))
+
+    if( !all(hillslope_class %in% names(stck)) ){
+        stop("Missing hillslope classification layer")
     }
 
-    
+
     ## ###############################################################
     ## Sanity checks that :
     ##   - Channel shape and raster file are consistent
     ##   - Shape file contains all information
     ##   - No river connectivity situations that aren't handled occur
     ## ###############################################################
-    
+
     ## check channel shape file values are not missing
     for(ii in c('endNode','startNode','length')){
         nm <- sum( is.na(chn[[ii]]) )
@@ -37,19 +60,19 @@ create_model <- function(brck,chn,hillslope_class){
             warning(paste("To many missing values (",nm,") in channel", ii, "variable - channels and gauges may be wrong"))
         }
     }
-    
+
     ## check there are no channel bifurcations..since these aren't handled
     if( length(unique(chn[['startNode']])) != nrow(chn) ){
         stop("There are channel bifurcations which are not handled in the code")
     }
     ## check all channels in raster and in chn
-    if( !all( raster::unique(brck[['channel_id']]) %in% chn[['id']] ) ){
+    if( !all( raster::unique(stck[['channel_id']]) %in% chn[['id']] ) ){
         stop("Channels in raster file that are not in the shape file")
     }
 
     ## check all hillslope id numbers are unique to channels
-    uid_hillslope <- raster::unique(brck[[hillslope_class]])
-    uid_channel <- raster::unique(brck[['channel_id']])
+    uid_hillslope <- raster::unique(stck[[hillslope_class]])
+    uid_channel <- raster::unique(stck[['channel_id']])
     if( any( uid_hillslope %in% uid_channel ) ){
         stop("Hillslope class has the same number as the channel id")
     }
@@ -58,26 +81,26 @@ create_model <- function(brck,chn,hillslope_class){
         min(c(uid_hillslope,uid_channel)!=1 ) ){
         stop("Hillslope and channel id's chould be sequential numbers starting from 1")
     }
-    
+
     ## #######################################
-    ## Basic computations of properties 
+    ## Basic computations of properties
     ## #######################################
     max_index <- max(c(uid_hillslope,uid_channel)) # since Cpp is zero index
-    offset <- c(-ncol(brck) + -1:1,-1,1,ncol(brck) + -1:1)
-    dx <- rep(sqrt(raster::xres(brck)^2 + raster::yres(brck)^2),8)
-    dx[c(2,7)] <- raster::yres(brck)
-    dx[c(4,5)] <- raster::xres(brck)
-    if( raster::xres(brck) != raster::yres(brck) ){
+    offset <- c(-ncol(stck) + -1:1,-1,1,ncol(stck) + -1:1)
+    dx <- rep(sqrt(raster::xres(stck)^2 + raster::yres(stck)^2),8)
+    dx[c(2,7)] <- raster::yres(stck)
+    dx[c(4,5)] <- raster::xres(stck)
+    if( raster::xres(stck) != raster::yres(stck) ){
         warning("Contour length presumes a square grid")
     }
-    mres <- (raster::xres(brck) + raster::yres(brck))/2
+    mres <- (raster::xres(stck) + raster::yres(stck))/2
     cl <- c(rep( mres /(1+sqrt(2)),8),mres) # TO DO this is based on a n octogan - but other papers return a different ratio
-    out <- fun_hru(as.vector(brck[['filled_dem']]),
-                   as.vector(brck[['gradient']]),
-                   as.vector(brck[['land_area']]),
-                   as.vector(brck[['channel_area']]),
-                   as.vector(brck[['channel_id']])-1,
-                   as.vector(brck[[hillslope_class]])-1,
+    out <- rcpp_hru(raster::getValues(stck[['filled_dem']]),
+                   raster::getValues(stck[['gradient']]),
+                   raster::getValues(stck[['land_area']]),
+                   raster::getValues(stck[['channel_area']]),
+                   raster::getValues(stck[['channel_id']])-1,
+                   raster::getValues(stck[[hillslope_class]])-1,
                    offset,
                    dx,
                    cl,
@@ -87,7 +110,7 @@ create_model <- function(brck,chn,hillslope_class){
         out$W[,ii] <- out$W[,ii]/out$area[ii]
     }
 
-    
+
     ## create the model list to be populated
     model <- list()
 
@@ -112,7 +135,7 @@ create_model <- function(brck,chn,hillslope_class){
         id = uid_channel,
         area = out$area[uid_channel],
         length=NA,
-        next_id=NA,                
+        next_id=NA,
         precip_input="unknown",
         pet_input="unknown",
         v_ch="v_ch_default",
@@ -128,7 +151,7 @@ create_model <- function(brck,chn,hillslope_class){
                      tex_default=100,
                      v_ch_default=100)
 
-    
+
     ## ########################
     ## Process the redistirbution matrices for the hillslope
     ## ########################
@@ -153,7 +176,7 @@ create_model <- function(brck,chn,hillslope_class){
         if( length(jdx) ==1 ){ # case of jdx>1 handled in bifurcation check
             si <- c(si,which(uid_channel==chn[['id']][jdx]))
             sj <- c(sj,ii)
-        }        
+        }
     }
     model$Wch <- Matrix::sparseMatrix(i=si,j=sj,x=1)
 
@@ -184,4 +207,4 @@ create_model <- function(brck,chn,hillslope_class){
 
     return(model)
 }
-        
+

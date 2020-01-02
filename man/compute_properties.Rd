@@ -2,14 +2,14 @@
 % Please edit documentation in R/compute_properties.R
 \name{compute_properties}
 \alias{compute_properties}
-\title{Function to compute statistics of brck pixels}
+\title{Function to compute statistics of catchment pixels}
 \usage{
-compute_properties(brck, ...)
+compute_properties(stck, ...)
 }
 \arguments{
-\item{brck}{rasterBrick or file containing the raster brick (as generated using create_brick)}
+\item{stck}{RasterStack or file containing the raster stack (as generated using create_catchment)}
 
-\item{...}{additional parameters passed to raster::brick if brck is a file name}
+\item{...}{additional parameters passed to raster::stack if stck is a file name}
 }
 \description{
 Computes statistics e.g. log(a/tanb) for raster cells

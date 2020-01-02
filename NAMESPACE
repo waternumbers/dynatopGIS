@@ -2,9 +2,9 @@
 
 export(add_channel)
 export(burn_in_class)
-export(check_brick)
+export(check_catchment)
 export(compute_properties)
-export(create_brick)
+export(create_catchment)
 export(create_channel)
 export(create_model)
 export(sink_fill)

@@ -21,11 +21,11 @@ build a dynamic TOPMODEL implementation using the dynatopGIS package.
 The dynatopGIS package is designed to work with a structured data flow, where
 by GIS data are processed through intermediate stages until one or more dynamic
 TOPMODEL implementations are produced. The processed GIS data are stored
-within two objects; a rasterBrick and a SpatialPolygonsDataFrame.
+within two objects; a RasterStack and a SpatialPolygonsDataFrame.
 
 At any point in the analysis the these two objects can be written to disk and
 reloaded using the commands within the ```raster``` package. There is no
-formal linkage between the rasterBrick and SpatialPolygonsDataFrame object so
+formal linkage between the RasterStack and SpatialPolygonsDataFrame object so
 spurious models may be produced if incorrect file combinations are used. 
 Creating a document such as this vignette which
 documents the work flow used should significantly enhance the chances of
@@ -65,23 +65,19 @@ channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dyna
 The package contains functions to correctly initialise the GIS objects
 populated during the analysis. 
 
-In the case of the rasterBrick the initialisation function takes the DEM
-(either as a rasterLayer or file name). The brick in initialised by calling
+In the case of the RasterStack the initialisation function takes the DEM
+(either as a rasterLayer or file name). The stack in initialised by calling
 ```create_brick``` as follow
 
 ```{r, create_brick}
-brck <- create_brick(dem_file)
+stck <- create_catchment(dem_file)
 ```
-The returned rasterBrick a number of layers 
+The returned RasterStack has a number of layers 
 ```{r, brck_layers}
-names(brck)
+names(stck)
 ```
-which are populated in the following steps. Project information is taken from
+These are the minimum requirements for a catchment descriptiiona and are populated in the following steps. The projection information is taken from
 the DEM.
-
-and return for reading the DEM and river
-network. These read in the specified files and outputs them to the project
-directory in a standard format. For the DEM this is straight forward
 
 Reading the river channel data data is more complex. Each vector object in the
 GIS file of channel information is treated as a length of river reach and
@@ -127,7 +123,7 @@ head(chn@data)
 
 The resulting data can be plotted using standard ```raster``` package commands
 ```{r, plot_raw}
-raster::plot(brck[['dem']])
+raster::plot(stck[['dem']])
 raster::plot(chn,add=TRUE)
 ```
 
@@ -149,10 +145,10 @@ The following shows the impact of the properties of the raster brick after
 applying the channel network in Swindale.
 
 ```{r, add_channel}
-#print(brck)
+#print(stck)
 #print(chn)
-brck <- add_channel(brck,chn)
-#print(brck)
+stck <- add_channel(stck,chn)
+#print(stck)
 ```
 
 # Filling sinks
@@ -171,8 +167,8 @@ minimum gradient adjust from the default of 1m in 1km.
 For Swindale, where the example DEM is already partially filled the algorithm
 finishes quickly and the changes in the DEM are minor
 ```{r, sink_fill}
-brck <- sink_fill(brck)
-raster::plot( brck[['filled_dem']] - brck[['dem']] )
+stck <- sink_fill(stck)
+raster::plot( stck[['filled_dem']] - stck[['dem']] )
 ```
 
 ## Computing summary properties
@@ -196,11 +192,11 @@ These properties (and others) are computed in an algorithm that passes over
 the data twice. First to compute identify 'peaks' in the dem, dsecondly to
 travel downslope. It is called as follows
 ```{r, calc_atb}
-brck <- compute_properties(brck)
+stck <- compute_properties(stck)
 ## plot of topographic index (log(a/tan b))
-raster::plot( brck[['atanb']])
+raster::plot( stck[['atanb']])
 ## plot of order of pixels (1 highest)
-raster::plot( brck[['order']] )
+raster::plot( stck[['order']] )
 ```
 
 ## Splitting into Hydrological response units
@@ -225,17 +221,17 @@ into 21 classes and save the output classes as "atb_split.tif" in the
 project folder:
 ```{r, atb_split}
 cuts <- list(atanb=20)
-brck <- split_to_class(brck,'atb_split',cuts)
-raster::plot( brck[['atb_split']] )
+stck <- split_to_class(stck,'atb_split',cuts)
+raster::plot( stck[['atb_split']] )
 ```
 
 More complex splits can be carried out by specifying all break points. for
 example to divide by topographic index and stream order
 ```{r, atb_ord_split}
 cuts <- list(atanb=20,
-             order=0:(raster::cellStats(brck[['order']],'max')+1))
-brck <- split_to_class(brck,'atb_ord_split',cuts)
-raster::plot( brck[['atb_ord_split']] )
+             order=0:(raster::cellStats(stck[['order']],'max')+1))
+stck <- split_to_class(stck,'atb_ord_split',cuts)
+raster::plot( stck[['atb_ord_split']] )
 ```
 TO DO comment of sequential numbering used
 
@@ -247,17 +243,17 @@ all areas above 500m that aren't channels.
 Firstly we add an additional layer to the brick to which these locations are
 identified.
 ```{r burn_in_set}
-brck[['greater_500']] <- raster::reclassify(brck[['filled_dem']],
+stck[['greater_500']] <- raster::reclassify(stck[['filled_dem']],
                                             matrix(c(0,500,NA,
-                                                     500,1000,raster::cellStats(brck[['atb_split']],'max')+1),2,byrow=TRUE))
+                                                     500,1000,raster::cellStats(stck[['atb_split']],'max')+1),2,byrow=TRUE))
 ```
 Note we have given the cells a value of one greater then the maximum value of
 splits we will burn this into to maintain the sequential numbering of the HRUs
 
 It can then be burnt in as follows
 ```{r burn_in}
-brck <- burn_in_class(brck,"atb_split","atb_500_split",list("greater_500"))
-raster::plot(brck[["atb_500_split"]])
+stck <- burn_in_class(stck,"atb_split","atb_500_split",list("greater_500"))
+raster::plot(stck[["atb_500_split"]])
 ```
 
 # Generating a dynamic TOPMODEL
@@ -270,7 +266,7 @@ HRUs.
 For example in the case of the division of Swindale by topographic index into
 21 classes the resulting model can be generated by
 ```{r, model_atb_split}
-model <- create_model(brck,chn,'atb_split')
+model <- create_model(stck,chn,'atb_split')
 ```
 
 We can then use the duynatop package to check the validity of the model

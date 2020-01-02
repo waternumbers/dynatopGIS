@@ -15,16 +15,16 @@ using namespace Rcpp;
 //' @return list of hillslope and channel properties
 //'
 // [[Rcpp::export]]
-List fun_hru(NumericVector dem,
-	     NumericVector grad,
-	     NumericVector land_area,
-	     NumericVector channel_area,
-	     IntegerVector channel_id,
-	     IntegerVector hillslope_id,
-	     IntegerVector offset,
-	     NumericVector dx,
-	     NumericVector cl,
-	     int max_index){
+List rcpp_hru(NumericVector dem,
+	      NumericVector grad,
+	      NumericVector land_area,
+	      NumericVector channel_area,
+	      IntegerVector channel_id,
+	      IntegerVector hillslope_id,
+	      IntegerVector offset,
+	      NumericVector dx,
+	      NumericVector cl,
+	      int max_index){
   
   // initialise the output - default filled with zeros
   NumericVector area(max_index);

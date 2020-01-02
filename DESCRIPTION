@@ -19,14 +19,15 @@ Imports:
 	rgdal,
 	jsonlite,
 	Matrix,
-	methods
+	methods,
+	igraph
 LinkingTo:
     Rcpp
 Depends:
 	R (>= 3.1)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
 URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Suggests: 
     knitr,
     rmarkdown,

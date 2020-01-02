@@ -1,20 +1,21 @@
 #' Initialise the analysis by loading a dem
 #'
-#' @description Reads the DEM file, sets up the raster brick
+#' @description Reads the DEM file, sets up the raster catchment description
 #'
 #' @param dem must be either a rasterLayer or a file name
+#' @param catchment_file filename to save output to
 #' @param fill_na should NA values in dem be filled. See details
-#' @param ... passed to raster::raster
-#' @param brck a RasterBrick for testing to match those created by create_brick
+#' @param ... passed to raster package functions to set options for reading files
+#' @param stck a RasterStack or file name for testing to see if it is a catchment description
 #'
-#' @return raster brick object with initialised layers
+#' @return A raster stack object with initialised layers or the name of file into which is is saved
 #'
-#' @details Reads in the dem using the raster package. Fi fill_na all NA values other then those that link to the edge of the dem are filled with -Inf, so they can be identified as sinks.
-#' @name gis_brick
+#' @details Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with -Inf, so they can be identified as sinks.
+#' @name catchment_file
 
-#' @rdname gis_brick
+#' @rdname catchment_file
 #' @export
-create_brick <- function(dem,fill_na=TRUE,...){
+create_catchment <- function(dem,catchment_file="",fill_na=TRUE,...){
 
     ## read in dem
     if(!("RasterLayer" %in% class(dem))){
@@ -38,40 +39,57 @@ create_brick <- function(dem,fill_na=TRUE,...){
         dem[!is.na(na_clumps)] <- -Inf
     }
 
-    ## initialise the other raster outputs
-    brck <- raster::brick(dem);
-    names(brck) <- "dem"
+    ## initialise the catchment file
+    stck_names <- req_catchment_layers()
     tmp <- dem
-    tmp[] <- NA
-    for(ii in c("filled_dem","land_area","channel_area","channel_id",
-                "atanb","gradient","upslope_area","contour_length","order")){
-        ##browser()
-        ##print(ii)
-        names(tmp) <- ii
-        brck <- raster::addLayer(brck,tmp)
-        ##dem
-        ##brck[[ii]][] <- NA
-    }
-    brck <- raster::brick(brck) # since addLeyer makes it a stack...
+    values(tmp) <- NA
+    stck <- raster::stack( rep(list(tmp),length(stck_names)) )
+    names(stck) <- stck_names
+
+    ## set dem
+    idx <- which(stck_names=="dem")
+    stck <- setValues(stck, getValues(dem), layer=idx)
+
 
     ## compute land area
-    if( raster::isLonLat(brck) ){
-        brck[['land_area']] <- raster::area(brck)
+    idx <- which(stck_names=="land_area")
+    if( raster::isLonLat(stck) ){
+        land_area <- raster::area(stck)
     }else{
-        brck[['land_area']][] <- prod(raster::res(brck))
+        land_area <- tmp
+        land_area <- setValues(land_area,prod(raster::res(stck)))
     }
-    brck[['land_area']] <- raster::mask( brck[['land_area']], brck[['dem']] )
- 
-    return(brck)
+    land_area <- raster::mask( land_area, stck[['dem']] )
+    stck <- setValues(stck, getValues(land_area), layer=idx)
+
+    ## write out
+    if(catchment_file!="" && length(catchment_file)>0){
+        writeRaster(stck,catchment_file)
+        return(catchment_file)
+    }else{
+        return(stck)
+    }
 }
 
 
 #' Function to check the brick
-#' @rdname gis_brick
+#' @rdname catchment_file
 #' @export
-check_brick <- function(brck){
-    req_names <- c("filled_dem","land_area","channel_area","channel_id",
-                   "atanb","gradient","upslope_area","contour_length","order")
-    if(!is(brck,"RasterBrick")){stop("Not a raster brick")}
-    if(!all( req_names %in% names(brck) )){stop("Brick missing key variables")}
+check_catchment <- function(stck,...){
+    if(!is(stck,"RasterStack")){
+        if( is.character(stck) ){
+            stck <- raster::stack(stck,...)
+        }else{
+            stop("Unknown catchment format")
+        }
+    }
+    req_names <- req_catchment_layers()
+    if(!is(stck,"RasterStack")){stop("Not a raster brick")}
+    if(!all( req_names %in% names(stck) )){stop("Catchment missing key variables")}
+}
+
+#' returns the list of required layers in the catchment file
+req_catchment_layers <- function(){
+    c("dem","filled_dem","land_area","channel_area","channel_id",
+      "atanb","gradient","upslope_area","contour_length","order")
 }

@@ -4,14 +4,14 @@
 \alias{create_model}
 \title{Create a dynamic TOPMODEL suitabel more model evaluation}
 \usage{
-create_model(brck, chn, hillslope_class)
+create_model(stck, chn, hillslope_class)
 }
 \arguments{
-\item{brck}{a RasterBrick as created by create_brick}
+\item{stck}{a RasterBrick as created by create_brick}
 
 \item{chn}{a channel object as created by create_channel}
 
-\item{hillslope_class}{Name of the existing hillslope classification to use to generate the model - a layer in brck}
+\item{hillslope_class}{Name of the existing hillslope classification to use to generate the model - a layer in stck}
 }
 \value{
 Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.

@@ -5,9 +5,25 @@
 
 using namespace Rcpp;
 
-// fun_hru
-List fun_hru(NumericVector dem, NumericVector grad, NumericVector land_area, NumericVector channel_area, IntegerVector channel_id, IntegerVector hillslope_id, IntegerVector offset, NumericVector dx, NumericVector cl, int max_index);
-RcppExport SEXP _dynatopGIS_fun_hru(SEXP demSEXP, SEXP gradSEXP, SEXP land_areaSEXP, SEXP channel_areaSEXP, SEXP channel_idSEXP, SEXP hillslope_idSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP, SEXP max_indexSEXP) {
+// rcpp_compute_properties
+List rcpp_compute_properties(NumericVector dem, IntegerVector channel_id, NumericVector land_area, IntegerVector offset, NumericVector dx, NumericVector cl);
+RcppExport SEXP _dynatopGIS_rcpp_compute_properties(SEXP demSEXP, SEXP channel_idSEXP, SEXP land_areaSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type land_area(land_areaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_compute_properties(dem, channel_id, land_area, offset, dx, cl));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_hru
+List rcpp_hru(NumericVector dem, NumericVector grad, NumericVector land_area, NumericVector channel_area, IntegerVector channel_id, IntegerVector hillslope_id, IntegerVector offset, NumericVector dx, NumericVector cl, int max_index);
+RcppExport SEXP _dynatopGIS_rcpp_hru(SEXP demSEXP, SEXP gradSEXP, SEXP land_areaSEXP, SEXP channel_areaSEXP, SEXP channel_idSEXP, SEXP hillslope_idSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP, SEXP max_indexSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,23 +37,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
     Rcpp::traits::input_parameter< int >::type max_index(max_indexSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_hru(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index));
-    return rcpp_result_gen;
-END_RCPP
-}
-// fun_single_pass
-List fun_single_pass(NumericVector dem, IntegerVector channel_id, NumericVector land_area, IntegerVector offset, NumericVector dx, NumericVector cl);
-RcppExport SEXP _dynatopGIS_fun_single_pass(SEXP demSEXP, SEXP channel_idSEXP, SEXP land_areaSEXP, SEXP offsetSEXP, SEXP dxSEXP, SEXP clSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type channel_id(channel_idSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type land_area(land_areaSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type offset(offsetSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type dx(dxSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type cl(clSEXP);
-    rcpp_result_gen = Rcpp::wrap(fun_single_pass(dem, channel_id, land_area, offset, dx, cl));
+    rcpp_result_gen = Rcpp::wrap(rcpp_hru(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -56,8 +56,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_dynatopGIS_fun_hru", (DL_FUNC) &_dynatopGIS_fun_hru, 10},
-    {"_dynatopGIS_fun_single_pass", (DL_FUNC) &_dynatopGIS_fun_single_pass, 6},
+    {"_dynatopGIS_rcpp_compute_properties", (DL_FUNC) &_dynatopGIS_rcpp_compute_properties, 6},
+    {"_dynatopGIS_rcpp_hru", (DL_FUNC) &_dynatopGIS_rcpp_hru, 10},
     {"_dynatopGIS_fun_sink_fill", (DL_FUNC) &_dynatopGIS_fun_sink_fill, 3},
     {NULL, NULL, 0}
 };

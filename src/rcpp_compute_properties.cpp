@@ -12,12 +12,12 @@ using namespace Rcpp;
 //' @return a list with the filled dem, order, upslope_area, contour_length, gradient and atanb
 //'
 // [[Rcpp::export]]
-List fun_single_pass(NumericVector dem,
-		     IntegerVector channel_id,
-		     NumericVector land_area,
-		     IntegerVector offset,
-		     NumericVector dx,
-		     NumericVector cl){
+List rcpp_compute_properties(NumericVector dem,
+			     IntegerVector channel_id,
+			     NumericVector land_area,
+			     IntegerVector offset,
+			     NumericVector dx,
+			     NumericVector cl){
 
   // store of the returned values
   IntegerVector order(dem.length(),NA_INTEGER);

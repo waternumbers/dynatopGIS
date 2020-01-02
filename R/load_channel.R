@@ -3,20 +3,22 @@
 #' @description Import channel data from an OGR file to the project directory
 #'
 #' @param shp a spatialLinesDataFrame or path to file to be read by OGR to produce one
+#' @param river_file file to save the river network to if required
 #' @param property_names named vector of columns of the spatial data frame to use for channel properties
 #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
 #'
 #' @return a channel SpatialLines object
 #'
 #' @details reading in the input file and covnerts it then saves a shape file of polygons with properties chanel_id,length,width,startNode,endNode in the project directory under the name \code{channel.shp}. Feild in the input file corresponding to the properties can be specified in the \code{property_names} vector.
-#' 
+#'
 #' @export
 create_channel <- function(shp,
-                         property_names=c(length="length",
-                                          startNode="startNode",
-                                          endNode="endNode",
-                                          width="width"),
-                         default_width=2){
+                           property_names=c(length="length",
+                                            startNode="startNode",
+                                            endNode="endNode",
+                                            width="width"),
+                           river_file="",
+                           default_width=2){
 
     ## read in shp if required
     if( is.character(shp) ){
@@ -28,7 +30,7 @@ create_channel <- function(shp,
         stop("shp is not a spatial lines or polygon data frame object (even when read in)")
     }
 
-      
+
     ## check property_names is of correct type
     if(!is.vector(property_names) ||
        length(names(property_names))!=length(property_names) ){
@@ -50,17 +52,17 @@ create_channel <- function(shp,
     if(!all( property_names %in% names(shp))){
         stop("Not all feilds names in property_names are in shp")
     }
-    
+
     ## create channel object
     chn <- shp
     chn <- chn[,property_names]
     names(chn) <- names(property_names)
     chn[['id']] <- 1:length(chn)
-    
+
     ## convert factors to strings
     idx <- sapply(chn@data, is.factor)
     chn@data[idx] <- lapply(chn@data[idx], as.character)
-    
+
     if(!is(chn,"SpatialPolygonsDataFrame")){
         if(!("width" %in% names(chn))){
             warning("Modifying to spatial polygons using default width")
@@ -68,25 +70,38 @@ create_channel <- function(shp,
         }else{
             warning("Modifying to spatial polygons using provided width")
         }
-        
+
         ## buffer to convert to spatial polygons object
         chn <- rgeos::gBuffer(chn, byid=TRUE, width=chn[['width']])
     }
 
-    return(chn)
+    if(length(river_file)>0 && river_file!=""){
+        rgdal::writeOGR(chn,river_file)
+        return(river_file)
+    }else{
+        return(chn)
+    }
 }
 
 
 check_channel <- function(chn){
+    if(!is(chn,"SpatialPolygonsDataFrame")){
+        if(is.character(chn)){
+            chn <- rgdal::readOGR(chn,...)
+        }else{
+            stop("Unknown channel format")
+        }
+    }
+
     req_names <- c("id","startNode","endNode","length")
     if(!is(chn,"SpatialPolygonsDataFrame")){stop("Not a SpatialPolygonsDataFrame")}
     if(!all( req_names %in% names(chn) )){stop("Channel missing key variables")}
 }
 
 ##     raster::shapefile(buffered_chanel, file.path(project_path,'channel'))
-    
+
 ##     chanel[['id']] <- id[cid]
-    
+
 ##     ## add blank values to missing feilds
 ##     missing <- setdiff( c('startNode','endNode','length'), names(chanel) )
 ##     if(length(missing)>0){
