@@ -1,5 +1,8 @@
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
+// [[Rcpp::depends(RcppArmadillo)]]
+// #include <Rcpp.h>
 using namespace Rcpp;
+using namespace arma;
 //' cpp wrapper function for computation of redistribution matrices
 //' 
 //' @param dem Digital elevation model
@@ -29,7 +32,7 @@ List rcpp_hru(NumericVector dem,
   // initialise the output - default filled with zeros
   NumericVector area(max_index);
   NumericVector av_grad(max_index);
-  NumericMatrix W(max_index,max_index);
+  sp_mat W(max_index,max_index);
 
   for( int i=0; i<dem.length(); i++){
     if( !(IntegerVector::is_na(hillslope_id(i))) ){

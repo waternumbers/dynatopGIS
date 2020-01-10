@@ -224,15 +224,6 @@ cuts <- list(atanb=20)
 stck <- split_to_class(stck,'atb_split',cuts)
 raster::plot( stck[['atb_split']] )
 ```
-
-More complex splits can be carried out by specifying all break points. for
-example to divide by topographic index and stream order
-```{r, atb_ord_split}
-cuts <- list(atanb=20,
-             order=0:(raster::cellStats(stck[['order']],'max')+1))
-stck <- split_to_class(stck,'atb_ord_split',cuts)
-raster::plot( stck[['atb_ord_split']] )
-```
 TO DO comment of sequential numbering used
 
 ### Burns

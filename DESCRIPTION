@@ -13,6 +13,7 @@ Encoding: UTF-8
 LazyData: true
 Imports:
 	Rcpp,
+	RcppArmadillo,
 	raster,
 	sp,
 	rgeos,
@@ -22,7 +23,7 @@ Imports:
 	methods,
 	igraph
 LinkingTo:
-    Rcpp
+    Rcpp, RcppArmadillo
 Depends:
 	R (>= 3.1)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues

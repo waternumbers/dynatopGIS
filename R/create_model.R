@@ -83,6 +83,17 @@ create_model <- function(stck,chn,hillslope_class){
     }
 
     ## #######################################
+    ## Add additional splits by order
+    ## #######################################
+    cp <- stck[[hillslope_class]]
+    x <- stck[['order']]
+    cp <- 0.5*(cp+x)*(cp+x+1)+x
+    ucp <- unique(cp)
+    ucp <- data.frame(ucp,cellStats(stck[['channel_id']],max) + (1:length(ucp)))
+    hillslope_id <- raster::subs(cp,ucp) # this is the new HRU class number
+    uid_hillslope <- raster::unique(hillslope_id)
+    
+    ## #######################################
     ## Basic computations of properties
     ## #######################################
     max_index <- max(c(uid_hillslope,uid_channel)) # since Cpp is zero index
@@ -100,17 +111,15 @@ create_model <- function(stck,chn,hillslope_class){
                    raster::getValues(stck[['land_area']]),
                    raster::getValues(stck[['channel_area']]),
                    raster::getValues(stck[['channel_id']])-1,
-                   raster::getValues(stck[[hillslope_class]])-1,
+                   raster::getValues(hillslope_id)-1,
+#                   raster::getValues(stck[[hillslope_class]])-1,
                    offset,
                    dx,
                    cl,
                    max_index)
     ## standardise W by total area
-    for(ii in 1:ncol(out$W)){
-        out$W[,ii] <- out$W[,ii]/out$area[ii]
-    }
-
-
+    out$W <- out$W %*% Diagonal(length(out$area),1/out$area)
+    
     ## create the model list to be populated
     model <- list()
 
@@ -120,6 +129,10 @@ create_model <- function(stck,chn,hillslope_class){
         area = out$area[uid_hillslope],
         s_bar = out$av_grad[uid_hillslope]/out$area[uid_hillslope],
         delta_x = 1,
+        split_id = unname(tapply(raster::getValues(stck[[hillslope_class]]),
+                                 raster::getValues(hillslope_id),unique)),
+        band = unname(tapply(raster::getValues(stck[['order']]),
+                             raster::getValues(hillslope_id),unique)),
         precip_input="unknown",
         pet_input="unknown",
         qex_max="qex_max_default",
@@ -145,7 +158,8 @@ create_model <- function(stck,chn,hillslope_class){
     )
 
     ## parameter values
-    model$param <- c(srz_max_default=0.05,
+    model$param <- c(qex_max_default=Inf,
+                     srz_max_default=0.05,
                      srz_0_default=0.99,
                      ln_t0_default=19,
                      m_default=0.004,
@@ -157,7 +171,8 @@ create_model <- function(stck,chn,hillslope_class){
     ## ########################
     ## Process the redistirbution matrices for the hillslope
     ## ########################
-    model$Dex <- model$Dsz <- Matrix::Matrix(out$W)
+    browser()
+    model$Dex <- model$Dsz <- out$W
 
     ## #######################################
     ## Add channel routing information
@@ -178,12 +193,12 @@ create_model <- function(stck,chn,hillslope_class){
             sj <- c(sj,ii)
         }
     }
-    model$Wch <- Matrix::sparseMatrix(i=si,j=sj,x=1)
+    
 
     ## ############################################
     ## Add gauges at all outlets from river network
     ## ############################################
-    idx <- which(colSums(model$Wch)==0)
+    idx <- which(!(model$channel$id %in% model$channel$next_id))
     model$gauge <- data.frame(
         name = paste("channel",uid_channel[idx],sep="_"),
         id = idx,
