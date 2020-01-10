@@ -119,8 +119,10 @@ create_model <- function(stck,chn,hillslope_class){
         id = uid_hillslope,
         area = out$area[uid_hillslope],
         s_bar = out$av_grad[uid_hillslope]/out$area[uid_hillslope],
+        delta_x = 1,
         precip_input="unknown",
         pet_input="unknown",
+        qex_max="qex_max_default",
         srz_max="srz_max_default",
         srz_0="srz_0_default",
         ln_t0="ln_t0_default",
@@ -155,9 +157,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## ########################
     ## Process the redistirbution matrices for the hillslope
     ## ########################
-    model$Dex <- Matrix::Matrix(out$W)
-    model$Wsz <- Matrix::Matrix(out$W[uid_hillslope,uid_hillslope])
-    model$Fsz <- Matrix::Matrix(out$W[uid_channel,uid_hillslope])
+    model$Dex <- model$Dsz <- Matrix::Matrix(out$W)
 
     ## #######################################
     ## Add channel routing information
@@ -186,7 +186,7 @@ create_model <- function(stck,chn,hillslope_class){
     idx <- which(colSums(model$Wch)==0)
     model$gauge <- data.frame(
         name = paste("channel",uid_channel[idx],sep="_"),
-        channel_id = idx,
+        id = idx,
         fraction = rep(1,length(idx)),
         stringsAsFactors=FALSE
     )
@@ -197,7 +197,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## blank point inflow table
     model$point_inflow <- data.frame(
         name = character(0),
-        channel_id = numeric(0),
+        id = numeric(0),
         fraction = numeric(0),
         stringsAsFactors=FALSE
     )
