@@ -107,16 +107,16 @@ create_model <- function(stck,chn,hillslope_class){
     mres <- (raster::xres(stck) + raster::yres(stck))/2
     cl <- c(rep( mres /(1+sqrt(2)),8),mres) # TO DO this is based on a n octogan - but other papers return a different ratio
     out <- rcpp_hru(raster::getValues(stck[['filled_dem']]),
-                   raster::getValues(stck[['gradient']]),
-                   raster::getValues(stck[['land_area']]),
-                   raster::getValues(stck[['channel_area']]),
-                   raster::getValues(stck[['channel_id']])-1,
-                   raster::getValues(hillslope_id)-1,
-#                   raster::getValues(stck[[hillslope_class]])-1,
-                   offset,
-                   dx,
-                   cl,
-                   max_index)
+                    raster::getValues(stck[['gradient']]),
+                    raster::getValues(stck[["atanb"]]),
+                    raster::getValues(stck[['land_area']]),
+                    raster::getValues(stck[['channel_area']]),
+                    raster::getValues(stck[['channel_id']])-1,
+                    raster::getValues(hillslope_id)-1,
+                    offset,
+                    dx,
+                    cl,
+                    max_index)
     ## standardise W by total area
     out$W <- out$W %*% Diagonal(length(out$area),1/out$area)
     
@@ -127,14 +127,15 @@ create_model <- function(stck,chn,hillslope_class){
     model$hillslope <- data.frame(
         id = uid_hillslope,
         area = out$area[uid_hillslope],
+        atb_bar = out$av_atanb[uid_hillslope]/out$area[uid_hillslope],
         s_bar = out$av_grad[uid_hillslope]/out$area[uid_hillslope],
         delta_x = 1,
         split_id = unname(tapply(raster::getValues(stck[[hillslope_class]]),
                                  raster::getValues(hillslope_id),unique)),
         band = unname(tapply(raster::getValues(stck[['order']]),
                              raster::getValues(hillslope_id),unique)),
-        precip_input="unknown",
-        pet_input="unknown",
+        precip_series="unknown",
+        pet_series="unknown",
         qex_max="qex_max_default",
         srz_max="srz_max_default",
         srz_0="srz_0_default",
@@ -151,8 +152,8 @@ create_model <- function(stck,chn,hillslope_class){
         area = out$area[uid_channel],
         length=NA,
         next_id=NA,
-        precip_input="unknown",
-        pet_input="unknown",
+        precip_series="unknown",
+        pet_series="unknown",
         v_ch="v_ch_default",
         stringsAsFactors=FALSE
     )
@@ -171,7 +172,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## ########################
     ## Process the redistirbution matrices for the hillslope
     ## ########################
-    browser()
+    #browser()
     model$Dex <- model$Dsz <- out$W
 
     ## #######################################

@@ -20,6 +20,7 @@ using namespace arma;
 // [[Rcpp::export]]
 List rcpp_hru(NumericVector dem,
 	      NumericVector grad,
+	      NumericVector atanb,
 	      NumericVector land_area,
 	      NumericVector channel_area,
 	      IntegerVector channel_id,
@@ -32,6 +33,7 @@ List rcpp_hru(NumericVector dem,
   // initialise the output - default filled with zeros
   NumericVector area(max_index);
   NumericVector av_grad(max_index);
+  NumericVector av_atanb(max_index);
   sp_mat W(max_index,max_index);
 
   for( int i=0; i<dem.length(); i++){
@@ -39,6 +41,7 @@ List rcpp_hru(NumericVector dem,
       // then a hillslope element
       area( hillslope_id(i) ) += land_area(i); // add area
       av_grad( hillslope_id(i) ) += land_area(i)*grad(i); //weighted sum of average gradient
+      av_atanb( hillslope_id(i) ) += land_area(i)*atanb(i); // weighted sum of a/tanb
       // redistribute downstream
       if( !(IntegerVector::is_na(channel_id(i))) ){
 	// then part cell with channel - all flow to channel
@@ -85,5 +88,6 @@ List rcpp_hru(NumericVector dem,
   
   return List::create(Named("area") = area,
 		      Named("av_grad") = av_grad,
+		      Named("av_atanb") = av_atanb
 		      Named("W") = W);
 }
