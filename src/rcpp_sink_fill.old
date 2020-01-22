@@ -9,40 +9,19 @@ using namespace Rcpp;
 //' @return a list with the filled dem
 //'
 // [[Rcpp::export]]
-
-NumericVector f_min_ngh(int i,
-		 NumericVector dem,
-		 IntegerVector offset){
-  IntegerVector ngh = offset + i; // all possible neighbours
-  LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
-  IntegerVector ranged_ngh = ngh[in_range];
-  NumericVector dem_ngh = dem[ranged_ngh];
-  
-  double minngh = NumericVector::min(dem_ngh[NumerciVector::is_na(demngh)]);
-  return minngh;
-}
-
-    
-
-  
-void rcpp_sink_fill(NumericVector dem,
-		    IntegerVector channel_id,
-		    IntegerVector offset){
+NumericVector rcpp_sink_fill(NumericVector dem,
+			     IntegerVector channel_id,
+			     IntegerVector offset){
 
   // store locations of sinks and lowest finite neighbour
-  IntegerVector R(dem.length(),NA_REAL);
-  NumericVector R_lowest_ngh(dem.length(),NA_REAL);
-  IntegerVector R_idx(2) = {0,1};
+  NumericVector filled_dem(dem.length(),NA_REAL);
+  NumericVector lowest_ngh(dem.length(),NA_REAL);
+  
 
   // look at all cells
   for(int i=0;i < dem.length(); i++){
     if( !(NumericVector::is_na(dem(i))) ){
       // then should be finite
-      NumericVector min_ngh= f_min_ngh(i,dem,offset);
-      if( dem(i) <= min_ngh ){
-	dem(i) = R_PosInf;
-      }
-      
       filled_dem(i) = dem(i);
       
       // work out lowest valid neighbour
