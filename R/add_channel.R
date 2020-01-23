@@ -66,7 +66,8 @@ add_channel <- function(stck,channel){
     stck[['channel_area']][ch_cell$cell] <- ch_cell$channel_area
     stck[['channel_id']][ch_cell$cell]  <- ch_cell$id
 
-        if(length(stck_file)>0){
+    ## output 
+    if(length(stck_file)>0){
         raster::writeRaster(stck,stck_file)
         return(stck_file)
     }else{

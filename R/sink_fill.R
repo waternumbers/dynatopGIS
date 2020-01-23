@@ -22,43 +22,35 @@ sink_fill <- function(stck,...){
     }else{
         stck_file <- character(0)
     }
-    
-    offset <- c(-ncol(stck) + -1:1,-1,1,ncol(stck) + -1:1)
-    ##browser()
 
-    ## raster are indexed column dominated i.e. fill lef to right first not top to bottom
-    ## this function is tested against raster::adjacent since this matches the
-    ## extraction order of raster::getValues
-    fN <- function(k,nr,nc){
-        ## find i,j location
-        j <- ((k-1)%/%nc) +1
-        i <- k - (j-1)*nc
-        m <- matrix(c(i-1,i,i+1,i-1,i+1,i-1,i,i+1,
-                      j-1,j-1,j-1,j,j,j+1,j+1,j+1),8,2)
-        m <- m[ m[,1]>0 & m[,1]<=nr & m[,2]>0 & m[,2]<=nc ,]
-        
-        return((m[,2]-1)*nc + m[,1])
-    }
+    check_catchment(stck)
+    
+    ## for testing
+    #stck <- raster::stack("./Swindale_stck.gri")
+
+    ## extract dem and channel_id values
+    dem <- raster::getValues(stck[['dem']])
+    ch_id <- raster::getValues(stck[['channel_id']])
     
     ## work out lowest neighbour
     nc <- ncol(stck)
     nr <- nrow(stck)
-    min_neighbour <- rep(NA,n)
-    for(ii in 1:length(dem)){
-        jj <- ii + offset
+    min_neighbour <- rep(NA,length(dem))
+    idx <- which(!is.na(dem))
+    for(ii in idx){
         min_neighbour[ii] <- min(dem[fN(ii,nr,nc)])
     }
-
+    
     ## determine sinks and set to Inf - this loop should only increase dem value
-    idx <- which(min_neighbour >= dem)
+    ## sink should be lower then neighbours and not have a channel
+    idx <- which( min_neighbour >= dem && !is.finite(ch_id) )
     dem[idx] <- Inf
     while(length(idx)>0){
-        io <- idx[1]+offset
-        io <- io[io>0 & io<=n]
+        io <- fN(idx[1],nr,nc) # neighbours of first point
         for(ii in io){
-            if(is.finite(dem[ii])){
-                jj <- ii + offset
-                min_neighbour[ii] <- min(dem[jj[jj>0 & jj<n]])
+            ## no point checking if already NA or Inf or a channel
+            if(is.finite(dem[ii]) & !is.finite(ch_id[ii]) ){
+                min_neighbour[ii] <- min(dem[fN(ii,nr,nc)])
                 if(!is.na(min_neighbour[ii]) && (min_neighbour[ii] >= dem[ii])){
                     idx <- c(idx,ii)
                     dem[ii] <- Inf
@@ -69,34 +61,17 @@ sink_fill <- function(stck,...){
     }
 
     ## populate starting with lowest
-    idx <- which(min_neighbour >= dem)
-    while(length(idx)>0){
-        print(idx)
-        mi <- which.min(min_neighbour[idx])
-        ii <- idx[mi] # current value to valuate
-        jj <- ii + offset
-        dd <- dem[jj[jj>0 & jj<n]]
+    idx <- which(dem==Inf)
+    idx <- idx[order(min_neighbour[idx])]
+    
+    for(ii in idx){
+        dd <- dem[fN(ii,nr,nc)]
         dem[ii] <- mean(dd[is.finite(dd)])
-        
-        for(kk in jj){
-            jjj <- kk + offset
-            min_neighbour[kk] <- min(dem[jjj[jjj>0 & jjj<n]])
-        }
-        idx <- which(min_neighbour >= dem)
-        #idx <- idx[-mi]
     }
     
-
-                           
-    out <- rcpp_sink_fill(raster::getValues(stck[["dem"]]),
-                          raster::getValues(stck[["channel_id"]]),
-                          offset)
-    #browser()
-    stck <- raster::setValues(stck, out, layer=which(names(stck)=="filled_dem"))
+    ## copy filled dem back into stack
+    stck <- raster::setValues(stck, dem, layer=which(names(stck)=="filled_dem"))
     
-    #warning("Sink filling is not implimented...this just copies the dem")
-    #stck[['filled_dem']] <- stck[['dem']]
-
     if(length(stck_file)>0){
         raster::writeRaster(stck,stck_file)
         return(stck_file)

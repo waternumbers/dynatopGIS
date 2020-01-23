@@ -15,10 +15,51 @@ band_model <- function(model, cuts){
     model <- readRDS("./dynatop/data/Swindale_ordered.rds")
     cuts <- seq(0,2760,by=10)
     hs <- model$hillslope
+    hs$class <- hs$split_id
+    
+    ## create new uids
+    grp <- as.numeric( cut(hs$band,cuts) )
+    if(any(!is.finite(grp))){
+        stop("Cut does not assign each HRU to a new band")
+    }
+    grp <- 0.5*(hs$class+grp)*(hs$class+grp+1)+grp # unique new uid by cantor pair
+    ugrp <- unique(grp)
+    hs[,'new_id'] <- NA
+    for(ii in 1:length(ugrp)){
+        hs[grp==ugrp[ii],'new_id'] <- ii
+    }
+    hs[,'new_id']  <-  hs[,'new_id'] + max(model$channel$id)
+    
 
-    ## create the new band numbers
-    hs[,'new_band'] <- as.numeric( cut(hs$band,cuts) )
+    ## create the new table
+    hs2 <- data.frame(
+        id = unique(hs[,'new_id']),
+        area = as.numeric(by(hs$area,hs$new_id,sum)),
+        atb_bar = as.numeric(by(hs$atb_bar*hs$area,hs$new_id,sum)),
+        s_bar = as.numeric(by(hs$s_bar*hs$area,hs$new_id,sum)),
+        delta_x = as.numeric(by(hs$delta_x,hs$new_id,sum)),
+        class = as.numeric(by(hs$class,hs$new_id,unique)),
+        band = as.numeric(by(hs$delta_x,hs$new_id,min)),
+        precip_series="unknown",
+        pet_series="unknown",
+        qex_max="qex_max_default",
+        srz_max="srz_max_default",
+        srz_0="srz_0_default",
+        ln_t0="ln_t0_default",
+        m="m_default",
+        td="td_default",
+        tex="tex_default",
+        stringsAsFactors=FALSE
+    )
+    hs2$s_bar <- hs2$s_bar/hs2$area
+    hs2$atb_bar <- hs2$atb_bar/hs2$area
 
+    ## adapt the redistribution matrices
+    ##create summarion matrices on both parts so K %*% A %*% D %*% t(K) ish..
+    Dsz <- Matrix(0,
+
+
+    
     ## find the area, length and d/s id for each split in each band
     new_band <- unique(hs$new_band)
     split <- unique(hs$split_id)

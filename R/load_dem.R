@@ -26,6 +26,9 @@ create_catchment <- function(dem,catchment_file="",fill_na=TRUE,...){
         }
     }
 
+    ## check projection is plausible
+    check_projection(dem)
+
     ## fill dem so only NA values are on boundaries
     if(fill_na){
         ## so all catchment dem value a number
@@ -36,7 +39,7 @@ create_catchment <- function(dem,catchment_file="",fill_na=TRUE,...){
                                          na_clumps[,ncol(na_clumps)])),
                                NA) #those clumps on the edge to be ignored
         na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
-        dem[!is.na(na_clumps)] <- -Inf # set to low value to show as sink
+        dem[!is.na(na_clumps)] <- Inf # set to high value to indicate missing
     }
 
     ## initialise the catchment file
@@ -50,15 +53,10 @@ create_catchment <- function(dem,catchment_file="",fill_na=TRUE,...){
     idx <- which(stck_names=="dem")
     stck <- setValues(stck, getValues(dem), layer=idx)
 
-
     ## compute land area
     idx <- which(stck_names=="land_area")
-    if( raster::isLonLat(stck) ){
-        land_area <- raster::area(stck)
-    }else{
-        land_area <- tmp
-        land_area <- setValues(land_area,prod(raster::res(stck)))
-    }
+    land_area <- tmp
+    land_area <- setValues(land_area,prod(raster::res(stck)))
     land_area <- raster::mask( land_area, stck[['dem']] )
     stck <- setValues(stck, getValues(land_area), layer=idx)
 
@@ -72,7 +70,7 @@ create_catchment <- function(dem,catchment_file="",fill_na=TRUE,...){
 }
 
 
-#' Function to check the brick
+#' Function to check the stack
 #' @rdname catchment_file
 #' @export
 check_catchment <- function(stck,...){
@@ -86,6 +84,32 @@ check_catchment <- function(stck,...){
     req_names <- req_catchment_layers()
     if(!is(stck,"RasterStack")){stop("Not a raster brick")}
     if(!all( req_names %in% names(stck) )){stop("Catchment missing key variables")}
+
+    check_projection(stck)
+}
+
+#' Function to check the projection of the stack is OK
+#' @rdname catchment_file
+#' @export
+check_projection <- function(stck,...){
+    if(!is(stck,"RasterStack")){
+        if( is.character(stck) ){
+            stck <- raster::stack(stck,...)
+        }else{
+            stop("Unknown catchment format")
+        }
+    }
+
+    ## check it is projected
+    if(raster::isLonLat(stck)){
+        stop("Processing currently only works for projected DEM")
+    }
+
+    ## check it is  a square grid
+    if( raster::xres(stck) != raster::yres(stck) ){
+        stop("Processing currently only works on square gridded DEMs")
+    }
+
 }
 
 #' returns the list of required layers in the catchment file
