@@ -26,6 +26,7 @@ split_to_class <- function(stck,split_name,cuts,json_path=getwd()){
     check_catchment(stck)
 
     ## check cuts are valid
+    
     cuts <- as.list(cuts)
     cuts <- lapply(cuts,FUN=function(x){as.numeric(x)})
     cut_names<- names(cuts)
@@ -48,8 +49,9 @@ split_to_class <- function(stck,split_name,cuts,json_path=getwd()){
     }
 
     ## work out new cuts by cantor_pairing
+    browser()
     for(ii in 1:length(cuts)){
-        x <- raster::cut(stck[[cut_names[ii]]],breaks=cuts[[ii]])
+        x <- raster::cut(stck[[cut_names[ii]]],breaks=as.numeric(cuts[[ii]]))
         if(ii == 1){
             cp <- x
         }else{

@@ -92,7 +92,10 @@ check_catchment <- function(stck,...){
 #' @rdname catchment_file
 #' @export
 check_projection <- function(stck,...){
-    if(!is(stck,"RasterStack")){
+    if(!(class(stck)=="RasterLayer" ||
+         class(stck)=="RasterBrick" ||
+         class(stck)=="RasterStack")){
+    ## if(!(class(stck) %in% c("RasterStack","RasterLayer","RasterBrick"))){
         if( is.character(stck) ){
             stck <- raster::stack(stck,...)
         }else{

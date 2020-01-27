@@ -4,11 +4,14 @@
 \alias{catchment_file}
 \alias{create_catchment}
 \alias{check_catchment}
+\alias{check_projection}
 \title{Initialise the analysis by loading a dem}
 \usage{
 create_catchment(dem, catchment_file = "", fill_na = TRUE, ...)
 
 check_catchment(stck, ...)
+
+check_projection(stck, ...)
 }
 \arguments{
 \item{dem}{must be either a rasterLayer or a file name}

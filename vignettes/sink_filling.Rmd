@@ -9,9 +9,10 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-                      collapse = TRUE,
-                      comment = "#>"
-)
+                    collapse = TRUE,
+                    comment = "#>"
+                  )
+devtools::load_all("/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
 ```
 The purpose of this vignette is to outline the sink filling routine used by
 the `sink_fill` function and provide some simple demonstrations.
@@ -65,13 +66,15 @@ the values are not known this not possible. Instead we approximate this by:
 Note that the replacement rule in step 3 ensure that no new sinks are
 generated.
 
+. New dem values are computed as the mean of the adjoining finite cell values. New minimums for the adjacent cells are then computed before resorting the sinks and moving on.
 
 # Examples
 
 Example dates is generated randomly
 
 ```{r, data}
-fake <- raster(matrix(1:100,10,10))
+fake <- raster::raster(matrix(1:100,10,10),
+                       crs="+init=epsg:27700") # UK OS projection
 ```
 
 ## handling of a larger area of missing
@@ -83,6 +86,7 @@ ex1[c(13:17,24:26,34:36)] <- NA
 ex1 <- create_catchment(ex1)
 ex1 <- sink_fill(ex1)
 
+plot(ex1[['dem']])
 plot(ex1[['filled_dem']])
 plot(ex1[['filled_dem']] - fake)
 ```

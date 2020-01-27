@@ -7,6 +7,7 @@
 rcpp_hru(
   dem,
   grad,
+  atanb,
   land_area,
   channel_area,
   channel_id,

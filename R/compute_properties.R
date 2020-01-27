@@ -54,31 +54,51 @@ compute_properties <- function(stck,...){
     ## work down list of higher cells
     idx <- which(n_higher==0)
     cnt <- 0
+    h_cnt <- 0
     while( length(idx)>0 ){
         cnt <- cnt + 1
         print(cnt)
         band[idx] <- cnt
         n_higher[idx] <- -1
         for(ii in idx){
-            if( is.finite(ch_id[ii]) ){
-                ## cell contains a channel so no movement downslope
+
+            ## neighbours and gradient +ve means lower
+            jj <- fN(ii,nr,nc,dx)
+            jj$dy <- dem[jj$idx] - dem[ii]
+            ## should we use upslope or down slope neighbours for calc
+            ## upslope if channel or on edge and no lower values
+            is_channel <- is.finite(ch_id[ii])
+            on_edge <- (any(is.na(jj$dy) & max(jj$dy,na.rm=TRUE)>0))
+
+            ## catch channel cells with no higher neighbours
+            use_upslope <- is_channel | on_edge
+            if(is_channel & max(jj$dy,na.rm=TRUE)<0){
+                warning("Channel cells with no higher neighbours")
+                use_upslope <- FALSE
+            }
+            
+            
+            ## the two cases
+            if(use_upslope){
+                ## cell contains a channel or edge cell so no movement downslope
                 ## estiamte gradient from upslope cells
-                jj <- fN(ii,nr,nc,dx)
-                jj$dy <- dem[jj$idx] - dem[ii]
+                h_cnt <- h_cnt+1
                 is_higher <- is.finite(jj$dy) & jj$dy > 0
                 jj <- lapply(jj,function(x,y){x[y]},y=is_higher)
                 grad_cl <- (jj$dy/jj$dx)*jj$cl # gradient time coutour length
                 gradient[ii] <- sum(grad_cl) / sum(jj$cl)
                 atb[ii] <- log( upslope_area[ii]/sum(grad_cl) )
+                if(!is.finite(atb[ii])){
+                    browser()
+                }
+                paul <- 1
             }else{
                 ## find lower neighbours and properties
-                jj <- fN(ii,nr,nc,dx)
-                jj$dy <- dem[ii] - dem[jj$idx]
-                is_lower <- is.finite(jj$dy) & jj$dy > 0
+                is_lower <- is.finite(jj$dy) & jj$dy < 0
                 jj <- lapply(jj,function(x,y){x[y]},y= is_lower)
                 
                 ## work out split
-                grad_cl <- (jj$dy/jj$dx)*jj$cl # gradient time coutour length
+                grad_cl <- (-jj$dy/jj$dx)*jj$cl # gradient time coutour length
                 
                 ## move upslope area down slope
                 upslope_area[jj$idx] <- upslope_area[jj$idx] +
@@ -87,6 +107,9 @@ compute_properties <- function(stck,...){
                 ## compute gradient - weighted sum by contour length
                 gradient[ii] <- sum(grad_cl) / sum(jj$cl)
                 atb[ii] <- log( upslope_area[ii]/sum(grad_cl) )
+                if(!is.finite(atb[ii])){
+                    browser()
+                }
                 
                 ## subtract from from n_higher downslope
                 n_higher[jj$idx] <- n_higher[jj$idx] - 1
@@ -102,7 +125,8 @@ compute_properties <- function(stck,...){
     stck <- raster::setValues(stck, upslope_area, layer=which(names(stck)=="upslope_area"))
     stck <- raster::setValues(stck, atb, layer=which(names(stck)=="atanb"))
  
-
+    print(h_cnt)
+    
     if(length(stck_file)>0){
         raster::writeRaster(stck,stck_file)
         return(stck_file)

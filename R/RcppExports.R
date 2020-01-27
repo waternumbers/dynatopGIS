@@ -30,8 +30,8 @@ rcpp_compute_properties <- function(dem, channel_id, land_area, offset, dx, cl) 
 #' @param max_index maximum value of the hillslope and channel id's
 #' @return list of hillslope and channel properties
 #'
-rcpp_hru <- function(dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index) {
-    .Call('_dynatopGIS_rcpp_hru', PACKAGE = 'dynatopGIS', dem, grad, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index)
+rcpp_hru <- function(dem, grad, atanb, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index) {
+    .Call('_dynatopGIS_rcpp_hru', PACKAGE = 'dynatopGIS', dem, grad, atanb, land_area, channel_area, channel_id, hillslope_id, offset, dx, cl, max_index)
 }
 
 #' cpp wrapper function for passing up the catchments from river nodes
@@ -42,7 +42,7 @@ rcpp_hru <- function(dem, grad, land_area, channel_area, channel_id, hillslope_i
 #' 
 #' @return a list with the filled dem
 #'
-rcpp_sink_fill <- function(dem, channel_id, offset) {
-    .Call('_dynatopGIS_rcpp_sink_fill', PACKAGE = 'dynatopGIS', dem, channel_id, offset)
+f_min_ngh <- function(i, dem, offset) {
+    .Call('_dynatopGIS_f_min_ngh', PACKAGE = 'dynatopGIS', i, dem, offset)
 }
 

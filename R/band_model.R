@@ -56,7 +56,7 @@ band_model <- function(model, cuts){
 
     ## adapt the redistribution matrices
     ##create summarion matrices on both parts so K %*% A %*% D %*% t(K) ish..
-    Dsz <- Matrix(0,
+    #Dsz <- Matrix(0,
 
 
     
@@ -86,7 +86,7 @@ band_model <- function(model, cuts){
     
 
     
-    for each split_id in each
+    #for each split_id in each
 
     if(!("RasterStack" %in% class(stck))){
         if( is.character(stck) ){

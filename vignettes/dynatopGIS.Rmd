@@ -49,16 +49,11 @@ The use of the dynatopGIS package is demonstrated using data from the Swindale
 catchment in the UK. This is included in the external data directory of the
 package with the following file paths.
 ```{r, initialization}
-library(dynatopGIS)
+#library(dynatopGIS)
+devtools::load_all("/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
 dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS")
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS")
 ```
-
-<!-- ```{r, include = FALSE} -->
-<!-- ## this stops the code evaluating on CRAN -->
-<!-- knitr::opts_chunk$set(eval = file.exists(file.path(initial_path,"SwindaleDTM4mFilled.tif")) -->
-<!-- ) -->
-<!-- ``` -->
 
 # Initialising the GIS objects
 
