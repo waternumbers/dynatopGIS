@@ -5,7 +5,6 @@
 #' @param stck a RasterBrick as created by create_brick
 #' @param chn a channel object as created by create_channel
 #' @param hillslope_class Name of the existing hillslope classification to use to generate the model - a layer in stck
-#' @param band_class Name of the existing order classification to use to generate the model - a layer in stck
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
@@ -110,7 +109,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## computations using raster package
     class[uid_hillslope] <- unname(tapply(raster::getValues(stck[[hillslope_class]]),
                                           raster::getValues(hillslope_id),unique))
-    band[uid_hillslope] <- unname(tapply(raster::getValues(stck[[band_class]]),
+    band[uid_hillslope] <- unname(tapply(raster::getValues(stck[["order"]]),
                                          raster::getValues(hillslope_id),unique))
     delta_x[uid_hillslope] <- raster::xres(stck)
 
@@ -120,8 +119,11 @@ create_model <- function(stck,chn,hillslope_class){
     lnd_area <- raster::getValues(stck[['land_area']])
     ch_area <- raster::getValues(stck[['channel_area']])
     hs_id <- raster::getValues(hillslope_id)
-    bnd <- raster::getValues(stck[[band_class]])
+    #bnd <- raster::getValues(stck[[band_class]])
     idx <- which(!is.na(dem))
+    nr <- nrow(stck)
+    nc <- ncol(stck)
+    dx <- raster::xres(stck)
     for(ii in idx){
         jj <- fN(ii,nr,nc)
         ## work valid lower neighbours

@@ -6,6 +6,7 @@
 # @useDynLib dynatopGIS
 #' @docType package
 #' @import raster
+#' @import Matrix
 # @importFrom Rcpp evalCpp
 #' @importFrom methods is 
 # #' @exportPattern "^[[:alpha:]]+" 

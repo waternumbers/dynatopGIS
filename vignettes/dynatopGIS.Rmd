@@ -62,7 +62,7 @@ populated during the analysis.
 
 In the case of the RasterStack the initialisation function takes the DEM
 (either as a rasterLayer or file name). The stack in initialised by calling
-```create_brick``` as follow
+`create_brick` as follow
 
 ```{r, create_brick}
 stck <- create_catchment(dem_file)
@@ -97,7 +97,7 @@ head(shp)
 ```
 
 The main properties are present under appropriate names and a call to
-```create_channel``` with no options would be successful. However if we want to carry over the addition information in the "indentifier" as "channel_id" a
+`create_channel` with no options would be successful. However if we want to carry over the addition information in the "indentifier" as "channel_id" a
 named vector giving the variable names to be used could be provided. In this
 case:
 
@@ -109,7 +109,7 @@ property_names <- c(channel_id="identifier",
 ```
 
 Since the data set for Swindale does not contain a channel width we
-use the default width of 2m in ```create_channel```. The river network can
+use the default width of 2m in `create_channel`. The river network can
 then be created in the correct format by
 ```{r, channel_load}
 chn <- create_channel(shp,property_names)

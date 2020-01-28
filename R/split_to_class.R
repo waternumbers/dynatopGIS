@@ -49,7 +49,7 @@ split_to_class <- function(stck,split_name,cuts,json_path=getwd()){
     }
 
     ## work out new cuts by cantor_pairing
-    browser()
+    #browser()
     for(ii in 1:length(cuts)){
         x <- raster::cut(stck[[cut_names[ii]]],breaks=as.numeric(cuts[[ii]]))
         if(ii == 1){
