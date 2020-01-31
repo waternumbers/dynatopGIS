@@ -6,30 +6,31 @@
 \usage{
 rcpp_hru(
   dem,
-  grad,
-  atanb,
+  hillslope_id,
+  channel_id,
   land_area,
   channel_area,
-  channel_id,
-  hillslope_id,
-  offset,
-  dx,
-  cl,
-  max_index
+  grad,
+  atb,
+  W,
+  area,
+  s_bar,
+  atb_bar,
+  rst_prop
 )
 }
 \arguments{
 \item{dem}{Digital elevation model}
 
-\item{grad}{average downslope gradient}
+\item{hillslope_id}{hillslope class of each pixel}
+
+\item{channel_id}{UID of channel present in the pixel}
 
 \item{land_area}{Area of land surface in pixel}
 
 \item{channel_area}{Area of channel surface in pixel}
 
-\item{channel_id}{UID of channel present in the pixel}
-
-\item{hillslope_id}{hillslope class of each pixel}
+\item{grad}{average downslope gradient}
 
 \item{offset}{- difference between cell index of adjacent cells and current cell index - clockwise from top left}
 
