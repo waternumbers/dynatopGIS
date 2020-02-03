@@ -30,7 +30,7 @@ sink_fill <- function(stck,max_it=1e6,...){
     ## extract dem and channel_id values
     dem <- raster::getValues(stck[['dem']])
     ch_id <- raster::getValues(stck[['channel_id']])
-    
+
     ## work out lowest neighbour
     nc <- ncol(stck)
     nr <- nrow(stck)
@@ -40,14 +40,15 @@ sink_fill <- function(stck,max_it=1e6,...){
         ## exclude NA values from edge of area - sinks on edge are dropped later
         min_neighbour[ii] <- min(dem[fN(ii,nr,nc)],na.rm=TRUE)
     }
-    
+
     ## determine initial sinks and missing values
     idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
     idx <- idx[order(min_neighbour[idx])]
- 
+
     ## idx contains the list of candidate sinks - not all will be sinks...
     nit <- 0
     while(length(idx)>0 & nit < max_it){
+        print(nit)
         nit <- nit+1
         ii <- idx[1]
 
@@ -66,53 +67,23 @@ sink_fill <- function(stck,max_it=1e6,...){
                 }else{
                     dem[ii] <- mean(dd)
                 }
+
+                for(kk in c(ii,jj)){
+                    min_neighbour[kk] <- min(dem[fN(kk,nr,nc)])
+                }
+                ## reevaluate potential sinks
+                idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
+                idx <- idx[order(min_neighbour[idx])]
+
+            }else{
+                idx  <- idx[-1]
             }
-            for(kk in c(ii,jj)){
-                min_neighbour[kk] <- min(dem[fN(kk,nr,nc)])
-            }
-            ## reevaluate potential sinks
-            idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
-            idx <- idx[order(min_neighbour[idx])]
-        }else{
-            idx  <- idx[-1]
         }
     }
-    
-    
-        
-    ##     ## don't alter values on the edge of the raster
-    ##     ## This stops cycling in some test cases
-    ##     if( length(jj)<8 ){
-    ##         idx <- idx[-1]
-    ##         next
-    ##     }
-        
-    ##     ## test if has lower neighbour
-    ##     if( dem[ii]==Inf | (min_neighbour[ii] >= dem[ii]) ){
-            
-    ##         ## needs to change
-    ##         dd <- dem[jj]
-    ##         dd <- dd[is.finite(dd)]
-    ##         if(length(dd)==1){
-    ##             dem[ii] <- dd+1e-6
-    ##         }else{
-    ##             dem[ii] <- mean(dd[is.finite(dd)])
-    ##         }
-            
-    ##         ## change all neighbour min_neighbour values
-    ##         for(kk in c(ii,jj)){
-    ##             min_neighbour[kk] <- min(dem[fN(kk,nr,nc)])
-    ##         }
-    ##         ## reevaluate potential sinks
-    ##         idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
-    ##         idx <- idx[order(min_neighbour[idx])]
-            
-    ##     }
-    ## }
-    
+
     ## copy filled dem back into stack
     stck <- raster::setValues(stck, dem, layer=which(names(stck)=="filled_dem"))
-    
+
     if(length(stck_file)>0){
         raster::writeRaster(stck,stck_file)
         return(stck_file)

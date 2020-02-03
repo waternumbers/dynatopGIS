@@ -1,0 +1,111 @@
+#include <Rcpp.h>
+using namespace Rcpp;
+//' cpp wrapper function for passing up the catchments from river nodes
+//' 
+//' @param dem Digital elevation model as a vector
+//' @param channel_id UID of channel in the pixel (id any) as a vector
+//' @param offset difference between index of neighbours and current cell - clockwise from top left
+//' 
+//' @return a list with the filled dem
+//'
+// [[Rcpp::export]]
+List rcpp_sink_fill(NumericVector dem,
+		    IntegerVector channel_id,
+		    IntegerVector offset){
+
+  // store of the order
+  // store the computational sequenence
+  IntegerVector sinks(dem.length(),NA_INTEGER);
+  NumericVector sinks_min(dem.length(),NA_REAL);
+  int sink_loc = 0;
+    
+  IntegerVector ngh(offset.length());
+  //IntegerVector n_lower(dem.length(),NA_INTEGER);
+
+  int n_finite = 0;
+  int n_lower = 0;
+  double ngh_min = 1e20;
+  
+  // work out number of lower cells
+  for(int i=0;i < dem.length(); i++){
+    if( !(NumericVector::is_na(dem(i))) and (IntegerVector::is_na(channel_id(i))) ){
+      // has finite dem value and isn't a channel
+      // then not a channel so work out how many lower cells
+      n_lower = 0;
+      n_finite = 0;
+      ngh_min = dem(i);
+      
+      // neighbours
+      ngh = offset + i;
+      LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
+      
+      for(int j=0;j<ngh.length();j++){
+	if( in_range(j) ){
+	  if( !(NumericVector::is_na(dem(ngh(j)))) ){
+	    n_finite += n_finite;
+	    if( (dem(ngh(j)) < dem(i)) and  ){
+	      n_lower = n_lower + 1;
+	      if(dem(ngh(j)) < ngh_min ){
+		ngh_min = dem(ngh(j));
+	      }
+	    }
+	  }
+	}
+      }
+      
+      // if there are no lower values then either sinkor  edge drain
+      if( n_lower == 0 ){
+	if( n_finite == 8 ){
+	  //sink....
+	  sink(sink_loc) = i;
+	  sink_min(sink_loc) = ngh_min;
+	  Rcout << "Sink at pixel" << i << "\n";
+	}
+      }
+    }
+  }
+  
+  Rcout << "got to seq_loc" << "\n";
+  
+  // loop order to get sequence vector
+  seq_loc = 0;
+  for(int i=0;i < dem.length(); i++){
+    if( order(i) == 1 ){
+      seq(seq_loc) = i;
+      seq_loc += 1;
+    }
+  }
+
+  Rcout << "got to populate" << "\n";
+  
+  // loop to populate all of order
+  for(int i=0;i < seq.length(); i++){
+    //Rcout << i << "\n";
+    if( !(IntegerVector::is_na(seq(i))) ){
+      // work out neighbours and if they are in range
+      ngh = offset + seq(i);
+      LogicalVector in_range = (ngh<dem.length()) & (ngh>-1);
+      // loop neighbours
+      for(int j=0;j<ngh.length();j++){	
+	if( in_range(j) ){
+	  if( !(NumericVector::is_na(dem(ngh(j)))) &&
+	      dem(ngh(j)) > dem(seq(i)) ){
+	    n_lower(ngh(j)) = n_lower(ngh(j)) - 1;
+	    if( n_lower(ngh(j))==0 ){
+	      order(ngh(j)) = order(seq(i))+1;
+	      seq(seq_loc) = ngh(j);
+	      seq_loc += 1;
+	    }
+	  }
+	}
+      }
+    }
+  }
+  Rcout << "got to output" << "\n";
+  // create output list
+  List out=List::create(Named("dem_filled")=dem,
+			Named("order")=order,
+			Named("seq")=seq);
+  
+  return out; 
+}

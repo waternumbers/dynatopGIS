@@ -19,11 +19,11 @@ List rcpp_fN(int k, NumericVector rst_prop){
   int col = k - row*nc; //column
   //Rcout << col << "\n";
   
-  IntegerVector new_col = {col-1,col,col+1,col-1,col+1,col-1,col,col+1};
-  IntegerVector new_row = {row-1,row-1,row-1,row,row,row+1,row+1,row+1};
+  IntegerVector new_col = IntegerVector::create(col-1,col,col+1,col-1,col+1,col-1,col,col+1);
+  IntegerVector new_row = IntegerVector::create(row-1,row-1,row-1,row,row,row+1,row+1,row+1);
   IntegerVector new_idx = new_row*nc + new_col;
-  NumericVector new_dx = {dxd,dx,dxd,dx,dx,dxd,dx,dxd};
-  NumericVector new_cl = {cl,cl,cl,cl,cl,cl,cl,cl}; // this needs changing
+  NumericVector new_dx = NumericVector::create(dxd,dx,dxd,dx,dx,dxd,dx,dxd);
+  NumericVector new_cl = NumericVector::create(cl,cl,cl,cl,cl,cl,cl,cl); // this needs changing
 
   LogicalVector is_valid = (new_col>-1) & (new_col < nc) & (new_row>-1) & (new_row<nr);
 
