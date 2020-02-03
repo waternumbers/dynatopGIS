@@ -44,7 +44,7 @@ sink_fill <- function(stck,max_it=1e6,...){
     ## determine initial sinks and missing values
     idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
     idx <- idx[order(min_neighbour[idx])]
-    
+ 
     ## idx contains the list of candidate sinks - not all will be sinks...
     nit <- 0
     while(length(idx)>0 & nit < max_it){

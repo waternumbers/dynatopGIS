@@ -6,10 +6,23 @@
 
 using namespace Rcpp;
 
+// rcpp_fN
+List rcpp_fN(int k, NumericVector rst_prop);
+RcppExport SEXP _dynatopGIS_rcpp_fN(SEXP kSEXP, SEXP rst_propSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type rst_prop(rst_propSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_fN(k, rst_prop));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hru
-void rcpp_hru(NumericVector dem, IntegerVector hillslope_id, IntegerVector channel_id, NumericVector land_area, NumericVector channel_area, NumericVector grad, NumericVector atb, arma::sp_mat W, NumericVector area, NumericVector s_bar, NumericVector atb_bar, NumericVector rst_prop);
+arma::sp_mat rcpp_hru(NumericVector dem, IntegerVector hillslope_id, IntegerVector channel_id, NumericVector land_area, NumericVector channel_area, NumericVector grad, NumericVector atb, arma::sp_mat W, NumericVector area, NumericVector s_bar, NumericVector atb_bar, NumericVector rst_prop);
 RcppExport SEXP _dynatopGIS_rcpp_hru(SEXP demSEXP, SEXP hillslope_idSEXP, SEXP channel_idSEXP, SEXP land_areaSEXP, SEXP channel_areaSEXP, SEXP gradSEXP, SEXP atbSEXP, SEXP WSEXP, SEXP areaSEXP, SEXP s_barSEXP, SEXP atb_barSEXP, SEXP rst_propSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type dem(demSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type hillslope_id(hillslope_idSEXP);
@@ -23,12 +36,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type s_bar(s_barSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type atb_bar(atb_barSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type rst_prop(rst_propSEXP);
-    rcpp_hru(dem, hillslope_id, channel_id, land_area, channel_area, grad, atb, W, area, s_bar, atb_bar, rst_prop);
-    return R_NilValue;
+    rcpp_result_gen = Rcpp::wrap(rcpp_hru(dem, hillslope_id, channel_id, land_area, channel_area, grad, atb, W, area, s_bar, atb_bar, rst_prop));
+    return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_dynatopGIS_rcpp_fN", (DL_FUNC) &_dynatopGIS_rcpp_fN, 2},
     {"_dynatopGIS_rcpp_hru", (DL_FUNC) &_dynatopGIS_rcpp_hru, 12},
     {NULL, NULL, 0}
 };

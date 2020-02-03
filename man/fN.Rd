@@ -24,7 +24,9 @@ This is in effect a cut down version of raster adjacent for use with the vectors
 }
 \examples{
 ## create a test raster
-rst <- raster(matrix(1:200,20,10))
+rst <- raster::raster(matrix(1:200,20,10))
+nc <- ncol(rst)
+nr <- nrow(rst)
 ## specify some locations
 kvec <- c(1, # top left
           floor(nc/2), # top row middle column

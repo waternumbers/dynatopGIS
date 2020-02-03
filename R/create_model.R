@@ -103,7 +103,9 @@ create_model <- function(stck,chn,hillslope_class){
 
     ## initialise varaibles
     class <- band <- delta_x <- rep(NA,length(uid))    
-    area <- s_bar <- atb_bar <-  rep(0,length(uid))
+    area <- rep(0,length(uid))
+    s_bar <- rep(0,length(uid))
+    atb_bar <-  rep(0,length(uid))
     W <- Matrix(0,length(uid),length(uid),sparse=TRUE)
     #W <- matrix(0,length(uid),length(uid))
     
@@ -125,154 +127,11 @@ create_model <- function(stck,chn,hillslope_class){
 
     #browser()
     ## call cpp version
-    rcpp_hru(dem,as.integer(hs_id),as.integer(ch_id),lnd_area,ch_area,grad,atb,W,
-             area,s_bar,atb_bar,
-             c(nrow(stck),ncol(stck),xres(stck)))
+    ## area atb_bar abd s_bar are altered, W explicitly returned since can't be referenced
+    W <- rcpp_hru(dem,hs_id,ch_id,lnd_area,ch_area,grad,atb,W,
+                         area,s_bar,atb_bar,
+                         c(nrow(stck),ncol(stck),xres(stck)))
     #browser()
-    
-    
-##     #browser()
-##     idx <- which(!is.na(dem))
-##     nr <- nrow(stck)
-##     nc <- ncol(stck)
-##     dx <- raster::xres(stck)
-
-    
-##     #for(luid in uid_hillslope){
-##     #    print(luid)
-##         #browser()
-##     #    idx <- which(hs_id==luid)
-##     #    w <- W[,luid]
-        
-##         for(ii in idx[1:5000]){
-##             ##print(ii)
-##             is_channel <- is.finite(ch_id[ii])
-##             has_land <- lnd_area[ii] > 0
-            
-            
-##             ## handle if channel
-##             if( is_channel ){
-##                 area[ ch_id[ii] ] <- area[ ch_id[ii] ] + ch_area[ii]
-##                 if( has_land ){
-##                     area[ hs_id[ii] ] <- area[ hs_id[ii] ] + lnd_area[ii]
-##                     s_bar[ hs_id[ii] ] <- s_bar[ hs_id[ii] ] + lnd_area[ii]*grad[ii]
-##                     atb_bar[ hs_id[ii] ] <- atb_bar[ hs_id[ii] ] + lnd_area[ii]*atb[ii]
-                                        
-##                     Wadd <- sparseMatrix(i=ch_id[ii],j=hs_id[ii],x=lnd_area[ii],
-##                                          dims=dim(W))
-##                     W <- W + Wadd
-## ##                    W[ch_id[ii],hs_id[ii]] <- W[ch_id[ii],hs_id[ii]] + lnd_area[ii]
-##                 }
-##             }else{
-##                 jj <- fN(ii,nr,nc,dx)
-##                 jj$dy <- dem[ii] - dem[jj$idx]
-##                 is_lower <- is.finite(jj$dy) & jj$dy > 0
-##                 if( any(is_lower) ){
-##                     ## only handle if drains within catchment
-                    
-##                     jj <- lapply(jj,function(x,y){x[y]},y= is_lower)
-##                     jj$frc <- (jj$dy/jj$dx)*jj$cl/ sum(jj$cl) # fraction in each direction
-                    
-##                     for(kk in 1:length(jj$idx)){
-##                         if(!is.finite(lnd_area[jj$idx[kk]]) ){
-##                             browser()
-##                         }
-                        
-##                         if( lnd_area[jj$idx[kk]] > 0){
-##                             ## send water to hillslope id
-##                             id <- hs_id[ jj$idx[kk] ]
-##                         }else{
-##                             ## send water to channel id
-##                             id <- ch_id[ jj$idx[kk] ]
-##                         }
-                        
-##                         if( is.na(id) | is.na(hs_id[ii]) ){
-##                             browser()
-##                         }
-##                         Wadd <- sparseMatrix(i=id,j=hs_id[ii],x=jj$frc[kk]*lnd_area[ii],
-##                                              dims=dim(W))
-##                         W <- W + Wadd
-##                         #W[id,hs_id[ii]] <- W[id,hs_id[ii]] + jj$frc[kk]*lnd_area[ii]
-##                         #w[id] <- w[id] + jj$frc[kk]*lnd_area[ii]
-##                     }
-##                 }
-##             }
-##         }
-        #W[,luid] <- w
-    #}
-    
-    ## for(ii in idx){
-    ##     ##print(ii)
-    ##     is_channel <- is.finite(ch_id[ii])
-    ##     has_land <- lnd_area[ii] > 0
-            
-
-    ##     ## handle if channel
-    ##     if( is_channel ){
-    ##         area[ ch_id[ii] ] <- area[ ch_id[ii] ] + ch_area[ii]
-    ##         if( has_land ){
-    ##             area[ hs_id[ii] ] <- area[ hs_id[ii] ] + lnd_area[ii]
-    ##             s_bar[ hs_id[ii] ] <- s_bar[ hs_id[ii] ] + lnd_area[ii]*grad[ii]
-    ##             atb_bar[ hs_id[ii] ] <- atb_bar[ hs_id[ii] ] + lnd_area[ii]*atb[ii]
-
-    ##             matrix_loc <- ivec==ch_id[ii] & jvec==hs_id[ii]
-    ##             if( any( matrix_loc ) ){
-    ##                 xvec[matrix_loc] <- xvec[matrix_loc] + lnd_area[ii]
-    ##             }else{
-    ##                 ivec[veccnt] <- ch_id[ii]
-    ##                 jvec[veccnt] <- hs_id[ii]
-    ##                 xvec[veccnt] <- lnd_area[ii]
-    ##                 veccnt <- veccnt + 1
-    ##             }
-    ##         }
-    ##     }else{
-    ##         jj <- fN(ii,nr,nc,dx)
-    ##         jj$dy <- dem[ii] - dem[jj$idx]
-    ##         is_lower <- is.finite(jj$dy) & jj$dy > 0
-    ##         if( any(is_lower) ){
-    ##             ## only handle if drains within catchment
-                
-    ##             jj <- lapply(jj,function(x,y){x[y]},y= is_lower)
-    ##             jj$frc <- (jj$dy/jj$dx)*jj$cl/ sum(jj$cl) # fraction in each direction
-
-    ##             jtrue <- jvec==hs_id[ii]
-    ##             for(kk in 1:length(jj$idx)){
-    ##                 if(!is.finite(lnd_area[jj$idx[kk]]) ){
-    ##                     browser()
-    ##                 }
-                
-    ##                 if( lnd_area[jj$idx[kk]] > 0){
-    ##                     ## send water to hillslope id
-    ##                     id <- hs_id[ jj$idx[kk] ]
-    ##                 }else{
-    ##                     ## send water to channel id
-    ##                     id <- ch_id[ jj$idx[kk] ]
-    ##                 }
-
-    ##                 if( is.na(id) | is.na(hs_id[ii]) ){
-    ##                     browser()
-    ##                 }
-
-    ##                 matrix_loc <- ivec==id & jtrue
-    ##                 if( any( matrix_loc ) ){
-    ##                     xvec[matrix_loc] <- xvec[matrix_loc] + jj$frc[kk]*lnd_area[ii]
-    ##                 }else{
-    ##                     ivec[veccnt] <- id
-    ##                     jvec[veccnt] <- hs_id[ii]
-    ##                     xvec[veccnt] <- jj$frc[kk]*lnd_area[ii]
-    ##                     veccnt <- veccnt + 1
-    ##                     jtrue <- jvec==hs_id[ii]
-    ##                 }
-    ##                 #W[id,hs_id[ii]] <- W[id,hs_id[ii]] + jj$frc[kk]*lnd_area[ii]
-    ##             }
-    ##         }
-    ##     }
-    ## }
-#    browser()
-    ## standardise W by total area
-    #tmp <- ivec > 0 & jvec>0 & xvec>0
-    #W <- sparseMatrix(i=ivec[tmp],j=jvec[tmp],x=xvec[tmp],dims=c(length(area),length(area)))
-    
     W <- W %*% Diagonal(length(area),1/area)
     s_bar <- s_bar/area
     atb_bar <- atb_bar/area
