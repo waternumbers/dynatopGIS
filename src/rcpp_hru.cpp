@@ -134,18 +134,21 @@ arma::sp_mat rcpp_hru(NumericVector dem,
 	if( any(is_lower).is_true() ){
 
 	  NumericVector trim_cl = cl[is_lower];
-	  double sum_cl = Rcpp::sum( trim_cl );
-	  NumericVector frc = grd*cl/sum_cl;
-	  
-	  for(int k=0; k< idx.length(); k++){
-	    if( is_lower(k) ){
-	      if( land_area(idx(k)) > 0 ){
-		W(hillslope_id(idx(k))-1,hillslope_id(i)-1) += frc(k)*land_area(i);
-	      }else{
-		W(channel_id(idx(k))-1,hillslope_id(i)-1) += frc(k)*land_area(i);
-	      }
+	  IntegerVector trim_idx = idx[is_lower];
+	  NumericVector gcl = s_bar(hillslope_id(i)-1)*trim_cl;
+	  double sum_gcl = Rcpp::sum( gcl );
+	  NumericVector frc = gcl / sum_gcl;
+	  //Rcout << "frc: " << frc << "\n";
+	  //Rcout << "is_lower: " << is_lower << "\n";
+
+	  for(int k=0; k< trim_idx.length(); k++){
+	    if( land_area(trim_idx(k)) > 0 ){
+	      W(hillslope_id(trim_idx(k))-1,hillslope_id(i)-1) += frc(k)*land_area(i);
+	    }else{
+	      W(channel_id(trim_idx(k))-1,hillslope_id(i)-1) += frc(k)*land_area(i);
 	    }
 	  }
+	  
 	}
       }
     }

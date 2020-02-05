@@ -127,11 +127,11 @@ create_model <- function(stck,chn,hillslope_class){
 
     #browser()
     ## call cpp version
-    ## area atb_bar abd s_bar are altered, W explicitly returned since can't be referenced
+    ## area atb_bar atb s_bar are altered, W explicitly returned since can't be referenced
     W <- rcpp_hru(dem,hs_id,ch_id,lnd_area,ch_area,grad,atb,W,
                          area,s_bar,atb_bar,
                          c(nrow(stck),ncol(stck),xres(stck)))
-    #browser()
+    
     W <- W %*% Diagonal(length(area),1/area)
     s_bar <- s_bar/area
     atb_bar <- atb_bar/area

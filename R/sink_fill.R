@@ -53,33 +53,45 @@ sink_fill <- function(stck,max_it=1e6,...){
         ii <- idx[1]
 
         ## test if it needs to change
-        if( dem[ii]==Inf | (min_neighbour[ii] >= dem[ii]) ){
+        ##if( dem[ii]==Inf | (min_neighbour[ii] >= dem[ii]) ){
 
-            ## work out neighbours
-            jj <- fN(ii,nr,nc)
-            dd <- dem[jj]
-
-            if( length(dd) == 8 & !any(is.na(dd)) ){
-                ## then cell is in middle of area and can be filled
-                dd <- dd[is.finite(dd)]
-                if(length(dd)==1){
-                    dem[ii] <- dd+1e-6
-                }else{
-                    dem[ii] <- mean(dd)
-                }
-
-                for(kk in c(ii,jj)){
-                    min_neighbour[kk] <- min(dem[fN(kk,nr,nc)])
-                }
-                ## reevaluate potential sinks
-                idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
-                idx <- idx[order(min_neighbour[idx])]
-
+        ## work out neighbours
+        jj <- fN(ii,nr,nc)
+        dd <- dem[jj]
+        
+        if( length(dd) == 8 & !any(is.na(dd)) ){
+            ## then cell is in middle of area and can be filled
+            dd <- dd[is.finite(dd)]
+            if(length(dd)==1){
+                dem[ii] <- dd+1e-6
             }else{
-                idx  <- idx[-1]
+                dem[ii] <- mean(dd)
+            }
+        }else{
+            ## it is on an edge (either dem or catchment)
+            ## drop cell
+            print(ii)
+            dem[ii] <- NA
+        }
+        
+        ## re evaluate minima of cell and neighbours
+        for(kk in c(ii,jj)){
+            #browser()
+            dd <- dem[fN(kk,nr,nc)]
+            dd <- dd[!is.na(dd)]
+            if( length(dd) > 0 ){
+                ## at least one not na value
+                min_neighbour[kk] <- min(dem[fN(kk,nr,nc)],na.rm=TRUE)
+            }else{
+                min_neighbour[kk] <- NA
             }
         }
+        ## reevaluate potential sinks
+        idx <- which( (min_neighbour >= dem & !is.finite(ch_id)) | dem==Inf )
+        idx <- idx[order(min_neighbour[idx])]
+        
     }
+
 
     ## copy filled dem back into stack
     stck <- raster::setValues(stck, dem, layer=which(names(stck)=="filled_dem"))

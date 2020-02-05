@@ -1,4 +1,5 @@
 rm(list=ls())
+setwd('/home/paul/Documents/Software/dynamic_topmodel/')
 pacPath <- "./dynatopGIS"
 devtools::load_all(pacPath)
 stck <- raster::stack("debugging.gri")

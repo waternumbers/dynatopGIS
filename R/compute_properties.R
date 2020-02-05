@@ -22,12 +22,6 @@ compute_properties <- function(stck,...){
 
     check_catchment(stck)
 
-    ## for testing
-    ##rm(list=ls())
-    ##stck <- raster::stack("./Swindale_stck.gri")
-    ##source("./dynatopGIS/R/fN.R")
-    
-
     ## extract dem and channel_id values and dem resolution
     dem <- raster::getValues(stck[['filled_dem']])
     ch_id <- raster::getValues(stck[['channel_id']])
@@ -47,7 +41,6 @@ compute_properties <- function(stck,...){
         n_higher[ii] <- sum(is_higher,na.rm=TRUE) # na.rm ensure cells on edge of are evaluated
     }
 
-    #browser()
     ## initialise the output
     band <- gradient <- atb <- rep(NA,length(dem))
     upslope_area <- lnd_area
@@ -55,10 +48,10 @@ compute_properties <- function(stck,...){
     ## work down list of higher cells
     idx <- which(n_higher==0)
     cnt <- 0
-    
+    #browser()
     while( length(idx)>0 ){
         cnt <- cnt + 1
-        
+        print(cnt)
         band[idx] <- cnt
         n_higher[idx] <- -1
         for(ii in idx){
@@ -82,22 +75,18 @@ compute_properties <- function(stck,...){
 
             ## compute stuff
             if( !use_upslope ){
+                ## use downslope gradient
                 kk <- which(jj$grd > 0)
                 sgn <- 1
                 if(length(kk)<1){
-                    if( any(is.na(jj$grd)) ){
-                        ## Bugga no lower neighbours use upslope
-                        kk <- which(jj$grd < 0)
-                        sgn <- -1
-                    }else{
-                        stop("None edge cell with no down slope neighbours")
-                    }
-                    
+                    browser()
+                    stop("Cell with no down slope neighbours")
                 }
             }else{
                 kk <- which(jj$grd < 0)
                 sgn <- -1
                 if(length(kk)<1){
+                    ## Odd case where there is a channel cell with no higher neighbours
                     ## Bugga no higher neighbours use downslope
                     kk <- which(jj$grd > 0)
                     sgn <- 1
@@ -106,14 +95,16 @@ compute_properties <- function(stck,...){
             grad_cl <- sgn*jj$grd[kk]*jj$cl[kk]
             gradient[ii] <- sum(grad_cl) / sum(jj$cl[kk])
             atb[ii] <- log( upslope_area[ii]/sum(grad_cl) )
-            if(atb[ii]==Inf){
+            if(is.na(atb[ii]) | atb[ii]==Inf){
+                browser()
                 warning("None finite topographic index values produced - this requires investigation")
             }
             
             ## cascade downslope if not channel
             if( !is_channel ){
-                kk <- jj$idx[which(jj$grd > 0)]
-                
+                jdx <- which(jj$grd > 0)
+                kk <- jj$idx[jdx]
+                grad_cl <- jj$grd[jdx]*jj$cl[jdx]
                 upslope_area[kk] <- upslope_area[kk] +
                     upslope_area[ii]*grad_cl/sum(grad_cl)
                 

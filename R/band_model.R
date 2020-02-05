@@ -60,12 +60,18 @@ band_model <- function(model, cuts){
                       x=1,
                       dims=c(max(hs$id),max(hs2$id)))
     A <- Diagonal(max(hs$id),c(model$channel$area,hs$area))
-    Dsz <- t(K)%*%A%*%model$Dsz%*%K
-    Dex <- t(K)%*%A%*%model$Dex%*%K
-
+    
+    Dsz <- t(K)%*%model$Dsz%*%A%*%K ## fractions combined with area
+    Asz <- t(K)%*%A%*%K # area in each
+    Dsz <- Dsz %*% Diagonal(ncol(Asz),1/diag(Asz)) # explicit inverse since diagonal
+    
+    Dex <- t(K)%*%model$Dex%*%A%*%K
+    Aex <- t(K)%*%A%*%K # area in each
+    Dex <- Dex %*% Diagonal(ncol(Aex),1/diag(Aex))
+    
     ## impose limit can;t drain to same band - but with same area draining out
-    tDsz <- colSums(Dsz) # current area*frac
-    tDex <- colSums(Dsz) # current area*frac
+    tDsz <- colSums(Dsz) # current sum of fractions
+    tDex <- colSums(Dsz) # current sum of fractions
 
     ## remove elements not needed
     for(ii in hs2$band){
@@ -77,8 +83,8 @@ band_model <- function(model, cuts){
     }
 
     ## standardise
-    Dsz <- Diagonal(ncol(Dsz),1/c(model$channel$area,hs2$area))%*% Dsz %*% Diagonal(ncol(Dsz),tDsz/colSums(Dsz))
-    Dex <- Diagonal(ncol(Dex),1/c(model$channel$area,hs2$area))%*% Dex %*% Diagonal(ncol(Dex),tDsz/colSums(Dex))
+    Dsz <- Dsz %*% Diagonal(ncol(Dsz),tDsz/colSums(Dsz))
+    Dex <- Dex %*% Diagonal(ncol(Dex),tDsz/colSums(Dex))
 
     ## put back into model
     model$hillslope <- hs2
