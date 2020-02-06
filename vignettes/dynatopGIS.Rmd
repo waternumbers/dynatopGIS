@@ -163,9 +163,10 @@ For Swindale, where the example DEM is already partially filled the algorithm
 finishes quickly and the changes in the DEM are minor
 ```{r, sink_fill}
 stck <- sink_fill(stck)
-raster::plot( stck[['filled_dem']] - stck[['dem']] )
-cellStats(!is.na(stck[['filled_dem']]),sum)
-cellStats(!is.na(stck[['dem']]),sum)
+raster::plot( is.na(stck[['filled_dem']]) - is.na(stck[['dem']]),
+             main="Areas dropped due to connectivity")
+raster::plot( stck[['filled_dem']] - stck[['dem']],
+             main="Changes to height")
 ```
 
 ## Computing summary properties
@@ -257,7 +258,7 @@ For example in the case of the division of Swindale by topographic index into
 model <- create_model(stck,chn,'atb_split')
 ```
 
-We can then use the duynatop package to check the validity of the model
+We can then use the dynatop package to check the validity of the model
 ```{r check_model}
 # dynatop::check_model(model)
 ```
