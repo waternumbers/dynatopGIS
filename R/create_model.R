@@ -148,16 +148,16 @@ create_model <- function(stck,chn,hillslope_class){
         delta_x = delta_x[uid_hillslope],
         class = class[uid_hillslope],
         sz_band = band[uid_hillslope],
-        ex_band = band[uid_hillslope],
-        precip_series="unknown",
-        pet_series="unknown",
-        qex_max="qex_max_default",
+        sf_band = band[uid_hillslope],
+        precip="unknown",
+        pet="unknown",
+        qsf_max="qsf_max_default",
         srz_max="srz_max_default",
         srz_0="srz_0_default",
         ln_t0="ln_t0_default",
         m="m_default",
         td="td_default",
-        tex="tex_default",
+        tsf="tsf_default",
         stringsAsFactors=FALSE
     )
 
@@ -167,20 +167,20 @@ create_model <- function(stck,chn,hillslope_class){
         area = area[uid_channel],
         length=NA,
         next_id=NA,
-        precip_series="unknown",
-        pet_series="unknown",
+        precip="unknown",
+        pet="unknown",
         v_ch="v_ch_default",
         stringsAsFactors=FALSE
     )
 
     ## parameter values
-    model$param <- c(qex_max_default=Inf,
+    model$param <- c(qsf_max_default=Inf,
                      srz_max_default=0.05,
                      srz_0_default=0.99,
                      ln_t0_default=19,
                      m_default=0.004,
                      td_default=20,
-                     tex_default=100,
+                     tsf_default=100,
                      v_ch_default=100)
 
 
@@ -188,7 +188,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## Process the redistirbution matrices for the hillslope
     ## ########################
     #browser()
-    model$Dex <- model$Dsz <- W
+    model$Fex <- model$Fsz <- W
 
     ## #######################################
     ## Add channel routing information

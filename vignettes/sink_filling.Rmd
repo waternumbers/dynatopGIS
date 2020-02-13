@@ -62,8 +62,7 @@ the values are not known this not possible. Instead we approximate this by:
 1. For each $k \in \mathcal{R}$ compute $m_k = \min_{j \in
 \hat{\mathcal{N}}_k} \left(z_{j}\zright)$
 2. Take $\tilde{k}$ and value of $k$ for which $m_k$ is at a minimum.
-3. Set $z_k = \mean_{j \in
-\hat{\mathcal{N}}_k} \left(z_{j}\right)$
+3. Set $z_k = \mean_{j \in \hat{\mathcal{N}}_k} \left(z_{j}\right)$
 4. Remove $k$ from $\mathcal{R}$ and return to step 1
 
 Note that the replacement rule in step 3 ensure that no new sinks are
@@ -76,7 +75,8 @@ generated.
 Example dates is generated randomly
 
 ```{r, data}
-fake <- raster::raster(matrix(1:100,10,10),
+M <- rbind(NA,cbind(NA,matrix(1:100,10,10),NA),NA)
+fake <- raster::raster(M,
                        crs="+init=epsg:27700") # UK OS projection
 ```
 
@@ -84,7 +84,7 @@ fake <- raster::raster(matrix(1:100,10,10),
 
 ```{r, example1}
 ex1 <- fake
-ex1[c(13:17,24:26,34:36)] <- NA
+ex1[c(29:32,41:44,54:55)] <- NA
 
 ex1 <- create_catchment(ex1)
 ex1 <- sink_fill(ex1)

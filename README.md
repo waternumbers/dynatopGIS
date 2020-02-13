@@ -40,8 +40,3 @@ the devtools package:
 devtools::install_github("waternumbers/dynatopGIS")
 ```
 
-## Future developments
-Two key future developments are:
-* To support the use of large (out of memory) GIS files
-* To improve iterative algorithms (iterations should not be needed in many
-cases!!)

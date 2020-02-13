@@ -1,3 +1,29 @@
+# dynatopGIS 0.0.4
+
+## TO DO
+- better sink_filling examples for vignette
+
+Complete rewrite of implimentation.
+
+## Breaking Changes
+
+- Uses a single multilayer raster file rather then a folder of raster files
+- New algorithms will not produce identical results to v0.0.3	
+
+## New Features
+
+- New sink fill algorithm which should use fewer passes of the DEM
+	- Fills from the sink with lowest possible value first.
+	- Drops non-connected cells on the edge of the catchment
+- Rewritten computation of HSU properties based on Quinn et al. 1995 and
+  implimneted in two passes of the DEM
+
+# dynatopGIS 0.0.3
+
+## Bug fixes
+
+- Various minor bug
+
 # dynatopGIS 0.0.2
 
 ## New features
