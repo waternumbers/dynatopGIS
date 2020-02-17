@@ -166,6 +166,8 @@ create_model <- function(stck,chn,hillslope_class){
         id = uid_channel,
         area = area[uid_channel],
         length=NA,
+        sz_band = band[uid_channel],
+        sf_band = band[uid_channel],
         next_id=NA,
         precip="unknown",
         pet="unknown",
@@ -188,7 +190,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## Process the redistirbution matrices for the hillslope
     ## ########################
     #browser()
-    model$Fex <- model$Fsz <- W
+    model$Fsf <- model$Fsz <- W
 
     ## #######################################
     ## Add channel routing information
