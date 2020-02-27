@@ -151,13 +151,13 @@ create_model <- function(stck,chn,hillslope_class){
         sf_band = band[uid_hillslope],
         precip="unknown",
         pet="unknown",
-        qsf_max="qsf_max_default",
-        srz_max="srz_max_default",
-        srz_0="srz_0_default",
+        q_sfmax="q_sfmax_default",
+        s_rzmax="s_rzmax_default",
+        s_rz0="s_rz0_default",
         ln_t0="ln_t0_default",
         m="m_default",
-        td="td_default",
-        tsf="tsf_default",
+        t_d="t_d_default",
+        t_sf="t_sf_default",
         stringsAsFactors=FALSE
     )
 
@@ -176,13 +176,13 @@ create_model <- function(stck,chn,hillslope_class){
     )
 
     ## parameter values
-    model$param <- c(qsf_max_default=Inf,
-                     srz_max_default=0.05,
-                     srz_0_default=0.99,
+    model$param <- c(q_sfmax_default=Inf,
+                     s_rzmax_default=0.05,
+                     s_rz0_default=0.99,
                      ln_t0_default=19,
                      m_default=0.004,
-                     td_default=20,
-                     tsf_default=100,
+                     t_d_default=20,
+                     t_sf_default=100,
                      v_ch_default=100)
 
 
@@ -204,14 +204,6 @@ create_model <- function(stck,chn,hillslope_class){
         }
         ## set length
         model$channel$length[ii] <- chn[['length']][idx]
-        ## ## work out next id
-        ## jdx <- which(chn[['startNode']]==chn[['endNode']][idx])
-        ## if( length(jdx) >  1){
-        ##     stop("Channel bifurcation not allowed for")
-        ## }else{
-        ##     si <- c(si,which(uid_channel==chn[['id']][jdx]))
-        ##     sj <- c(sj,ii)
-        ## }
     }
     
 
@@ -236,9 +228,6 @@ create_model <- function(stck,chn,hillslope_class){
         fraction = numeric(0),
         stringsAsFactors=FALSE
     )
-
-    ## Save model
-    ## saveRDS(model,file=file.path(out_path,paste0(hillslope_class,'.rds')))
 
     return(model)
 }
