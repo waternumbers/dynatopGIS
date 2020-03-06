@@ -32,10 +32,6 @@ create_model <- function(stck,chn,hillslope_class){
     check_catchment(stck)
     check_channel(chn)
 
-
-
-
-
     ## ####################################
     ##  Check required inputs are available
     ## ####################################
@@ -114,6 +110,7 @@ create_model <- function(stck,chn,hillslope_class){
                                           raster::getValues(hillslope_id),unique))
     band[uid_hillslope] <- unname(tapply(raster::getValues(stck[["order"]]),
                                          raster::getValues(hillslope_id),unique))
+    band[uid_channel] <- max(band,na.rm=TRUE)+1 
     delta_x[uid_hillslope] <- raster::xres(stck)
 
     ## computations by looping
@@ -204,13 +201,18 @@ create_model <- function(stck,chn,hillslope_class){
         }
         ## set length
         model$channel$length[ii] <- chn[['length']][idx]
+        ## work out next id
+        jdx <- which(chn[['startNode']]==chn[['endNode']][idx])
+        if( length(jdx) ==1 ){ # case of jdx>1 handled in bifurcation check
+            model$channel$next_id[ii] <- chn[['id']][jdx]
+        }
     }
     
 
     ## ############################################
     ## Add gauges at all outlets from river network
     ## ############################################
-    idx <- which(!(model$channel$id %in% model$channel$next_id))
+    idx <- which(is.na(model$channel$next_id))
     model$gauge <- data.frame(
         name = paste("channel",model$channel$id[idx],sep="_"),
         id = model$channel$id[idx],
