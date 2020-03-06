@@ -138,7 +138,7 @@ create_model <- function(stck,chn,hillslope_class){
 
     ## hillslope elements
     model$hillslope <- data.frame(
-        id = uid_hillslope,
+        id = as.integer(uid_hillslope),
         area = area[uid_hillslope],
         atb_bar = atb_bar[uid_hillslope],
         s_bar = s_bar[uid_hillslope],
@@ -162,10 +162,10 @@ create_model <- function(stck,chn,hillslope_class){
     model$channel <- data.frame(
         id = uid_channel,
         area = area[uid_channel],
-        length=NA,
+        length = NA,
         sz_band = band[uid_channel],
         sf_band = band[uid_channel],
-        next_id=NA,
+        next_id = NA,
         precip="unknown",
         pet="unknown",
         v_ch="v_ch_default",
@@ -200,7 +200,7 @@ create_model <- function(stck,chn,hillslope_class){
             stop("Inconsitency between channel raster and shapefile")
         }
         ## set length
-        model$channel$length[ii] <- chn[['length']][idx]
+        model$channel$length[ii] <- as.numeric( chn[['length']][idx] )
         ## work out next id
         jdx <- which(chn[['startNode']]==chn[['endNode']][idx])
         if( length(jdx) ==1 ){ # case of jdx>1 handled in bifurcation check
@@ -226,7 +226,7 @@ create_model <- function(stck,chn,hillslope_class){
     ## blank point inflow table
     model$point_inflow <- data.frame(
         name = character(0),
-        id = numeric(0),
+        id = integer(0),
         fraction = numeric(0),
         stringsAsFactors=FALSE
     )
