@@ -1,6 +1,7 @@
-^docs
+^docs$
 ^cran-comments\.md$ # Comments for CRAN submission
 ^vignette_data
 ^old_files
 ^\.travis\.yml$
 ^appveyor\.yml$
+make_dynatopGIS.R
