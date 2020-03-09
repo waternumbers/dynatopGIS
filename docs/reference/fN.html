@@ -36,7 +36,7 @@
 
 
 <meta property="og:title" content="Function to give neighbours of cells — fN" />
-<meta property="og:description" content="TO DO" />
+<meta property="og:description" content="Returns index of neighbouring cells and possibly some properties" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -129,7 +129,7 @@
     </div>
 
     <div class="ref-description">
-    <p>TO DO</p>
+    <p>Returns index of neighbouring cells and possibly some properties</p>
     </div>
 
     <pre class="usage"><span class='fu'>fN</span>(<span class='no'>k</span>, <span class='no'>nr</span>, <span class='no'>nc</span>, <span class='kw'>dx</span> <span class='kw'>=</span> <span class='fl'>NA</span>)</pre>
@@ -149,14 +149,18 @@
       <th>nc</th>
       <td><p>number fo columnc in original raster</p></td>
     </tr>
+    <tr>
+      <th>dx</th>
+      <td><p>resolution of raster grid (presumed square)</p></td>
+    </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>the index of neighbouring cells</p>
+    <p>The index of neighbouring cells. If dx is a single finite value then values or contour length, and distance to neighbours is returned.</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>This is in effect a cut down version of raster adjacent for use with the vectors exctraced by raster::getValues. See example below</p>
+    <p>This is in effect a cut down version of raster adjacent for use with the vectors exctraced by raster::getValues. See example below.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='co'>## create a test raster</span>

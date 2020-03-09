@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{rcpp_hru}
 \alias{rcpp_hru}
-\title{cpp wrapper function for computation of redistribution matrices}
+\title{cpp wrapper function for computation of hru properties}
 \usage{
 rcpp_hru(
   dem,
@@ -30,19 +30,20 @@ rcpp_hru(
 
 \item{channel_area}{Area of channel surface in pixel}
 
-\item{grad}{average downslope gradient}
+\item{grad}{gradient of the cell}
 
-\item{offset}{- difference between cell index of adjacent cells and current cell index - clockwise from top left}
+\item{atb}{topographic index ln(upslope area / tan beta) of the cell}
 
-\item{dx}{distance between cell centres - from top left in clockwise direction}
+\item{W}{saturated zone redistribution matrix}
 
-\item{cl}{contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel}
+\item{area}{HSU area}
 
-\item{max_index}{maximum value of the hillslope and channel id's}
-}
-\value{
-list of hillslope and channel properties
+\item{s_bar}{HSU average gradient}
+
+\item{atb_bar}{HSU averable topographic index}
+
+\item{rst_prop}{dimension ans resolution of raster converted to vectors}
 }
 \description{
-cpp wrapper function for computation of redistribution matrices
+cpp wrapper function for computation of hru properties
 }

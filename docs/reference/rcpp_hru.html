@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>cpp wrapper function for computation of redistribution matrices — rcpp_hru • dynatopGIS</title>
+<title>cpp wrapper function for computation of hru properties — rcpp_hru • dynatopGIS</title>
 
 
 <!-- jquery -->
@@ -35,8 +35,8 @@
 
 
 
-<meta property="og:title" content="cpp wrapper function for computation of redistribution matrices — rcpp_hru" />
-<meta property="og:description" content="cpp wrapper function for computation of redistribution matrices" />
+<meta property="og:title" content="cpp wrapper function for computation of hru properties — rcpp_hru" />
+<meta property="og:description" content="cpp wrapper function for computation of hru properties" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -123,13 +123,13 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>cpp wrapper function for computation of redistribution matrices</h1>
+    <h1>cpp wrapper function for computation of hru properties</h1>
     <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/RcppExports.R'><code>R/RcppExports.R</code></a></small>
     <div class="hidden name"><code>rcpp_hru.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>cpp wrapper function for computation of redistribution matrices</p>
+    <p>cpp wrapper function for computation of hru properties</p>
     </div>
 
     <pre class="usage"><span class='fu'>rcpp_hru</span>(
@@ -172,36 +172,40 @@
     </tr>
     <tr>
       <th>grad</th>
-      <td><p>average downslope gradient</p></td>
+      <td><p>gradient of the cell</p></td>
     </tr>
     <tr>
-      <th>offset</th>
-      <td><p>- difference between cell index of adjacent cells and current cell index - clockwise from top left</p></td>
+      <th>atb</th>
+      <td><p>topographic index ln(upslope area / tan beta) of the cell</p></td>
     </tr>
     <tr>
-      <th>dx</th>
-      <td><p>distance between cell centres - from top left in clockwise direction</p></td>
+      <th>W</th>
+      <td><p>saturated zone redistribution matrix</p></td>
     </tr>
     <tr>
-      <th>cl</th>
-      <td><p>contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel</p></td>
+      <th>area</th>
+      <td><p>HSU area</p></td>
     </tr>
     <tr>
-      <th>max_index</th>
-      <td><p>maximum value of the hillslope and channel id's</p></td>
+      <th>s_bar</th>
+      <td><p>HSU average gradient</p></td>
+    </tr>
+    <tr>
+      <th>atb_bar</th>
+      <td><p>HSU averable topographic index</p></td>
+    </tr>
+    <tr>
+      <th>rst_prop</th>
+      <td><p>dimension ans resolution of raster converted to vectors</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>list of hillslope and channel properties</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#value">Value</a></li>
     </ul>
 
   </div>

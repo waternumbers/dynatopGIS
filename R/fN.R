@@ -1,13 +1,14 @@
 #' Function to give neighbours of cells
-#' @description TO DO
+#' @description Returns index of neighbouring cells and possibly some properties
 #'
 #' @param k cell index (only single values accepted)
 #' @param nr number fo rows in original raster
 #' @param nc number fo columnc in original raster
+#' @param dx resolution of raster grid (presumed square)
 #'
-#' @return the index of neighbouring cells
+#' @return The index of neighbouring cells. If dx is a single finite value then values or contour length, and distance to neighbours is returned.
 #'
-#' @details This is in effect a cut down version of raster adjacent for use with the vectors exctraced by raster::getValues. See example below
+#' @details This is in effect a cut down version of raster adjacent for use with the vectors exctraced by raster::getValues. See example below.
 #'
 #' @examples
 #' ## create a test raster
@@ -24,7 +25,7 @@
 #'           (nc*(nr-1))+1, # bottom left
 #'           (nc*nr)- floor(nc/2), # bottom row middle
 #'           (nc*nr)) # bottom right
-#' 
+#'
 #' ## test matching of locations
 #' for(k in kvec){
 #'     ra <- sort( raster::adjacent(rst,k,direction=8,pairs=FALSE) )
@@ -37,7 +38,7 @@
 fN <- function(k,nr,nc,dx=NA){
     if( k > nc*nr | k < 1){ return(numeric(0)) }
     pflg <- length(dx)==1 && is.finite(dx)
-    
+
     ## find i,j location
     j <- ((k-1)%/%nc) +1 # row
     i <- k - (j-1)*nc #column
@@ -47,9 +48,10 @@ fN <- function(k,nr,nc,dx=NA){
     if(pflg){
         dxd <- dx*sqrt(2)
         p <- matrix( c(dxd,dx,dxd,dx,dx,dxd,dx,dxd, # distance
-                       rep( dx /(1+sqrt(2)),8)), # contour length
-                    8,2)
-        ## TO DO contour length is based on octogan, Quinn uses a different ratio
+                       dx*c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)), # from Quinn
+                       8,2)
+        ## Ocatagon based countout length is
+        ##rep( dx /(1+sqrt(2)),8))
         m <- cbind(m,p)
     }
     ## trim to within bounds

@@ -5,20 +5,20 @@ rcpp_fN <- function(k, rst_prop) {
     .Call('_dynatopGIS_rcpp_fN', PACKAGE = 'dynatopGIS', k, rst_prop)
 }
 
-#' cpp wrapper function for computation of redistribution matrices
+#' cpp wrapper function for computation of hru properties
 #' 
 #' @param dem Digital elevation model
-#' @param grad average downslope gradient
+#' @param hillslope_id hillslope class of each pixel
+#' @param channel_id UID of channel present in the pixel
 #' @param land_area Area of land surface in pixel
 #' @param channel_area Area of channel surface in pixel
-#' @param channel_id UID of channel present in the pixel
-#' @param hillslope_id hillslope class of each pixel
-#' @param offset - difference between cell index of adjacent cells and current cell index - clockwise from top left
-#' @param dx distance between cell centres - from top left in clockwise direction
-#' @param cl contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel
-#' @param max_index maximum value of the hillslope and channel id's
-#' @return list of hillslope and channel properties
-#'
+#' @param grad gradient of the cell
+#' @param atb topographic index ln(upslope area / tan beta) of the cell
+#' @param W saturated zone redistribution matrix
+#' @param area HSU area
+#' @param s_bar HSU average gradient
+#' @param atb_bar HSU averable topographic index
+#' @param rst_prop dimension ans resolution of raster converted to vectors
 rcpp_hru <- function(dem, hillslope_id, channel_id, land_area, channel_area, grad, atb, W, area, s_bar, atb_bar, rst_prop) {
     .Call('_dynatopGIS_rcpp_hru', PACKAGE = 'dynatopGIS', dem, hillslope_id, channel_id, land_area, channel_area, grad, atb, W, area, s_bar, atb_bar, rst_prop)
 }

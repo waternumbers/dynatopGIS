@@ -12,15 +12,17 @@ fN(k, nr, nc, dx = NA)
 \item{nr}{number fo rows in original raster}
 
 \item{nc}{number fo columnc in original raster}
+
+\item{dx}{resolution of raster grid (presumed square)}
 }
 \value{
-the index of neighbouring cells
+The index of neighbouring cells. If dx is a single finite value then values or contour length, and distance to neighbours is returned.
 }
 \description{
-TO DO
+Returns index of neighbouring cells and possibly some properties
 }
 \details{
-This is in effect a cut down version of raster adjacent for use with the vectors exctraced by raster::getValues. See example below
+This is in effect a cut down version of raster adjacent for use with the vectors exctraced by raster::getValues. See example below.
 }
 \examples{
 ## create a test raster

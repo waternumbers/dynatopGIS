@@ -12,7 +12,9 @@ List rcpp_fN(int k, NumericVector rst_prop){
   int nr = rst_prop(0);
   double dx = rst_prop(2);
   double dxd = dx*sqrt(2);
-  double cl = dx /(1+sqrt(2));
+  double cl = dx*0.5;
+  double cld = dx*0.35;
+  //double cl = dx /(1+sqrt(2));
   
   int row = (k/nc); // row - should be integer division
   //Rcout << row << "\n";
@@ -23,7 +25,7 @@ List rcpp_fN(int k, NumericVector rst_prop){
   IntegerVector new_row = IntegerVector::create(row-1,row-1,row-1,row,row,row+1,row+1,row+1);
   IntegerVector new_idx = new_row*nc + new_col;
   NumericVector new_dx = NumericVector::create(dxd,dx,dxd,dx,dx,dxd,dx,dxd);
-  NumericVector new_cl = NumericVector::create(cl,cl,cl,cl,cl,cl,cl,cl); // this needs changing
+  NumericVector new_cl = NumericVector::create(cld,cl,cld,cl,cl,cld,cl,cld);
 
   LogicalVector is_valid = (new_col>-1) & (new_col < nc) & (new_row>-1) & (new_row<nr);
 
@@ -40,20 +42,20 @@ List rcpp_fN(int k, NumericVector rst_prop){
 }
 
 
-//' cpp wrapper function for computation of redistribution matrices
+//' cpp wrapper function for computation of hru properties
 //' 
 //' @param dem Digital elevation model
-//' @param grad average downslope gradient
+//' @param hillslope_id hillslope class of each pixel
+//' @param channel_id UID of channel present in the pixel
 //' @param land_area Area of land surface in pixel
 //' @param channel_area Area of channel surface in pixel
-//' @param channel_id UID of channel present in the pixel
-//' @param hillslope_id hillslope class of each pixel
-//' @param offset - difference between cell index of adjacent cells and current cell index - clockwise from top left
-//' @param dx distance between cell centres - from top left in clockwise direction
-//' @param cl contour length - from top left in a clockwise direction. The 9th value is used for cells split beteen land and channel
-//' @param max_index maximum value of the hillslope and channel id's
-//' @return list of hillslope and channel properties
-//'
+//' @param grad gradient of the cell
+//' @param atb topographic index ln(upslope area / tan beta) of the cell
+//' @param W saturated zone redistribution matrix
+//' @param area HSU area
+//' @param s_bar HSU average gradient
+//' @param atb_bar HSU averable topographic index
+//' @param rst_prop dimension ans resolution of raster converted to vectors
 // [[Rcpp::export]]
 arma::sp_mat rcpp_hru(NumericVector dem,
 		      IntegerVector hillslope_id,
