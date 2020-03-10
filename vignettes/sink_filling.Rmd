@@ -75,7 +75,7 @@ generated.
 Example dates is generated randomly
 
 ```{r, data}
-M <- rbind(NA,cbind(NA,matrix(1:100,10,10),NA),NA)
+M <- matrix(1:100,10,10)
 fake <- raster::raster(M,
                        crs="+init=epsg:27700") # UK OS projection
 ```
@@ -84,7 +84,7 @@ fake <- raster::raster(M,
 
 ```{r, example1}
 ex1 <- fake
-ex1[c(29:32,41:44,54:55)] <- NA
+ex1[c(23:26,33:36,44:45)] <- NA
 
 ex1 <- create_catchment(ex1)
 ex1[['channel_id']][1,1] <- 1

@@ -3,16 +3,17 @@
 #' @description Computes statistics e.g. log(a/tanb) for raster cells
 #'
 #' @param stck RasterStack or file containing the raster stack (as generated using create_catchment)
+#' @param verbose print out additional diagnostic information
 #' @param ... additional parameters passed to raster::stack if stck is a file name
 #'
 #' @details The algorithm works in two passes. The first computes the number of upstream pixels. The second sequences downslope to compute values.
 #' @export
-compute_properties <- function(stck,...){
+compute_properties <- function(stck,verbose=FALSE,...){
 
     if(!("RasterStack" %in% class(stck))){
         if( is.character(stck) ){
             stck_file <- stck
-            stck <- raster::stack(stck,...)
+            stck <- raster::stack(stck,alist(...))
         }else{
             stop("Unknown format for input")
         }
@@ -51,7 +52,10 @@ compute_properties <- function(stck,...){
     #browser()
     while( length(idx)>0 ){
         cnt <- cnt + 1
-        print(cnt)
+        if( verbose ){
+            print(paste("Band",cnt))
+        }
+        
         band[idx] <- cnt
         n_higher[idx] <- -1
         for(ii in idx){

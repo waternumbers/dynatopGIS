@@ -6,6 +6,7 @@
 #' @param river_file file to save the river network to if required
 #' @param property_names named vector of columns of the spatial data frame to use for channel properties
 #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
+#' @param ... passed to \code{raster::readOGR} if loading a file
 #'
 #' @return a channel SpatialLines object
 #'
@@ -18,11 +19,12 @@ create_channel <- function(shp,
                                             endNode="endNode",
                                             width="width"),
                            river_file="",
-                           default_width=2){
+                           default_width=2,
+                           ...){
 
     ## read in shp if required
     if( is.character(shp) ){
-        shp <- rgdal::readOGR(shp,stringsAsFactors=FALSE)
+        shp <- rgdal::readOGR(shp,stringsAsFactors=FALSE,...)
     }
 
     ## check shp is a SpatialLinesDataFrame
@@ -84,7 +86,7 @@ create_channel <- function(shp,
 }
 
 
-check_channel <- function(chn){
+check_channel <- function(chn,...){
     if(!is(chn,"SpatialPolygonsDataFrame")){
         if(is.character(chn)){
             chn <- rgdal::readOGR(chn,...)

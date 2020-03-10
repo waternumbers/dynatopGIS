@@ -39,7 +39,7 @@ create_catchment <- function(dem,catchment_file="",fill_na=TRUE,...){
                                          na_clumps[,ncol(na_clumps)])),
                                NA) #those clumps on the edge to be ignored
         na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
-        dem[!is.na(na_clumps)] <- Inf # set to high value to indicate missing
+        dem[!is.na(na_clumps)] <- -Inf # set to low value to indicate missing
     }
 
     ## initialise the catchment file

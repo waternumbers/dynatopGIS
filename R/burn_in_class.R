@@ -7,13 +7,14 @@
 #' @param output_name name to give the output layer added to stck
 #' @param burns Named list of layer in stck to burn into discretisation of HRUs that will be stamped onto the classification. Overrides any classification already defined
 #' @param json_path Path of folder into which to write the json file identifying which burns were used.
-#'
+#' @param ... passed to \code{raster::stack} if loading a file
+#' 
 #' @return a raster layer as stck but with additional layer added.
 #'
 #' @details Create an additional layer in stck with a classification based on class_name with the burns overwriting the original class values. Burns are applied in the order theya are input.
 #'
 #' @export
-burn_in_class <- function(stck,class_name,output_name,burns,json_path=getwd()){
+burn_in_class <- function(stck,class_name,output_name,burns,json_path=getwd(),...){
 
     if(!("RasterStack" %in% class(stck))){
         if( is.character(stck) ){

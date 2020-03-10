@@ -6,12 +6,13 @@
 #' @param split_name name to give the split
 #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
 #' @param json_path the folder to write out json file containing the summary of splits to
-#'
+#' @param ... passed to \code{raster::stack} if loading a file
+#' 
 #' @return as for stck but containing an additional layer with the split classes
 #'
 #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. These are numbered using a cantor pairing scheme. In theory you could reverse out the class of each layer if required but this isn't implimented.
 #' @export
-split_to_class <- function(stck,split_name,cuts,json_path=getwd()){
+split_to_class <- function(stck,split_name,cuts,json_path=getwd(),...){
 
         if(!("RasterStack" %in% class(stck))){
         if( is.character(stck) ){

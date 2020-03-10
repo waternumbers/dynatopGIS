@@ -5,10 +5,11 @@
 #' @param stck a RasterBrick as created by create_brick
 #' @param chn a channel object as created by create_channel
 #' @param hillslope_class Name of the existing hillslope classification to use to generate the model - a layer in stck
+#' @param ... passed to \code{raster::stack} if loading a file
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(stck,chn,hillslope_class){
+create_model <- function(stck,chn,hillslope_class,...){
 
     if(!("RasterStack" %in% class(stck))){
         if( is.character(stck) ){
