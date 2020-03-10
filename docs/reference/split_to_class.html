@@ -132,7 +132,7 @@
     <p>Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layers and cuts</p>
     </div>
 
-    <pre class="usage"><span class='fu'>split_to_class</span>(<span class='no'>stck</span>, <span class='no'>split_name</span>, <span class='no'>cuts</span>, <span class='kw'>json_path</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/getwd.html'>getwd</a></span>())</pre>
+    <pre class="usage"><span class='fu'>split_to_class</span>(<span class='no'>stck</span>, <span class='no'>split_name</span>, <span class='no'>cuts</span>, <span class='kw'>json_path</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/getwd.html'>getwd</a></span>(), <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -152,6 +152,10 @@
     <tr>
       <th>json_path</th>
       <td><p>the folder to write out json file containing the summary of splits to</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>passed to <code><a href='https://rdrr.io/pkg/raster/man/stack.html'>raster::stack</a></code> if loading a file</p></td>
     </tr>
     </table>
 

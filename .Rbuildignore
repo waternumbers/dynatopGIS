@@ -5,3 +5,5 @@
 ^\.travis\.yml$
 ^appveyor\.yml$
 make_dynatopGIS.R
+^\.git$
+^\.gitignore$

@@ -137,7 +137,8 @@
   <span class='kw'>property_names</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='kw'>length</span> <span class='kw'>=</span> <span class='st'>"length"</span>, <span class='kw'>startNode</span> <span class='kw'>=</span> <span class='st'>"startNode"</span>, <span class='kw'>endNode</span> <span class='kw'>=</span> <span class='st'>"endNode"</span>,
     <span class='kw'>width</span> <span class='kw'>=</span> <span class='st'>"width"</span>),
   <span class='kw'>river_file</span> <span class='kw'>=</span> <span class='st'>""</span>,
-  <span class='kw'>default_width</span> <span class='kw'>=</span> <span class='fl'>2</span>
+  <span class='kw'>default_width</span> <span class='kw'>=</span> <span class='fl'>2</span>,
+  <span class='no'>...</span>
 )</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -158,6 +159,10 @@
     <tr>
       <th>default_width</th>
       <td><p>default width of a channel if not specified in property_names. Defaults to 2 metres.</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>passed to <code>raster::readOGR</code> if loading a file</p></td>
     </tr>
     </table>
 

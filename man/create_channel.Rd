@@ -9,7 +9,8 @@ create_channel(
   property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
     width = "width"),
   river_file = "",
-  default_width = 2
+  default_width = 2,
+  ...
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ create_channel(
 \item{river_file}{file to save the river network to if required}
 
 \item{default_width}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
+
+\item{...}{passed to \code{raster::readOGR} if loading a file}
 }
 \value{
 a channel SpatialLines object

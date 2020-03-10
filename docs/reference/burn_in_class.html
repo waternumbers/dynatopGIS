@@ -132,7 +132,7 @@
     <p>Burn in distinct regions to a classification map</p>
     </div>
 
-    <pre class="usage"><span class='fu'>burn_in_class</span>(<span class='no'>stck</span>, <span class='no'>class_name</span>, <span class='no'>output_name</span>, <span class='no'>burns</span>, <span class='kw'>json_path</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/getwd.html'>getwd</a></span>())</pre>
+    <pre class="usage"><span class='fu'>burn_in_class</span>(<span class='no'>stck</span>, <span class='no'>class_name</span>, <span class='no'>output_name</span>, <span class='no'>burns</span>, <span class='kw'>json_path</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/getwd.html'>getwd</a></span>(), <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -156,6 +156,10 @@
     <tr>
       <th>json_path</th>
       <td><p>Path of folder into which to write the json file identifying which burns were used.</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>passed to <code><a href='https://rdrr.io/pkg/raster/man/stack.html'>raster::stack</a></code> if loading a file</p></td>
     </tr>
     </table>
 

@@ -132,7 +132,7 @@
     <p>take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>create_model</span>(<span class='no'>stck</span>, <span class='no'>chn</span>, <span class='no'>hillslope_class</span>)</pre>
+    <pre class="usage"><span class='fu'>create_model</span>(<span class='no'>stck</span>, <span class='no'>chn</span>, <span class='no'>hillslope_class</span>, <span class='no'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -148,6 +148,10 @@
     <tr>
       <th>hillslope_class</th>
       <td><p>Name of the existing hillslope classification to use to generate the model - a layer in stck</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>passed to <code><a href='https://rdrr.io/pkg/raster/man/stack.html'>raster::stack</a></code> if loading a file</p></td>
     </tr>
     </table>
 
