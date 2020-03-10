@@ -87,8 +87,8 @@ ex1 <- fake
 ex1[c(29:32,41:44,54:55)] <- NA
 
 ex1 <- create_catchment(ex1)
+ex1[['channel_id']][1,1] <- 1
 ex1 <- sink_fill(ex1)
-
 plot(ex1[['dem']])
 plot(ex1[['filled_dem']])
 plot(ex1[['filled_dem']] - fake)
@@ -101,6 +101,7 @@ ex2 <- fake
 ex2[c(13:17,24,26,34:36)] <- NA
 
 ex2 <- create_catchment(ex2)
+ex2[['channel_id']][1,1] <- 1
 ex2 <- sink_fill(ex2)
 
 plot(ex2[['filled_dem']])
