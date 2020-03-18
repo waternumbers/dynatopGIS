@@ -10,34 +10,18 @@
 #'
 #' @details Populates the channel_id & channel_area layers. Alters the land_area layer to correspond.
 #' @export
-add_channel <- function(stck,channel,...){
-
-    if(!is(stck,"RasterStack")){
-        if( is.character(stck) ){
-            stck_file <- stck
-            stck <- raster::stack(stck,...)
-        }else{
-            stop("Unknown catchment format")
-        }
-    }else{
-        stck_file <- character(0)
-    }
-
-
-    if(!is(channel,"SpatialPolygonsDataFrame")){
-        if(is.character(channel)){
-            channel <- rgdal::readOGR(channel,...)
-        }else{
-            stop("Unknown channel format")
-        }
-    }
+add_channel <- function(ctch,channel,...){
 
     ## pass to checks
-    check_catchment(stck)
+    check_catchment(ctch,c("land_area"))
     check_channel(channel)
 
+    ## create a land area raster
+    land_area <- glist_to_raster(ctch,"land_area")
+    
+    
     ## extract cells index, and fraction of river area in cell
-    ch_cell<- raster::extract(stck[['land_area']],channel,weights=TRUE,cellnumbers=TRUE,na.rm=TRUE)
+    ch_cell<- raster::extract(land_area,channel,weights=TRUE,cellnumbers=TRUE,na.rm=TRUE)
 
     ## Loop and add the chanel id and channel area
     ch_area <- raster::area(channel) # areas of river channels
@@ -62,17 +46,12 @@ add_channel <- function(stck,channel,...){
     ch_cell[,'channel_area'] <- pmin( ch_cell[,'channel_area'], ch_cell[,'land_area'] )
     ch_cell[,'land_area'] <- ch_cell[,'land_area'] - ch_cell[,'channel_area']
 
-    ## add to rasters and write out
-    stck[['land_area']][ch_cell$cell] <- ch_cell$land_area
-    stck[['channel_area']][ch_cell$cell] <- ch_cell$channel_area
-    stck[['channel_id']][ch_cell$cell]  <- ch_cell$id
-
-    ## output 
-    if(length(stck_file)>0){
-        raster::writeRaster(stck,stck_file)
-        return(stck_file)
-    }else{
-        return(stck)
-    }
-
+    ## add to the catchment
+    ctch$layers$channel_area <- rep(0,prod(ctch$raster$dim))
+    ctch$layers$channel_id <- rep(NA,prod(ctch$raster$dim))
+    ctch$layers$land_area[ch_cell$cell] <- ch_cell$land_area
+    ctch$layers$channel_area[ch_cell$cell] <- ch_cell$channel_area
+    ctch$layers$channel_id[ch_cell$cell]  <- ch_cell$id
+    
+    return(ctch)
 }

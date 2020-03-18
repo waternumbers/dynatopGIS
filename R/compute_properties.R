@@ -10,41 +10,27 @@
 #' @export
 compute_properties <- function(stck,verbose=FALSE,...){
 
-    if(!("RasterStack" %in% class(stck))){
-        if( is.character(stck) ){
-            stck_file <- stck
-            stck <- raster::stack(stck,alist(...))
-        }else{
-            stop("Unknown format for input")
-        }
-    }else{
-        stck_file <- character(0)
-    }
+    check_catchment(ctch)
 
-    check_catchment(stck)
 
-    ## extract dem and channel_id values and dem resolution
-    dem <- raster::getValues(stck[['filled_dem']])
-    ch_id <- raster::getValues(stck[['channel_id']])
-    lnd_area <- raster::getValues(stck[['land_area']])
-
-    ## get properties of required from stck
-    dx <-  raster::xres(stck)
-    nc <- ncol(stck)
-    nr <- nrow(stck)
+    ## get properties of required from ctch
+    dx <- mean(ctch$raster$res)
+    nc <- ctch$raster$dim[2]
+    nr <- ctch$raster$dim[1]
     
-    ## first pass to compute the number of higher cells
-    n_higher <- rep(NA,length(dem))
+    ## first pass to compute the number of higher cells and flow directions
+    n_higher <- rep(NA,prod(ctch$raster$dim))
     idx <- which(!is.na(dem))
     for(ii in idx){
         jj <- fN(ii,nr,nc)
-        is_higher <- dem[jj] > dem[ii] & !is.finite(ch_id[jj]) # higher cells that aren't channels
+        is_higher <- (catch$layers$filled_dem[jj] > catch$layers$filled_dem[ii]) &
+            !is.finite(catch$layers$channel_id[jj]) # higher cells that aren't channels
         n_higher[ii] <- sum(is_higher,na.rm=TRUE) # na.rm ensure cells on edge of are evaluated
     }
 
     ## initialise the output
-    band <- gradient <- atb <- rep(NA,length(dem))
-    upslope_area <- lnd_area
+    catch$layers[c("band","gradient","atanb")] <- rep(NA,prod(ctch$raster$dim))
+    catch$layers$upslope_area <- catch$layers$land_area
     
     ## work down list of higher cells
     idx <- which(n_higher==0)
@@ -56,16 +42,16 @@ compute_properties <- function(stck,verbose=FALSE,...){
             print(paste("Band",cnt))
         }
         
-        band[idx] <- cnt
+        catch$layers$band[idx] <- cnt
         n_higher[idx] <- -1
         for(ii in idx){
             
             ## skip of no land area
-            if( lnd_area[ii] <= 0 ){
+            if( catch$layers$lnd_area[ii] <= 0 ){
                 next
             }
             
-            if( is.finite(ch_id[ii]) ){
+            if( is.finite(catch$layers$channel_id[ii]) ){
                 is_channel <- TRUE
                 use_upslope <- TRUE
             }else{
@@ -75,7 +61,7 @@ compute_properties <- function(stck,verbose=FALSE,...){
             
             ## neighbours and grd +ve means lower
             jj <- fN(ii,nr,nc,dx)
-            jj$grd <- (dem[ii] - dem[jj$idx])/jj$dx
+            jj$grd <- (catch$layers$filled_dem[ii] - catch$layers$filled_dem[jj$idx])/jj$dx
 
             ## compute stuff
             if( !use_upslope ){
@@ -97,9 +83,9 @@ compute_properties <- function(stck,verbose=FALSE,...){
                 }
             }
             grad_cl <- sgn*jj$grd[kk]*jj$cl[kk]
-            gradient[ii] <- sum(grad_cl) / sum(jj$cl[kk])
-            atb[ii] <- log( upslope_area[ii]/sum(grad_cl) )
-            if(is.na(atb[ii]) | atb[ii]==Inf){
+            ctch$layers$gradient[ii] <- sum(grad_cl) / sum(jj$cl[kk])
+            ctch$layers$atanb[ii] <- log( ctch$layers$upslope_area[ii]/sum(grad_cl) )
+            if(is.na(ctch$layers$atanb[ii]) | ctch$layers$atanb[ii]==Inf){
                 browser()
                 warning("None finite topographic index values produced - this requires investigation")
             }
@@ -109,8 +95,8 @@ compute_properties <- function(stck,verbose=FALSE,...){
                 jdx <- which(jj$grd > 0)
                 kk <- jj$idx[jdx]
                 grad_cl <- jj$grd[jdx]*jj$cl[jdx]
-                upslope_area[kk] <- upslope_area[kk] +
-                    upslope_area[ii]*grad_cl/sum(grad_cl)
+                ctch$layers$upslope_area[kk] <- ctch$layers$upslope_area[kk] +
+                    ctch$layers$upslope_area[ii]*grad_cl/sum(grad_cl)
                 
                 n_higher[kk] <- n_higher[kk] - 1
             }
@@ -120,20 +106,6 @@ compute_properties <- function(stck,verbose=FALSE,...){
         idx <- which(n_higher==0)
     }
     print(cnt)
-    #browser()
-    ## write back to stack
-    stck <- raster::setValues(stck, band, layer=which(names(stck)=="order"))
-    stck <- raster::setValues(stck, gradient, layer=which(names(stck)=="gradient"))
-    stck <- raster::setValues(stck, upslope_area, layer=which(names(stck)=="upslope_area"))
-    stck <- raster::setValues(stck, atb, layer=which(names(stck)=="atanb"))
- 
-    
-    
-    if(length(stck_file)>0){
-        raster::writeRaster(stck,stck_file)
-        return(stck_file)
-    }else{
-        return(stck)
-    }
 
+    return(ctch)
 }

@@ -14,33 +14,22 @@
 #' If stck is a character object it is presemed to be the path to a file containing the catchment RasterStack. If so it read in and overwritten with the result using the raster package.
 #'
 #' @export
-sink_fill <- function(stck,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
- 
-    if(!("RasterStack" %in% class(stck))){
-        if( is.character(stck) ){
-            stck_file <- stck
-            stck <- raster::stack(stck,...)
-        }else{
-            stop("Unknown stck format")
-        }
-    }else{
-        stck_file <- character(0)
-    }
+sink_fill <- function(ctch,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
 
-    check_catchment(stck)
+    check_catchment(ctch,c("dem","land_area","channel_area","channel_id"))
     
     ## extract dem and channel_id values
     z <- raster::getValues(stck[['dem']])
     ch_id <- raster::getValues(stck[['channel_id']])
 
-    w <- z
+    w <- ctch$layers$dem
     w[!is.na(w)] <- Inf
-    w[is.finite(ch_id)] <- z[is.finite(ch_id)]
+    w[is.finite(ctch$layers$channel_id)] <- ctch$layers$dem[is.finite(ctch$layers$channel_id)]
 
-    ## set minium expected increase
-    dx <- mean(raster::res(stck))
-    nc <- ncol(stck)
-    nr <- nrow(stck)
+    ## get properties of required from ctch
+    dx <- mean(ctch$raster$res)
+    nc <- ctch$raster$dim[2]
+    nr <- ctch$raster$dim[1]
 
     idx <- which(!is.na(w))
 
@@ -52,14 +41,14 @@ sink_fill <- function(stck,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
         }
         something_done <- FALSE
         for(ii in idx){
-            if( w[ii] > z[ii] ){
+            if( w[ii] > ctch$layers$dem[ii] ){
                 ## then need to investigate
                 ## compute neighbours
                 jj <- fN(ii,nr,nc,dx)
                 w_min <- min(w[jj$idx]+jj$dx*min_grad,na.rm=TRUE)
-                if( z[ii] > w_min ){
-                    ## set to z and leave
-                    w[ii] <- z[ii]
+                if( ctch$layers$dem[ii] > w_min ){
+                    ## set to ctch$layers$dem and leave
+                    w[ii] <- ctch$layers$dem[ii]
                     something_done <- TRUE
                 }else{
                     if( w[ii] > w_min ){
@@ -78,12 +67,7 @@ sink_fill <- function(stck,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
     }
 
     ## copy filled dem back into stack
-    stck <- raster::setValues(stck, w, layer=which(names(stck)=="filled_dem"))
+    ctch$layers$filled_dem <- w
 
-    if(length(stck_file)>0){
-        raster::writeRaster(stck,stck_file)
-        return(stck_file)
-    }else{
-        return(stck)
-    }
+    return(ctch)
 }
