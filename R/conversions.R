@@ -11,10 +11,11 @@ raster_to_glist <- function(rst,variable_name){
     out <- list(raster=list(crs = crs(rst),
                             ext = extent(rst),
                             res = res(rst),
-                            dim = dim(res)[1:2]),
-                layers=list())
+                            dim = dim(rst)[1:2]),
+                layers=list()
+                )
     out$layers[[variable_name]] <- getValues(rst)
-    return(out)y
+    return(out)
 }
 
 merge_glist <- function(...){

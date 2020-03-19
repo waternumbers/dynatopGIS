@@ -17,15 +17,16 @@ pkgdown::build_site(pacPath)
 devtools::load_all(pacPath)
 dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS")
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS")
-stck <- create_catchment(dem_file)
+ctch <- create_catchment(dem_file)
 shp <- rgdal::readOGR(channel_file)
 property_names <- c(channel_id="identifier",
                     endNode="endNode",
                     startNode="startNode",
                     length="length")
 chn <- create_channel(shp,property_names)
-stck <- add_channel(stck,chn)
-stck <- sink_fill(stck)
+ctch <- add_channel(ctch,chn)
+
+ctch <- sink_fill(ctch)
 stck <- compute_properties(stck)
 cuts <- list(atanb=20)
 stck <- split_to_class(stck,'atb_split',cuts)

@@ -47,7 +47,7 @@ create_catchment <- function(dem,fill_na=TRUE,...){
     catchment$layers$land_area <- rep(prod(catchment$res),length(catchment$layers$dem))*is.na(catchment$layers$dem)
 
     ## check projection is plausible
-    check_projection(dem)
+    check_projection(catchment)
 
     return(catchment)
 }

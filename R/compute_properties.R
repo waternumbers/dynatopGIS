@@ -8,7 +8,7 @@
 #'
 #' @details The algorithm works in two passes. The first computes the number of upstream pixels. The second sequences downslope to compute values.
 #' @export
-compute_properties <- function(stck,verbose=FALSE,...){
+compute_properties <- function(stck,verbose=FALSE){
 
     check_catchment(ctch)
 

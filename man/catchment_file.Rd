@@ -7,20 +7,20 @@
 \alias{check_projection}
 \title{Initialise the analysis by loading a dem}
 \usage{
-create_catchment(dem, catchment_file = "", fill_na = TRUE, ...)
+create_catchment(dem, fill_na = TRUE, ...)
 
-check_catchment(stck, ...)
+check_catchment(ctch, req_names = req_catchment_layers())
 
-check_projection(stck, ...)
+check_projection(ctch, ...)
 }
 \arguments{
 \item{dem}{must be either a rasterLayer or a file name}
 
-\item{catchment_file}{filename to save output to}
-
 \item{fill_na}{should NA values in dem be filled. See details}
 
 \item{...}{passed to raster package functions to set options for reading files}
+
+\item{catchment_file}{filename to save output to}
 
 \item{stck}{a RasterStack or file name for testing to see if it is a catchment description}
 }

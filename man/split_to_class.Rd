@@ -4,14 +4,14 @@
 \alias{split_to_class}
 \title{Split a catchment into hydrological response units (HRUs)}
 \usage{
-split_to_class(stck, split_name, cuts, json_path = getwd(), ...)
+split_to_class(ctch, split_name, cuts)
 }
 \arguments{
-\item{stck}{a RasterStack as created by create_catchment}
-
 \item{split_name}{name to give the split}
 
 \item{cuts}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)}
+
+\item{stck}{a RasterStack as created by create_catchment}
 
 \item{json_path}{the folder to write out json file containing the summary of splits to}
 

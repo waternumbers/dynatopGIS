@@ -19,20 +19,23 @@ sink_fill <- function(ctch,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
     check_catchment(ctch,c("dem","land_area","channel_area","channel_id"))
     
     ## extract dem and channel_id values
-    z <- raster::getValues(stck[['dem']])
-    ch_id <- raster::getValues(stck[['channel_id']])
-
     w <- ctch$layers$dem
     w[!is.na(w)] <- Inf
     w[is.finite(ctch$layers$channel_id)] <- ctch$layers$dem[is.finite(ctch$layers$channel_id)]
-
+   
     ## get properties of required from ctch
     dx <- mean(ctch$raster$res)
     nc <- ctch$raster$dim[2]
     nr <- ctch$raster$dim[1]
 
-    idx <- which(!is.na(w))
-
+    
+    finite_neighbour <- rep(FALSE,length(w))
+    for(ii in which(is.finite(w))){
+        finite_neighbour[fN(ii,nr,nc)] <- TRUE
+    }
+ 
+    # idx <- which(!is.na(w))
+    
     something_done <- TRUE
     it <- 1
     while( something_done ){
@@ -40,30 +43,35 @@ sink_fill <- function(ctch,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
             print(paste("Iteration",it))
         }
         something_done <- FALSE
+        idx <- which( (w > ctch$layers$dem) & finite_neighbour )
         for(ii in idx){
-            if( w[ii] > ctch$layers$dem[ii] ){
+            #if( w[ii] > ctch$layers$dem[ii] ){
                 ## then need to investigate
-                ## compute neighbours
-                jj <- fN(ii,nr,nc,dx)
-                w_min <- min(w[jj$idx]+jj$dx*min_grad,na.rm=TRUE)
-                if( ctch$layers$dem[ii] > w_min ){
-                    ## set to ctch$layers$dem and leave
-                    w[ii] <- ctch$layers$dem[ii]
+            ## compute neighbours
+            jj <- fN(ii,nr,nc,dx)
+            w_min <- min(w[jj$idx]+jj$dx*min_grad,na.rm=TRUE)
+            
+            if( ctch$layers$dem[ii] > w_min ){
+                ## set to ctch$layers$dem and leave
+                w[ii] <- ctch$layers$dem[ii]
+                something_done <- TRUE
+                finite_neighbour[jj$idx] <- TRUE
+            }else{
+                if( w[ii] > w_min ){
+                    w[ii] <- w_min
+                    finite_neighbour[jj$idx] <- TRUE
                     something_done <- TRUE
-                }else{
-                    if( w[ii] > w_min ){
-                        w[ii] <- w_min
-                        something_done <- TRUE
-                    }
                 }
             }
+            ##}
+            
         }
         if( it > max_it ){
             warning("Maximum number of iterations reached, sink filling not complete")
             something_done <- FALSE # cause end of while loop
         }
         it <- it+1
-        #print(sum(is.finite(w)))
+        print(paste(sum(is.finite(w)),sum(is.finite(ctch$layers$dem)),length(idx)))
     }
 
     ## copy filled dem back into stack
