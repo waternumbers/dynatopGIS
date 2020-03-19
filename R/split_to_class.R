@@ -12,22 +12,11 @@
 #'
 #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. These are numbered using a cantor pairing scheme. In theory you could reverse out the class of each layer if required but this isn't implimented.
 #' @export
-split_to_class <- function(stck,split_name,cuts,json_path=getwd(),...){
+split_to_class <- function(ctch,split_name,cuts){
 
-        if(!("RasterStack" %in% class(stck))){
-        if( is.character(stck) ){
-            stck_file <- stck
-            stck <- raster::stack(stck,...)
-        }else{
-            stop("Unknown format for input")
-        }
-    }else{
-        stck_file <- character(0)
-    }
-    check_catchment(stck)
+    check_catchment(ctch)
 
     ## check cuts are valid
-    
     cuts <- as.list(cuts)
     cuts <- lapply(cuts,FUN=function(x){as.numeric(x)})
     cut_names<- names(cuts)
@@ -37,22 +26,19 @@ split_to_class <- function(stck,split_name,cuts,json_path=getwd(),...){
     if( length(cut_names)!=length(unique(cut_names)) ){
         stop("Replicated names in the cuts list")
     }
-
-    ## check output name is valid
-    if( split_name %in% names(stck) ){
-        stop("Output name already used")
-    }
-
-    ## check the layers exist
-    if( !all(cut_names %in% names(stck)) ){
+    if( !all(cut_names %in% names(ctch$layers)) ){
         stop(paste( "Missing layers:",
-                   paste(setdiff(cut_names,names(stck)),collapse=" ")))
+                   paste(setdiff(cut_names,names(ctch$layers)),collapse=" ")))
+    }
+    ## check output name is valid
+    if( split_name %in% names(ctch$layers) ){
+        stop("Output name already used")
     }
 
     ## work out new cuts by cantor_pairing
     #browser()
     for(ii in 1:length(cuts)){
-        x <- raster::cut(stck[[cut_names[ii]]],breaks=as.numeric(cuts[[ii]]))
+        x <- cut(ctch$layers[[cut_names[ii]]],breaks=as.numeric(cuts[[ii]]))
         if(ii == 1){
             cp <- x
         }else{
@@ -62,25 +48,16 @@ split_to_class <- function(stck,split_name,cuts,json_path=getwd(),...){
 
     ## renumber from cantour paring to get sequential values
     ucp <- unique(cp)
-    ucp <- data.frame(ucp,cellStats(stck[['channel_id']],max) + (1:length(ucp)))
-    cp <- raster::subs(cp,ucp)
+    ucp <- setNames( max(c(0,ctch$layer$channel),na.rm=TRUE) + (1:length(ucp)),
+                    paste(ucp) ) # only works since cp is an integer
+    cp <- ucp[paste(cp)]
 
-    ## add back into brick
-    cp <- raster::mask(cp,stck[['dem']])
-    names(cp) <- split_name
-    stck <- addLayer(stck,cp)
+    ## add back into layer
+    ctch$layers[[split_name]] <- cp
+    
+    ## record in splits
+    ctch$cuts[[split_name]] <- cuts
 
-    ## make and write json
-    tmp <- list(cuts=cuts)
-    writeLines( jsonlite::toJSON(tmp,pretty=TRUE),
-               file.path(json_path,paste0(split_name,'.json')) )
-
-    if(length(stck_file)>0){
-        writeRaster(stck,stck_file)
-        return(stck_file)
-    }else{
-        return(stck)
-    }
-
+    return(ctch)
 }
 

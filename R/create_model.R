@@ -9,26 +9,7 @@
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(stck,chn,hillslope_class,...){
-
-    if(!("RasterStack" %in% class(stck))){
-        if( is.character(stck) ){
-            stck_file <- stck
-            stck <- raster::stack(stck,...)
-        }else{
-            stop("Unknown format for input")
-        }
-    }else{
-        stck_file <- character(0)
-    }
-
-    if(!is(chn,"SpatialPolygonsDataFrame")){
-        if(is.character(chn)){
-            chn <- rgdal::readOGR(chn,...)
-        }else{
-            stop("Unknown channel format")
-        }
-    }
+create_model <- function(ctch,chn,hillslope_class){
 
     check_catchment(stck)
     check_channel(chn)
@@ -37,7 +18,7 @@ create_model <- function(stck,chn,hillslope_class,...){
     ##  Check required inputs are available
     ## ####################################
 
-    if( !(hillslope_class %in% names(stck)) ){
+    if( !(hillslope_class %in% names(ctch$layers)) ){
         stop("Missing hillslope classification layer")
     }
 
@@ -64,13 +45,13 @@ create_model <- function(stck,chn,hillslope_class,...){
     }
     
     ## check all channels in raster and in chn
-    if( !all( raster::unique(stck[['channel_id']]) %in% chn[['id']] ) ){
+    if( !all( unique(ctch$layers[['channel_id']]) %in% chn[['id']] ) ){
         stop("There are channels in raster file that are not in the shape file")
     }
 
     ## check all hillslope id numbers are unique to channels
-    uid_hillslope <- raster::unique(stck[[hillslope_class]])
-    uid_channel <- raster::unique(stck[['channel_id']])
+    uid_hillslope <- unique(ctch$layers[[hillslope_class]])
+    uid_channel <- unique(ctch$layers[['channel_id']])
     if( any( uid_hillslope %in% uid_channel ) ){
         stop("Hillslope class id numbers and channel id numbers are not unique")
     }
@@ -83,15 +64,16 @@ create_model <- function(stck,chn,hillslope_class,...){
     }
 
     ## #######################################
-    ## Add additional splits by order
+    ## create the hillslope id by combining splits and order
     ## #######################################
-    cp <- stck[[hillslope_class]]
-    x <- stck[['order']]
-    cp <- 0.5*(cp+x)*(cp+x+1)+x
+    cp <- 0.5*(ctch$layers[[hillslope_class]] + ctch$layers[['order']])*
+        (ctch$layers[[hillslope_class]] + ctch$layers[['order']] + 1) +
+        ctch$layers[['order']]
     ucp <- unique(cp)
-    ucp <- data.frame(ucp,max(uid_channel) + (1:length(ucp)))
-    hillslope_id <- raster::subs(cp,ucp) # this is the new HRU class number
-    uid_hillslope <- raster::unique(hillslope_id)
+    ucp <- setNames(data.frame(ucp,max(uid_channel) + (1:length(ucp))),
+                    paste(ucp))
+    hillslope_id <- ucp[paste(cp)] # this is the new HRU class number
+    uid_hillslope <- unique(hillslope_id,na.rm=TRUE)
     uid <- c(uid_hillslope,uid_channel)
     
     ## #######################################
