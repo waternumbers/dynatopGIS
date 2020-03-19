@@ -44,7 +44,8 @@ create_catchment <- function(dem,fill_na=TRUE,...){
     catchment <- raster_to_glist(dem,"dem")
 
     ## add land area
-    catchment$layers$land_area <- rep(prod(catchment$res),length(catchment$layers$dem))*is.na(catchment$layers$dem)
+    catchment$layers$land_area <- rep(prod(catchment$res),length(catchment$layers$dem))*
+        !is.na(catchment$layers$dem)
 
     ## check projection is plausible
     check_projection(catchment)
@@ -62,8 +63,9 @@ check_catchment <- function(ctch,req_names=req_catchment_layers()){
     }
 
     if(!all( req_names %in% names(ctch$layers) )){
-        stop("Catchment missing key layers",
-             setdiff( req_names,  names(ctch$layers)))
+        stop(paste(c("Catchment missing key layers:",
+                     setdiff( req_names,  names(ctch$layers))),
+                   collapse="\n"))
     }
     
     check_projection(ctch)
@@ -92,5 +94,5 @@ check_projection <- function(ctch,...){
 #' returns the list of required layers in the catchment file
 req_catchment_layers <- function(){
     c("dem","filled_dem","land_area","channel_area","channel_id",
-      "atanb","gradient","upslope_area","contour_length","order")
+      "atanb","gradient","upslope_area","order","flowDir")
 }

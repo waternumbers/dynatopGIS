@@ -27,7 +27,7 @@ chn <- create_channel(shp,property_names)
 ctch <- add_channel(ctch,chn)
 
 ctch <- sink_fill(ctch)
-stck <- compute_properties(stck)
+ctch <- compute_properties(ctch)
 cuts <- list(atanb=20)
 stck <- split_to_class(stck,'atb_split',cuts)
 model <- create_model(stck,chn,'atb_split')

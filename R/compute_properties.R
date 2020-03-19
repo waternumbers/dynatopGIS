@@ -8,34 +8,38 @@
 #'
 #' @details The algorithm works in two passes. The first computes the number of upstream pixels. The second sequences downslope to compute values.
 #' @export
-compute_properties <- function(stck,verbose=FALSE){
+compute_properties <- function(ctch,verbose=FALSE){
 
-    check_catchment(ctch)
+    check_catchment(ctch,c("filled_dem","channel_id",
+                           "land_area","channel_area"))
 
 
     ## get properties of required from ctch
     dx <- mean(ctch$raster$res)
     nc <- ctch$raster$dim[2]
     nr <- ctch$raster$dim[1]
-    
-    ## first pass to compute the number of higher cells, flow directions
+    #browser()
+    ## First pass to compute the number of higher cells, flow directions
     ## and variables that are not order specific
+
+    cat("Pass 1")
     
     n_higher <- rep(NA,prod(ctch$raster$dim)) ## number of higher cells
     grad_cl <- rep(NA,prod(ctch$raster$dim)) ## sum of gradient * contour length of flow paths
-    ctch$layers["flowDir"] <- rep(list(NULL),prod(ctch$raster$dim))
-    ctch$layers["gradient"] <- rep(NA,prod(ctch$raster$dim))
     
-    idx <- which(!is.na(catch$layers$filled_dem))
+    ctch$layers[["flowDir"]] <- rep(list(NULL),prod(ctch$raster$dim))
+    ctch$layers[["gradient"]] <- rep(NA,prod(ctch$raster$dim))
+    
+    idx <- which(!is.na(ctch$layers$filled_dem))
     for(ii in idx){
 
         ## skip of no land area
-        if( catch$layers$lnd_area[ii] <= 0 ){
+        if( ctch$layers$land_area[ii] <= 0 ){
             next
         }
 
         ## if cell has a channel_id then set flags
-        if( is.finite(catch$layers$channel_id[ii]) ){
+        if( is.finite(ctch$layers$channel_id[ii]) ){
             is_channel <- TRUE
         }else{
             is_channel <- FALSE
@@ -44,12 +48,12 @@ compute_properties <- function(stck,verbose=FALSE){
         
         ## work out neighbours and gradient to them
         jj <- fN(ii,nr,nc,dx)
-        jj$grd <- (catch$layers$filled_dem[ii] - catch$layers$filled_dem[jj$idx])/jj$dx
+        jj$grd <- (ctch$layers$filled_dem[ii] - ctch$layers$filled_dem[jj$idx])/jj$dx
 
         
         ## work out higher cells (negative gradient and not channels)
         ## these need evaluating first
-        is_higher <- which( (jj$grd < 0) & !is.finite(catch$layers$channel_id[jj$idx]) )
+        is_higher <- which( (jj$grd < 0) & !is.finite(ctch$layers$channel_id[jj$idx]) )
 
         ## work out the lower cells (positive gradient)
         is_lower <- which(jj$grd > 0)
@@ -97,9 +101,13 @@ compute_properties <- function(stck,verbose=FALSE){
         }
     }
 
+    
     ## Second pass to compute ordered valraibles
-    ctch$layers[c("band","atanb")] <- rep(NA,prod(ctch$raster$dim))
-    ctch$layers$upslope_area <- catch$layers$land_area
+    cat("Pass 2")
+    
+    ctch$layers[["band"]] <- ctch$layers[["atanb"]] <- rep(NA,prod(ctch$raster$dim))
+    ctch$layers$upslope_area <- ctch$layers$land_area
+Q
     
     ## work down list of higher cells
     idx <- which(n_higher==0)
@@ -110,18 +118,18 @@ compute_properties <- function(stck,verbose=FALSE){
             print(paste("Band",cnt))
         }
         
-        catch$layers$band[idx] <- cnt
+        ctch$layers$band[idx] <- cnt
         n_higher[idx] <- -1
         for(ii in idx){
 
             ## skip if no downslope linkages
-            if(length(ctch$flowDir[[ii]]) == 0){
+            if(length(ctch$layers$flowDir[[ii]]) == 0){
                 next
             }
 
             ## move upslopre area downslope
-            kk <- ctch$flowDir[[ii]]$idx
-            ff <- ctch$flowDir[[ii]]$frc
+            kk <- ctch$layers$flowDir[[ii]]$idx
+            ff <- ctch$layers$flowDir[[ii]]$frc
             ctch$layers$upslope_area[kk] <- ctch$layers$upslope_area[kk] +
                 ctch$layers$upslope_area[ii]*ff
             n_higher[kk] <- n_higher[kk] - 1
@@ -132,9 +140,9 @@ compute_properties <- function(stck,verbose=FALSE){
     }
 
     ## compute tographic from summaries
+    browser()
     ctch$layers$atanb <- log( ctch$layers$upslope_area / grad_cl )
-    if( any(ctch$layers$atanb[ii]==Inf) ){
-        browser()
+    if( any(ctch$layers$atanb==Inf) ){       
         warning("None finite topographic index values produced - this requires investigation")
     }
 
