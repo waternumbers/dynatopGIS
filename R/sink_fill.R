@@ -39,14 +39,17 @@ sink_fill <- function(ctch,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
     something_done <- TRUE
     it <- 1
     while( something_done ){
-        if( verbose ){
-            print(paste("Iteration",it))
-        }
         something_done <- FALSE
         idx <- which( (w > ctch$layers$dem) & finite_neighbour )
+
+        if( verbose ){
+            cat("Iteration",it,"\n")
+            cat("\t","Cells to evaluate:",length(idx),"\n")
+            cat("\t","Percentage Complete:",
+                  round(100*sum(is.finite(w))/sum(is.finite(ctch$layers$dem)),1),"\n")
+        }
+        
         for(ii in idx){
-            #if( w[ii] > ctch$layers$dem[ii] ){
-                ## then need to investigate
             ## compute neighbours
             jj <- fN(ii,nr,nc,dx)
             w_min <- min(w[jj$idx]+jj$dx*min_grad,na.rm=TRUE)
@@ -63,19 +66,17 @@ sink_fill <- function(ctch,min_grad = 1e-4,max_it=1e6,verbose=FALSE,...){
                     something_done <- TRUE
                 }
             }
-            ##}
-            
         }
         if( it > max_it ){
             warning("Maximum number of iterations reached, sink filling not complete")
             something_done <- FALSE # cause end of while loop
         }
         it <- it+1
-        print(paste(sum(is.finite(w)),sum(is.finite(ctch$layers$dem)),length(idx)))
+        
     }
-
+    
     ## copy filled dem back into stack
     ctch$layers$filled_dem <- w
-
+    
     return(ctch)
 }
