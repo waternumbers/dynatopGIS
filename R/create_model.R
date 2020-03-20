@@ -9,9 +9,9 @@
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(ctch,chn,hillslope_class){
+create_model <- function(ctch,chn,hillslope_class,band_cut=5){
 
-    check_catchment(stck)
+    check_catchment(ctch)
     check_channel(chn)
 
     ## ####################################
@@ -43,92 +43,77 @@ create_model <- function(ctch,chn,hillslope_class){
     if( length(unique(chn[['startNode']])) != nrow(chn) ){
         stop("There are channel bifurcations which are not handled in the simulation code")
     }
+
+    ## get unique hillslope class and channel id numbers
+    uid <- list(hillslope = unique(ctch$layers[[hillslope_class]]),
+                channel = unique(ctch$layers[['channel_id']])
+                )
+    for(ii in names(uid)){
+        uid[[ii]] <- uid[[ii]][!is.na(uid[[ii]])]
+    }
     
-    ## check all channels in raster and in chn
-    if( !all( unique(ctch$layers[['channel_id']]) %in% chn[['id']] ) ){
+    ## check all channels in raster are in channel
+    if( !all( uid[['channel']] %in% chn[['id']] ) ){
         stop("There are channels in raster file that are not in the shape file")
     }
-
-    ## check all hillslope id numbers are unique to channels
-    uid_hillslope <- unique(ctch$layers[[hillslope_class]])
-    uid_channel <- unique(ctch$layers[['channel_id']])
-    if( any( uid_hillslope %in% uid_channel ) ){
-        stop("Hillslope class id numbers and channel id numbers are not unique")
-    }
-
+    
     ## check that uids are sequential numbers from 1
-    uid <- c(uid_hillslope,uid_channel)
-    if( !all( uid %in% 1:length(uid) ) &&
-        min( uid )!=1 ){
-        stop("The hillslope and channel id's chould be sequential numbers starting from 1")
+    for(ii in names(uid)){
+        tmp <- range(uid[[ii]])
+        if( tmp[1] !=1 | tmp[2] != length(uid[[ii]]) ){
+            stop("The",ii,"id numbers should run sequentially from 1")
+        }
     }
+    
 
-    ## #######################################
-    ## create the hillslope id by combining splits and order
-    ## #######################################
-    cp <- 0.5*(ctch$layers[[hillslope_class]] + ctch$layers[['order']])*
-        (ctch$layers[[hillslope_class]] + ctch$layers[['order']] + 1) +
-        ctch$layers[['order']]
-    ucp <- unique(cp)
-    ucp <- setNames(data.frame(ucp,max(uid_channel) + (1:length(ucp))),
+    ## cut up the bands
+    cut_band <- as.numeric(cut(ctch$layers$band,breaks=as.numeric(band_cut)))
+
+    ## create hsu ids
+    cp <- 0.5*(ctch$layers[[hillslope_class]] + cut_band)*
+        (ctch$layers[[hillslope_class]] + cut_band + 1) +
+        cut_band
+    ucp <- unique(cp[!is.na(cp)])
+    ucp <- setNames(1:length(ucp),
                     paste(ucp))
-    hillslope_id <- ucp[paste(cp)] # this is the new HRU class number
-    uid_hillslope <- unique(hillslope_id,na.rm=TRUE)
-    uid <- c(uid_hillslope,uid_channel)
-    
-    ## #######################################
-    ## Basic computations of hillslope properties
-    ## #######################################
+    ## create vector of HSU numbers for the hillslopes
+    hillslope_hsu_id <- unname(ucp[paste(cp)]) + max(uid[['channel']]) ## this is the new HRU class number
+    uid[['hillslope_hsu']] <- unique(hillslope_hsu_id[!is.na(hillslope_hsu_id)])
 
-    ## initialise varaibles
-    class <- band <- delta_x <- rep(NA,length(uid))    
-    area <- rep(0,length(uid))
-    s_bar <- rep(0,length(uid))
-    atb_bar <-  rep(0,length(uid))
-    W <- Matrix(0,length(uid),length(uid),sparse=TRUE)
-    #W <- matrix(0,length(uid),length(uid))
-    
-    ## computations using raster package
-    class[uid_hillslope] <- unname(tapply(raster::getValues(stck[[hillslope_class]]),
-                                          raster::getValues(hillslope_id),unique))
-    band[uid_hillslope] <- unname(tapply(raster::getValues(stck[["order"]]),
-                                         raster::getValues(hillslope_id),unique))
-    band[uid_channel] <- max(band,na.rm=TRUE)+1 
-    delta_x[uid_hillslope] <- raster::xres(stck)
-
-    ## computations by looping
-    dem <- raster::getValues(stck[['filled_dem']])
-    ch_id <- raster::getValues(stck[['channel_id']])
-    lnd_area <- raster::getValues(stck[['land_area']])
-    ch_area <- raster::getValues(stck[['channel_area']])
-    hs_id <- raster::getValues(hillslope_id)
-    grad <- raster::getValues(stck[['gradient']])
-    atb <- raster::getValues(stck[['atanb']])
-
-    #browser()
-    ## call cpp version
-    ## area atb_bar atb s_bar are altered, W explicitly returned since can't be referenced
-    W <- rcpp_hru(dem,hs_id,ch_id,lnd_area,ch_area,grad,atb,W,
-                         area,s_bar,atb_bar,
-                         c(nrow(stck),ncol(stck),xres(stck)))
-    
-    W <- W %*% Diagonal(length(area),1/area)
-    s_bar <- s_bar/area
-    atb_bar <- atb_bar/area
-    
-    ## create the model list to be populated
+    ## Initialise the model
     model <- list()
-
-    ## hillslope elements
+    
+    ## create the model hillslope table and do basic computations
     model$hillslope <- data.frame(
-        id = as.integer(uid_hillslope),
-        area = area[uid_hillslope],
-        atb_bar = atb_bar[uid_hillslope],
-        s_bar = s_bar[uid_hillslope],
-        delta_x = delta_x[uid_hillslope],
-        class = class[uid_hillslope],
-        sz_band = band[uid_hillslope],
-        sf_band = band[uid_hillslope],
+        id = as.integer(uid[['hillslope_hsu']]),
+        area = unname(tapply(ctch$layers$land_area,
+                             hillslope_hsu_id,
+                             sum)
+                      [ paste(uid[['hillslope_hsu']]) ]),
+        atb_bar = unname(tapply(ctch$layers$land_area*ctch$layers$atanb,
+                                hillslope_hsu_id,
+                                sum)
+                         [ paste(uid[['hillslope_hsu']]) ]),
+        s_bar = unname(tapply(ctch$layers$land_area*ctch$layers$gradient,
+                              hillslope_hsu_id,
+                              sum)
+                       [ paste(uid[['hillslope_hsu']]) ]),
+        delta_x = unname(tapply(ctch$layers$band,
+                                hillslope_hsu_id,
+                                function(z){diff(range(z))})
+                         [ paste(uid[['hillslope_hsu']]) ]),
+        class = unname(tapply(ctch$layers[[hillslope_class]],
+                              hillslope_hsu_id,
+                              unique)
+                       [ paste(uid[['hillslope_hsu']]) ]),
+        sz_band = unname(tapply(ctch$layers$band,
+                                hillslope_hsu_id,
+                                min)
+                         [ paste(uid[['hillslope_hsu']])]),
+        sf_band = unname(tapply(ctch$layers$band,
+                                hillslope_hsu_id,
+                                sum)
+                         [ paste(uid[['hillslope_hsu']]) ]),
         precip="unknown",
         pet="unknown",
         q_sfmax="q_sfmax_default",
@@ -140,21 +125,124 @@ create_model <- function(ctch,chn,hillslope_class){
         t_sf="t_sf_default",
         stringsAsFactors=FALSE
     )
-
-    ## channel elements
+    model$hillslope$atb_bar <- model$hillslope$atb_bar / model$hillslope$area
+    model$hillslope$s_bar <- model$hillslope$s_bar / model$hillslope$area
+    model$hillslope$delta_x <- model$hillslope$delta_x * mean(ctch$raster$res)
+    
+    ## create the model channel table and do basic computations
     model$channel <- data.frame(
-        id = uid_channel,
-        area = area[uid_channel],
-        length = NA,
-        sz_band = band[uid_channel],
-        sf_band = band[uid_channel],
-        next_id = NA,
+        id = uid[['channel']],
+        area = unname(tapply(ctch$layers$channel_area,
+                             ctch$layers$channel_id,
+                             sum)
+                      [ paste(uid[['channel']]) ]),
+        length = as.numeric(chn$length),
+        sz_band = max(model$hillslope$sz_band)+1,
+        sf_band = max(model$hillslope$sf_band)+1,
         precip="unknown",
         pet="unknown",
         v_ch="v_ch_default",
         stringsAsFactors=FALSE
     )
 
+    ## #############################################
+    ## Compute the hillslope HSU flow redistribution
+    ## #############################################
+
+    ## initialise the output
+    model$hillslope[["sz_flowDir"]] <- rep(list(NULL),nrow(model$hillslope))
+
+    ## work out the band of each hsu
+    hsu_bnd <- rep(NA,max(uid$hillslope_hsu))
+    hsu_bnd[model$hillslope$id] <- model$hillslope$sz_band
+    hsu_bnd[model$channel$id] <- model$channel$sz_band
+
+    ## work out the order in which to pass through the hillslope hsus
+    ## from low to high band
+    idx <- (1:nrow(model$hillslope))[order(model$hillslope$sz_band)]
+
+    ## pass through them computing downslope
+    for(ii in idx){
+        ## initialise fraction in each direction
+        tmp <- rep(0,max(uid$hillslope_hsu))
+        id <- model$hillslope$id[ii]
+        
+        bm <- list()
+        cnt <- 1
+        ## loop through raster cells
+        for(jj in which(hillslope_hsu_id == id)){
+            ## set to downslope hillslope HSU value
+            if( length( ctch$layers$flowDir[[jj]]$idx )== 0 ){
+                ds <- ctch$layers$channel_id[jj]
+                frc <- 1
+            }else{
+                ds <- hillslope_hsu_id[ ctch$layers$flowDir[[jj]]$idx ]
+                
+                ## if this is NA set to downslope channel HSU value
+                ch <- ctch$layers$channel_id[ ctch$layers$flowDir[[jj]]$idx ]
+                ds[is.na(ds)] <- ch[is.na(ds)]
+                frc <- ctch$layers$flowDir[[jj]]$frc
+            }
+            bm[[cnt]] <- frc
+            cnt <- cnt+1
+            ## spread area downslope
+            ## Need to allow for repeat downslope classes - to see the problem
+            ## try running a <- 1:10; b <- c(3,4,5,3); f <- 1:4; a[b] <- a[b]+f
+            lmp <- by(frc,ds,sum)
+            ds <- as.numeric(names(lmp))
+            frc <- as.numeric(lmp)
+            
+            tmp[ds] <- tmp[ds] + ctch$layers$land_area[jj]*frc
+
+        }
+
+        print(paste(ii,id) )
+        print(paste( sum(tmp), model$hillslope$area[ii]))
+        #browser()
+        ## Ensure that flow only goes to HSUs later in sequence
+        ## these have a higher band number
+        kk <- which(tmp>0 & hsu_bnd > model$hillslope$sz_band[ii]) # trim to posistive and lower
+        if( length(kk) > 0 ){
+            ## if there is one
+            ## then the flow can be redistributed to higher bands (more downslope)
+            model$hillslope[["sz_flowDir"]][[ii]]$idx <- kk
+            model$hillslope[["sz_flowDir"]][[ii]]$frc <- tmp[kk]/sum(tmp[kk])
+        }else{
+            ## if not look for the HSUs of the same class which are downslope
+            kk <- which(model$hillslope$class == model$hillslope$class[ii] &
+                        model$hillslope$sz_band > model$hillslope$sz_band[ii])
+            if( length(kk) > 0 ){
+                ## there are some select the nearest and send all flow there
+                kk <- kk[which.min(model$hillslope$sz_band[kk])]
+                model$hillslope[["sz_flowDir"]][[ii]]$idx <- model$hillslope$id[kk]
+                model$hillslope[["sz_flowDir"]][[ii]]$frc <- 1
+            }else{
+                ## Cna't send flow anywhere issue a warning
+                warning("Some HSU have no downslope output")
+            }
+        }
+    }
+
+    ## set surface flow directions to match saturated zone
+    model$hillslope$sf_flowDir <- model$hillslope$sz_flowDir
+
+    ## compute the channel HSU redistributions
+    model$channel[["flowDir"]] <- rep(list(NULL),nrow(model$channel))
+
+    for(ii in 1:nrow(model$channel)){
+        idx <- which(chn[['id']]==model$channel$id[ii])
+        if(length(idx) != 1){
+            stop("Inconsitency between channel raster and shapefile")
+        }
+        
+        ## work out next id
+        jdx <- which(chn[['startNode']]==chn[['endNode']][idx])
+        if( length(jdx) > 0 ){
+            model$channel$flowDir[[ii]] <- list(idx=jdx,
+                                                frc= 1/length(jdx))
+        }
+    }
+    
     ## parameter values
     model$param <- c(q_sfmax_default=Inf,
                      s_rzmax_default=0.05,
@@ -164,33 +252,6 @@ create_model <- function(ctch,chn,hillslope_class){
                      t_d_default=20,
                      t_sf_default=100,
                      v_ch_default=100)
-
-
-    ## ########################
-    ## Process the redistirbution matrices for the hillslope
-    ## ########################
-    #browser()
-    model$Fsf <- model$Fsz <- W
-
-    ## #######################################
-    ## Add channel routing information
-    ## #######################################
-    ##si <- NULL
-    ##sj <- NULL
-    for(ii in uid_channel){
-        idx <- which(chn[['id']]==ii)
-        if(length(idx) != 1){
-            stop("Inconsitency between channel raster and shapefile")
-        }
-        ## set length
-        model$channel$length[ii] <- as.numeric( chn[['length']][idx] )
-        ## work out next id
-        jdx <- which(chn[['startNode']]==chn[['endNode']][idx])
-        if( length(jdx) ==1 ){ # case of jdx>1 handled in bifurcation check
-            model$channel$next_id[ii] <- chn[['id']][jdx]
-        }
-    }
-    
 
     ## ############################################
     ## Add gauges at all outlets from river network

@@ -48,7 +48,7 @@ split_to_class <- function(ctch,split_name,cuts){
 
     ## renumber from cantour paring to get sequential values
     ucp <- unique(cp)
-    ucp <- setNames( max(c(0,ctch$layer$channel),na.rm=TRUE) + (1:length(ucp)),
+    ucp <- setNames( 1:length(ucp),
                     paste(ucp) ) # only works since cp is an integer
     cp <- ucp[paste(cp)]
 

@@ -44,7 +44,9 @@ create_catchment <- function(dem,fill_na=TRUE,...){
     catchment <- raster_to_glist(dem,"dem")
 
     ## add land area
-    catchment$layers$land_area <- rep(prod(catchment$res),length(catchment$layers$dem))*
+    
+    catchment$layers$land_area <- rep(prod(catchment$raster$res),
+                                      length(catchment$layers$dem))*
         !is.na(catchment$layers$dem)
 
     ## check projection is plausible
@@ -94,5 +96,5 @@ check_projection <- function(ctch,...){
 #' returns the list of required layers in the catchment file
 req_catchment_layers <- function(){
     c("dem","filled_dem","land_area","channel_area","channel_id",
-      "atanb","gradient","upslope_area","order","flowDir")
+      "atanb","gradient","upslope_area","band","flowDir")
 }

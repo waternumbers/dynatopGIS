@@ -22,7 +22,7 @@ compute_properties <- function(ctch,verbose=FALSE){
     ## First pass to compute the number of higher cells, flow directions
     ## and variables that are not order specific
 
-    cat("Pass 1")
+    cat("Pass 1","\n")
     
     n_higher <- rep(NA,prod(ctch$raster$dim)) ## number of higher cells
     grad_cl <- rep(NA,prod(ctch$raster$dim)) ## sum of gradient * contour length of flow paths
@@ -103,11 +103,11 @@ compute_properties <- function(ctch,verbose=FALSE){
 
     
     ## Second pass to compute ordered valraibles
-    cat("Pass 2")
+    cat("Pass 2","\n")
     
     ctch$layers[["band"]] <- ctch$layers[["atanb"]] <- rep(NA,prod(ctch$raster$dim))
     ctch$layers$upslope_area <- ctch$layers$land_area
-Q
+    
     
     ## work down list of higher cells
     idx <- which(n_higher==0)
@@ -140,9 +140,9 @@ Q
     }
 
     ## compute tographic from summaries
-    browser()
+    
     ctch$layers$atanb <- log( ctch$layers$upslope_area / grad_cl )
-    if( any(ctch$layers$atanb==Inf) ){       
+    if( any(ctch$layers$atanb==Inf,na.rm=TRUE) ){       
         warning("None finite topographic index values produced - this requires investigation")
     }
 

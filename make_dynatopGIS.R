@@ -25,12 +25,12 @@ property_names <- c(channel_id="identifier",
                     length="length")
 chn <- create_channel(shp,property_names)
 ctch <- add_channel(ctch,chn)
-
 ctch <- sink_fill(ctch)
 ctch <- compute_properties(ctch)
 cuts <- list(atanb=20)
-stck <- split_to_class(stck,'atb_split',cuts)
-model <- create_model(stck,chn,'atb_split')
+ctch <- split_to_class(ctch,'atb_split',cuts)
+
+model <- create_model(ctch,chn,'atb_split')
 saveRDS(model,"./dynatop/inst/extdata/Swindale.rds")
 
 
