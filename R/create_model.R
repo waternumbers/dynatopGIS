@@ -9,7 +9,7 @@
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(ctch,chn,hillslope_class,band_cut=5){
+create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
 
     check_catchment(ctch)
     check_channel(chn)
@@ -161,11 +161,20 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5){
     ## from low to high band
     idx <- (1:nrow(model$hillslope))[order(model$hillslope$sz_band)]
 
+    if(verbose){
+        verbose_cnt <- c(numeric(2),sum(model$hillslope$area))
+    }
+    
     ## pass through them computing downslope
     for(ii in idx){
         ## initialise fraction in each direction
         tmp <- rep(0,max(uid$hillslope_hsu))
         id <- model$hillslope$id[ii]
+
+        if(verbose){
+            verbose_cnt[1] <- verbose_cnt[1] + 1
+            cat("Processing ",verbose_cnt[1]," of ",length(idx)," hillsope HSUs","\n")
+        }
         
         bm <- list()
         cnt <- 1
@@ -194,10 +203,10 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5){
             
             tmp[ds] <- tmp[ds] + ctch$layers$land_area[jj]*frc
 
+
+            
         }
 
-        print(paste(ii,id) )
-        print(paste( sum(tmp), model$hillslope$area[ii]))
         #browser()
         ## Ensure that flow only goes to HSUs later in sequence
         ## these have a higher band number
@@ -220,6 +229,12 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5){
                 ## Cna't send flow anywhere issue a warning
                 warning("Some HSU have no downslope output")
             }
+        }
+
+        if(verbose){
+            #browser()
+            verbose_cnt[2] <- verbose_cnt[2] + sum(tmp)
+            cat("\t","Processed ",round(100*verbose_cnt[2]/verbose_cnt[3]),"% of area","\n")
         }
     }
 
@@ -256,7 +271,7 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5){
     ## ############################################
     ## Add gauges at all outlets from river network
     ## ############################################
-    idx <- which(is.na(model$channel$next_id))
+    idx <- which(sapply(model$channel$flowDir,length)==0)
     model$gauge <- data.frame(
         name = paste("channel",model$channel$id[idx],sep="_"),
         id = model$channel$id[idx],
