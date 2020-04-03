@@ -4,12 +4,12 @@
 \alias{compute_properties}
 \title{Function to compute statistics of catchment pixels}
 \usage{
-compute_properties(stck, verbose = FALSE)
+compute_properties(ctch, verbose = FALSE)
 }
 \arguments{
-\item{stck}{RasterStack or file containing the raster stack (as generated using create_catchment)}
-
 \item{verbose}{print out additional diagnostic information}
+
+\item{stck}{RasterStack or file containing the raster stack (as generated using create_catchment)}
 
 \item{...}{additional parameters passed to raster::stack if stck is a file name}
 }

@@ -30,7 +30,7 @@ ctch <- compute_properties(ctch)
 cuts <- list(atanb=20)
 ctch <- split_to_class(ctch,'atb_split',cuts)
 
-model <- create_model(ctch,chn,'atb_split',verbose=TRUE)
+model <- create_model(ctch,'atb_split',verbose=TRUE)
 saveRDS(model,"./dynatop/inst/extdata/Swindale.rds")
 
 

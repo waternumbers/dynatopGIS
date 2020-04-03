@@ -4,7 +4,7 @@
 \alias{create_model}
 \title{Create a dynamic TOPMODEL suitabel more model evaluation}
 \usage{
-create_model(ctch, chn, hillslope_class)
+create_model(ctch, chn, hillslope_class, band_cut = 5, verbose = FALSE)
 }
 \arguments{
 \item{chn}{a channel object as created by create_channel}

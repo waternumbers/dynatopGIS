@@ -52,6 +52,10 @@ add_channel <- function(ctch,channel,...){
     ctch$layers$land_area[ch_cell$cell] <- ch_cell$land_area
     ctch$layers$channel_area[ch_cell$cell] <- ch_cell$channel_area
     ctch$layers$channel_id[ch_cell$cell]  <- ch_cell$id
+
+    ## add channel to the catchment object
+    ## This is used for plotting and model generation
+    ctch$channel <- channel 
     
     return(ctch)
 }

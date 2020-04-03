@@ -3,16 +3,15 @@
 #' @description take a classification map and associatd GIS data then computes the GIS properties needed for dynamic TOPMODEL.
 #'
 #' @param stck a RasterBrick as created by create_brick
-#' @param chn a channel object as created by create_channel
 #' @param hillslope_class Name of the existing hillslope classification to use to generate the model - a layer in stck
 #' @param ... passed to \code{raster::stack} if loading a file
 #'
 #' @return Logical imdicating it has run. Outputs an rds file named after the classification in the project directory containing the model summary.
 #' @export
-create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
+create_model <- function(ctch,hillslope_class,band_cut=5,verbose=FALSE){
 
     check_catchment(ctch)
-    check_channel(chn)
+    check_channel(ctch$channel)
 
     ## ####################################
     ##  Check required inputs are available
@@ -21,8 +20,7 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
     if( !(hillslope_class %in% names(ctch$layers)) ){
         stop("Missing hillslope classification layer")
     }
-
-
+    
     ## ###############################################################
     ## Sanity checks that :
     ##   - Channel shape and raster file are consistent
@@ -32,7 +30,7 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
 
     ## check channel shape file values are not missing
     for(ii in c('endNode','startNode','length')){
-        nm <- sum( is.na(chn[[ii]]) )
+        nm <- sum( is.na(ctch$channel[[ii]]) )
         max_mn <- ifelse(ii=="endNode",1,0)
         if(nm > max_mn){
             warning(paste("To many missing values (",nm,") in channel", ii, "variable - channels and outlets may be wrong"))
@@ -40,7 +38,7 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
     }
 
     ## check there are no channel bifurcations..since these aren't handled
-    if( length(unique(chn[['startNode']])) != nrow(chn) ){
+    if( length(unique(ctch$channel[['startNode']])) != nrow(ctch$channel) ){
         stop("There are channel bifurcations which are not handled in the simulation code")
     }
 
@@ -53,7 +51,7 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
     }
     
     ## check all channels in raster are in channel
-    if( !all( uid[['channel']] %in% chn[['id']] ) ){
+    if( !all( uid[['channel']] %in% ctch$channel[['id']] ) ){
         stop("There are channels in raster file that are not in the shape file")
     }
     
@@ -136,7 +134,7 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
                              ctch$layers$channel_id,
                              sum)
                       [ paste(uid[['channel']]) ]),
-        length = as.numeric(chn$length),
+        length = as.numeric(ctch$channel$length),
         sz_band = max(model$hillslope$sz_band)+1,
         sf_band = max(model$hillslope$sf_band)+1,
         precip="unknown",
@@ -245,13 +243,13 @@ create_model <- function(ctch,chn,hillslope_class,band_cut=5,verbose=FALSE){
     model$channel[["flowDir"]] <- rep(list(NULL),nrow(model$channel))
 
     for(ii in 1:nrow(model$channel)){
-        idx <- which(chn[['id']]==model$channel$id[ii])
+        idx <- which(ctch$channel[['id']]==model$channel$id[ii])
         if(length(idx) != 1){
             stop("Inconsitency between channel raster and shapefile")
         }
         
         ## work out next id
-        jdx <- which(chn[['startNode']]==chn[['endNode']][idx])
+        jdx <- which(ctch$channel[['startNode']]==ctch$channel[['endNode']][idx])
         if( length(jdx) > 0 ){
             model$channel$flowDir[[ii]] <- list(idx=jdx,
                                                 frc= 1/length(jdx))
