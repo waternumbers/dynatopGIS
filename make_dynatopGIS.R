@@ -4,7 +4,7 @@ graphics.off()
 
 ## path of the package
 pacPath <- './dynatopGIS'
-Rcpp::compileAttributes(pacPath)
+## Rcpp::compileAttributes(pacPath)
 devtools::document(pacPath)
 devtools::check(pacPath)
 tmp <- devtools::build(pacPath)
@@ -15,25 +15,22 @@ pkgdown::build_site(pacPath)
 
 ## This code runs to generate the model used in the dynatop examples
 devtools::load_all(pacPath)
-dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS")
-channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS")
-ctch <- create_catchment(dem_file)
-shp <- rgdal::readOGR(channel_file)
+dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS"))
+shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS"))
 property_names <- c(channel_id="identifier",
-                    endNode="endNode",
-                    startNode="startNode",
-                    length="length")
-chn <- create_channel(shp,property_names)
-ctch <- add_channel(ctch,chn)
-ctch <- sink_fill(ctch)
-ctch <- compute_properties(ctch)
-cuts <- list(atanb=20)
-ctch <- split_to_class(ctch,'atb_split',cuts)
+                     endNode="endNode",
+                     startNode="startNode",
+                     length="length")
 
-model <- create_model(ctch,'atb_split',verbose=TRUE)
-saveRDS(model,"./dynatop/inst/extdata/Swindale.rds")
+profvis::profvis({
+c2 <- dynatopGIS$new(dem)
+c2$add_channel(shp,property_names)
 
+c2$sink_fill() #verbose=TRUE)
+c2$compute_properties()
 
-
-
+c2$classify(list(atanb=20,band=5))
+mdl <- c2$create_model()
+})
+saveRDS(mdl,"./Swindale_from_r6.rds")
 
