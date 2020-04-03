@@ -1,6 +1,10 @@
 # dynatop 0.1
 
-- TODO WIRTE THIS
+## TODO 
+
+- WIRTE THIS
+- add verbose to make model
+- Speed up fN - slow parts are matrix creation and trimming
 
 # dynatopGIS 0.0.4
 

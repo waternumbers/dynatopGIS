@@ -4,15 +4,15 @@
 \alias{borg}
 \title{update a dynatopGIS class object}
 \usage{
-borg(old_object)
+borg(old_object, force = FALSE)
 }
 \arguments{
 \item{old_object}{the current dynatopGIS object}
 
-\item{is_class}{logical if the class based on this layer should be returned}
+\item{force}{force conversion even to an older version}
 }
 \value{
-a RasterLayer of the requested information
+a dynatopGIS updated to the current version of the methods
 }
 \description{
 Update a dynatopGIS object while keeping layers and channel

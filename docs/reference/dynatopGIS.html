@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>dynatopGIS — dynatopGIS • dynatopGIS</title>
+<title>R6 Class for processing a catchment to make a Dynamic TOPMODEL — dynatopGIS • dynatopGIS</title>
 
 
 <!-- jquery -->
@@ -35,7 +35,7 @@
 
 
 
-<meta property="og:title" content="dynatopGIS — dynatopGIS" />
+<meta property="og:title" content="R6 Class for processing a catchment to make a Dynamic TOPMODEL — dynatopGIS" />
 <meta property="og:description" content="This package contains the code for setting up a dynamic TOPMODEL implimentation" />
 <meta name="twitter:card" content="summary" />
 
@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
       </span>
     </div>
 
@@ -123,8 +123,8 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>dynatopGIS</h1>
-    <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/dynatopGIS-package.R'><code>R/dynatopGIS-package.R</code></a></small>
+    <h1>R6 Class for processing a catchment to make a Dynamic TOPMODEL</h1>
+    <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/dygis.R'><code>R/dygis.R</code></a>, <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/dynatopGIS-package.R'><code>R/dynatopGIS-package.R</code></a></small>
     <div class="hidden name"><code>dynatopGIS.Rd</code></div>
     </div>
 
@@ -134,11 +134,254 @@
 
 
 
+    <h2 class="hasAnchor" id="methods"><a class="anchor" href="#methods"></a>Methods</h2>
+
+    
+<h3>Public methods</h3>
+
+<ul>
+<li><p><a href='#method-new'><code>dynatopGIS$new()</code></a></p></li>
+<li><p><a href='#method-list_layers'><code>dynatopGIS$list_layers()</code></a></p></li>
+<li><p><a href='#method-add_layer'><code>dynatopGIS$add_layer()</code></a></p></li>
+<li><p><a href='#method-get_layer'><code>dynatopGIS$get_layer()</code></a></p></li>
+<li><p><a href='#method-plot'><code>dynatopGIS$plot()</code></a></p></li>
+<li><p><a href='#method-add_channel'><code>dynatopGIS$add_channel()</code></a></p></li>
+<li><p><a href='#method-get_channel'><code>dynatopGIS$get_channel()</code></a></p></li>
+<li><p><a href='#method-sink_fill'><code>dynatopGIS$sink_fill()</code></a></p></li>
+<li><p><a href='#method-compute_properties'><code>dynatopGIS$compute_properties()</code></a></p></li>
+<li><p><a href='#method-classify'><code>dynatopGIS$classify()</code></a></p></li>
+<li><p><a href='#method-create_model'><code>dynatopGIS$create_model()</code></a></p></li>
+<li><p><a href='#method-neighbour'><code>dynatopGIS$neighbour()</code></a></p></li>
+<li><p><a href='#method-get_class'><code>dynatopGIS$get_class()</code></a></p></li>
+<li><p><a href='#method-get_version'><code>dynatopGIS$get_version()</code></a></p></li>
+<li><p><a href='#method-clone'><code>dynatopGIS$clone()</code></a></p></li>
+</ul>
+<p><hr>
+<a id="method-new"></a></p><h3>Method <code>new()</code></h3>
+<p>Reads the DEM file, sets up the raster catchment description</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$new(dem, fill_na = TRUE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>dem</code></dt><dd><p>a RasterLayer containing the dem</p></dd>
+
+<dt><code>fill_na</code></dt><dd><p>should NA values in dem be filled. See details</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.</p>
+
+<h3>Returns</h3>
+<p>A new `dynatopGIS` object</p>
+<p><hr>
+<a id="method-list_layers"></a></p><h3>Method <code>list_layers()</code></h3>
+<p>List the available of geographical layers</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$list_layers(is_class = FALSE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>is_class</code></dt><dd><p>should layers of partial classification be returned</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-add_layer"></a></p><h3>Method <code>add_layer()</code></h3>
+<p>Add a layer of geographical information</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$add_layer(raster_layer, layer_name, check_name = TRUE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>raster_layer</code></dt><dd><p>a RasterLayer object to add</p></dd>
+
+<dt><code>layer_name</code></dt><dd><p>name to give to the layer</p></dd>
+
+<dt><code>check_name</code></dt><dd><p>logical indicating if name should be checked against reserved names</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.</p>
+
+<h3>Returns</h3>
+<p>suitable for chaining</p>
+<p><hr>
+<a id="method-get_layer"></a></p><h3>Method <code>get_layer()</code></h3>
+<p>Get a layer of geographical information</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_layer(layer_name = character(0), is_class = FALSE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>layer_name</code></dt><dd><p>name of the layer give to the layer</p></dd>
+
+<dt><code>is_class</code></dt><dd><p>logical if the class based on this layer should be returned</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>Setting is_class to TRUE and not providing a layer_name returns the overall classification</p>
+
+<h3>Returns</h3>
+<p>a RasterLayer of the requested information</p>
+<p><hr>
+<a id="method-plot"></a></p><h3>Method <code><a href='https://rdrr.io/r/graphics/plot.html'>plot()</a></code></h3>
+<p>Plot a layer</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$plot(
+  layer_name = character(0),
+  add_channel = TRUE,
+  is_class = FALSE
+)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>layer_name</code></dt><dd><p>the name of layer to plot</p></dd>
+
+<dt><code>add_channel</code></dt><dd><p>shouel the channel be added to the plot</p></dd>
+
+<dt><code>is_class</code></dt><dd><p>logical if the class based on this layer should be returned</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>Setting is_class to TRUE and not providing a layer_name returns a plot of the overall classification</p>
+
+<h3>Returns</h3>
+<p>a plot</p>
+<p><hr>
+<a id="method-add_channel"></a></p><h3>Method <code>add_channel()</code></h3>
+<p>Import channel data from an OGR file to the `dynatopGIS` object</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$add_channel(
+  sp_object,
+  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
+    width = "width"),
+  default_width = 2
+)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>sp_object</code></dt><dd><p>a spatialLinesDataFrame containing the channel information</p></dd>
+
+<dt><code>property_names</code></dt><dd><p>named vector of columns of the spatial data frame to use for channel properties</p></dd>
+
+<dt><code>default_width</code></dt><dd><p>default width of a channel if not specified in property_names. Defaults to 2 metres.</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the <code>property_names</code> vector.
+The function opulates the channel_id &amp; channel_area layers and alters the land_area layer to correspond.</p>
+
+<h3>Returns</h3>
+<p>suitable for chaining</p>
+<p><hr>
+<a id="method-get_channel"></a></p><h3>Method <code>get_channel()</code></h3>
+<p>Get the channel description</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_channel()</pre><p></div></p>
+
+<h3>Returns</h3>
+<p>an SpatialPolygonDataFrame containing the channels</p>
+<p><hr>
+<a id="method-sink_fill"></a></p><h3>Method <code>sink_fill()</code></h3>
+<p>The sink filling algorithm of Planchona and Darboux 2001</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$sink_fill(
+  min_grad = 1e-04,
+  max_it = 1e+06,
+  verbose = FALSE,
+  hot_start = FALSE
+)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>min_grad</code></dt><dd><p>Minimum gradient between cell centres</p></dd>
+
+<dt><code>max_it</code></dt><dd><p>maximum number of replacement cycles</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>print out additional diagnostic information</p></dd>
+
+<dt><code>hot_start</code></dt><dd><p>start from filled_dem if it exists</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>The algorithm implimented in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.</p>
+
+<p><hr>
+<a id="method-compute_properties"></a></p><h3>Method <code>compute_properties()</code></h3>
+<p>Computes statistics e.g. log(a/tanb) for raster cells</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$compute_properties(missing_grad = 1e-04, verbose = FALSE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>missing_grad</code></dt><dd><p>gradient that can be assigned to a pixel if it can't be computed</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>print out additional diagnostic information</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>The algorithm works in two passes. The first computes the number of upstream pixels and values that do not depend on ordering. The second sequences downslope to compute values. Missing gradient is only used for pixels which are partially channel but have no upslope neighbours.</p>
+
+<p><hr>
+<a id="method-classify"></a></p><h3>Method <code>classify()</code></h3>
+<p>Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layer cuts or burns</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$classify(cuts, burns = NULL)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>cuts</code></dt><dd><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)</p></dd>
+
+<dt><code>burns</code></dt><dd><p>a vector of layer names which are to be used as burns</p></dd>
+
+</dl><p></div></p>
+<h3>Details</h3>
+<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given.</p>
+
+<p><hr>
+<a id="method-create_model"></a></p><h3>Method <code>create_model()</code></h3>
+<p>Compute a Dynamic TOPMODEL</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$create_model()</pre><p></div></p>
+
+<h3>Returns</h3>
+<p>a Dynamic TOPMODELGIS description suitable for the <code>dyantop</code> package</p>
+<p><hr>
+<a id="method-neighbour"></a></p><h3>Method <code>neighbour()</code></h3>
+<p>Return the index of neighbouring cells</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$neighbour(x)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>x</code></dt><dd><p>index of cells for which to find neighbours</p></dd>
+
+</dl><p></div></p>
+<h3>Returns</h3>
+<p>a list of indexes of neighbours</p>
+<p><hr>
+<a id="method-get_class"></a></p><h3>Method <code>get_class()</code></h3>
+<p>get the cuts and burns used to classify</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_class()</pre><p></div></p>
+
+<h3>Returns</h3>
+<p>a list with two elements, cuts and burns</p>
+<p><hr>
+<a id="method-get_version"></a></p><h3>Method <code>get_version()</code></h3>
+<p>get the version number</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_version()</pre><p></div></p>
+
+<h3>Details</h3>
+<p>teh version number indicates the version of the algorithms within the object</p>
+
+<h3>Returns</h3>
+<p>a numeric version number</p>
+<p><hr>
+<a id="method-clone"></a></p><h3>Method <code>clone()</code></h3>
+<p>The objects of this class are cloneable with this method.</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$clone(deep = FALSE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>deep</code></dt><dd><p>Whether to make a deep clone.</p></dd>
+
+</dl><p></div></p>
+
+
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
+      <li><a href="#methods">Methods</a></li>
     </ul>
 
   </div>

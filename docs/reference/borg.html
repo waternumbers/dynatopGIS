@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>returns the list of required layers in the catchment file — req_catchment_layers • dynatopGIS</title>
+<title>update a dynatopGIS class object — borg • dynatopGIS</title>
 
 
 <!-- jquery -->
@@ -35,8 +35,8 @@
 
 
 
-<meta property="og:title" content="returns the list of required layers in the catchment file — req_catchment_layers" />
-<meta property="og:description" content="returns the list of required layers in the catchment file" />
+<meta property="og:title" content="update a dynatopGIS class object — borg" />
+<meta property="og:description" content="Update a dynatopGIS object while keeping layers and channel" />
 <meta name="twitter:card" content="summary" />
 
 
@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
       </span>
     </div>
 
@@ -123,23 +123,44 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>returns the list of required layers in the catchment file</h1>
-    <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/load_dem.R'><code>R/load_dem.R</code></a></small>
-    <div class="hidden name"><code>req_catchment_layers.Rd</code></div>
+    <h1>update a dynatopGIS class object</h1>
+    <small class="dont-index">Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/R/borg.R'><code>R/borg.R</code></a></small>
+    <div class="hidden name"><code>borg.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>returns the list of required layers in the catchment file</p>
+    <p>Update a dynatopGIS object while keeping layers and channel</p>
     </div>
 
-    <pre class="usage"><span class='fu'>req_catchment_layers</span>()</pre>
+    <pre class="usage"><span class='fu'>borg</span>(<span class='no'>old_object</span>, <span class='kw'>force</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
 
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>old_object</th>
+      <td><p>the current dynatopGIS object</p></td>
+    </tr>
+    <tr>
+      <th>force</th>
+      <td><p>force conversion even to an older version</p></td>
+    </tr>
+    </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>a dynatopGIS updated to the current version of the methods</p>
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>Setting is_class to TRUE and not providing a layer_name returns the overall classification</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
+      <li><a href="#arguments">Arguments</a></li>
+      <li><a href="#value">Value</a></li>
+      <li><a href="#details">Details</a></li>
     </ul>
 
   </div>

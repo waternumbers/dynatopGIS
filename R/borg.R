@@ -3,11 +3,12 @@
 #' @description Update a dynatopGIS object while keeping layers and channel
 #'
 #' @param old_object the current dynatopGIS object
-#' @param is_class logical if the class based on this layer should be returned
-#' @return a RasterLayer of the requested information
+#' @param force force conversion even to an older version
+#' 
+#' @return a dynatopGIS updated to the current version of the methods
 #' @details Setting is_class to TRUE and not providing a layer_name returns the overall classification
 #' @export
-borg <- function(old_object){
+borg <- function(old_object,force=FALSE){
     if(!("dynatopGIS" %in% class(old_object))){
         stop("Not a dynatopGIS class object")
     }
@@ -15,6 +16,14 @@ borg <- function(old_object){
     ## dem and create object
     new_object <- dynatopGIS$new(old_object$get_layer("dem"))
 
+    if( !force ){
+        if( new_object$get_version() < old_object$get_version() ){
+            stop(paste("This is converting to an older version.",
+                       "Set the force flag in the call if you really want to do this",
+                       sep="\n"))
+        }
+    }
+    
     ## add channel
     new_object$add_channel(old_object$get_channel())
 

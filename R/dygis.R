@@ -1,11 +1,4 @@
 #' R6 Class for processing a catchment to make a Dynamic TOPMODEL
-#'
-#' TODO
-#' add documentation
-#' add verbose to make model
-#' create a copy/update method of the object - how to include cuts? Copy cut list and impliment?
-#' Spped up fN - slow parts are matrix creation and trimming
-
 dynatopGIS <- R6::R6Class(
     "dynatopGIS",
     public = list(

@@ -7,34 +7,6 @@
 \description{
 This package contains the code for setting up a dynamic TOPMODEL implimentation
 }
-\details{
-TODO
-add documentation
-add verbose to make model
-create a copy/update method of the object - how to include cuts? Copy cut list and impliment?
-Spped up fN - slow parts are matrix creation and trimming
-
-Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.
-
-The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
-
-Setting is_class to TRUE and not providing a layer_name returns the overall classification
-
-Setting is_class to TRUE and not providing a layer_name returns a plot of the overall classification
-
-Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
-The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
-
-
-The algorithm implimented in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.
-
-
-The algorithm works in two passes. The first computes the number of upstream pixels and values that do not depend on ordering. The second sequences downslope to compute values. Missing gradient is only used for pixels which are partially channel but have no upslope neighbours.
-
-This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given.
-
-teh version number indicates the version of the algorithms within the object
-}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -72,6 +44,10 @@ Reads the DEM file, sets up the raster catchment description
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.
+}
+
 \subsection{Returns}{
 A new `dynatopGIS` object
 }
@@ -111,6 +87,10 @@ Add a layer of geographical information
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
+}
+
 \subsection{Returns}{
 suitable for chaining
 }
@@ -132,6 +112,10 @@ Get a layer of geographical information
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Setting is_class to TRUE and not providing a layer_name returns the overall classification
+}
+
 \subsection{Returns}{
 a RasterLayer of the requested information
 }
@@ -159,6 +143,10 @@ Plot a layer
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Setting is_class to TRUE and not providing a layer_name returns a plot of the overall classification
+}
+
 \subsection{Returns}{
 a plot
 }
@@ -187,6 +175,11 @@ Import channel data from an OGR file to the `dynatopGIS` object
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
+The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+}
+
 \subsection{Returns}{
 suitable for chaining
 }
@@ -229,6 +222,10 @@ The sink filling algorithm of Planchona and Darboux 2001
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+The algorithm implimented in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-compute_properties"></a>}}
@@ -247,6 +244,10 @@ Computes statistics e.g. log(a/tanb) for raster cells
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+The algorithm works in two passes. The first computes the number of upstream pixels and values that do not depend on ordering. The second sequences downslope to compute values. Missing gradient is only used for pixels which are partially channel but have no upslope neighbours.
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-classify"></a>}}
@@ -265,6 +266,10 @@ Split a catchment into a set hydrological response units (HRUs) according to any
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given.
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-create_model"></a>}}
@@ -315,6 +320,10 @@ a list with two elements, cuts and burns
 get the version number
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_version()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+teh version number indicates the version of the algorithms within the object
 }
 
 \subsection{Returns}{
