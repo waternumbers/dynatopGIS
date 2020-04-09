@@ -593,7 +593,6 @@ dynatopGIS <- R6::R6Class(
                 delta_x = rep(NA,length(uid)),
                 ## class = rep(NA,length(uid)),
                 sz_band = rep(NA,length(uid)),
-                sf_band = rep(NA,length(uid)),
                 precip="unknown",
                 pet="unknown",
                 q_sfmax="q_sfmax_default",
@@ -627,7 +626,6 @@ dynatopGIS <- R6::R6Class(
                     private$layers$band[idx]))+1) * private$scope$res[1]
                 
                 model$hillslope$sz_band[rw]  <-  min( private$layers$band[idx] )
-                model$hillslope$sf_band[rw] <- model$hillslope$sz_band[rw]
                 
                 for(jj in names(private$class$partial)){
                     model$hillslope[[ paste0(jj,"_class") ]] <- unique(
@@ -644,23 +642,20 @@ dynatopGIS <- R6::R6Class(
                                      sum)
                               [ paste(uid) ]),
                 length = as.numeric(private$channel$length),
-                sz_band = max(model$hillslope$sz_band)+1,
-                sf_band = max(model$hillslope$sf_band)+1,
                 precip="unknown",
                 pet="unknown",
                 v_ch="v_ch_default",
                 stringsAsFactors=FALSE
             )
             
-            ## loop for hillslope flow directions
-            
+            ## loop for hillslope flow directions           
             receiving_id <- pmax(private$class$total,private$layers$channel_id,
                                  na.rm=TRUE)
-            model$hillslope$flow_dir = rep(list(NULL),length(model$hillslope$id))
+            model$hillslope$sz_dir = rep(list(NULL),length(model$hillslope$id))
             
             bnd <- rep(NA,max(model$hillslope$id)) 
-            bnd[model$hillslope$id] <- model$hillslope$sf_band
-            bnd[model$channel$id] <- model$channel$sf_band
+            bnd[model$hillslope$id] <- model$hillslope$sz_band
+            bnd[model$channel$id] <- Inf #model$channel$sz_band
             
             for(id in model$hillslope$id){
                 rw <- which(model$hillslope$id == id)
@@ -676,13 +671,38 @@ dynatopGIS <- R6::R6Class(
                     rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
                 }
                 
-                kdx <- which( (bnd <= bnd[id]) & rfrc>0 )
-                model$hillslope$flow_dir[[rw]] <- list(
+                kdx <- which( (bnd > bnd[id]) & rfrc>0 )
+                model$hillslope$sz_dir[[rw]] <- list(
+                    band = model$hillslope$sz_band[[rw]],
                     idx = kdx,
                     frc = rfrc[kdx]/sum(rfrc[kdx])
                 )
             }
+
+            ## handle HSU with no downslope by assigning to same class in later bands
+            keep <- rep(TRUE,nrow(model$hillslope))
+            for(ii in which(sapply(model$hillslop$sz_dir$idx,length)==0)){
+                jdx <- which(model$hillslop$sz_band > model$hillslop$sz_band[ii] &
+                             model$hillslope$class == model$hillslope$class[ii])
+                jdx <- jdx[ which.min(model$hillslop$sz_band[jdx] )]
+                if(length(jdx)>0){
+                    ## merge to later class
+                    model$hillslope$area
+                    atb_bar
+                    s_bar
+                    
+                }else{
+                    warning("Cannot reassign HSU",model$hillslope$id[ii],"dropping")
+                    keep[ii] <- FALSE
+                }
+            }
             
+            ## set surface to saturated for lack of better knwoledge
+            model$hillslope$sf_dir <- model$hillslope$sz_dir
+
+            ## remove band from mode
+            model$hillslope$sz_band <- NULL
+                
             ## work out the channel flow directions
             model$channel$flow_dir = rep(list(NULL),length(model$channel$id))
             for(id in model$channel$id){
@@ -752,17 +772,24 @@ dynatopGIS <- R6::R6Class(
             ## contour length
             cl <- dx*c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)
             ## make a matrix
-            m <- matrix(c(i-1,i,i+1,i-1,i+1,i-1,i,i+1,
-                          j-1,j-1,j-1,j,j,j+1,j+1,j+1,
-                          dst,
-                          cl),8,4)
+            ii <- i + c(-1,0,1,-1,1,-1,0,1)
+            jj <- j + c(-1,-1,-1,0,0,1,1,1)
+            idx <- ii>0 & ii<=nc & jj>0 & jj<=nr
+            out <- list(idx = (jj[idx]-1)*nc + ii[idx],
+                        dx = dst[idx],
+                        cl=cl[idx])
             
-            ## trim to within bounds
-            m <- m[ (m[,1]>0 & m[,1]<=nc & m[,2]>0 & m[,2]<=nr) ,]
+            ## m <- matrix(c(i-1,i,i+1,i-1,i+1,i-1,i,i+1,
+            ##               j-1,j-1,j-1,j,j,j+1,j+1,j+1,
+            ##               dst,
+            ##               cl),8,4)
             
-            out <- list(idx = (m[,2]-1)*nc + m[,1],
-                        dx = m[,3],
-                        cl = m[,4])
+            ## ## trim to within bounds
+            ## m <- m[ (m[,1]>0 & m[,1]<=nc & m[,2]>0 & m[,2]<=nr) ,]
+            
+            ## out <- list(idx = (m[,2]-1)*nc + m[,1],
+            ##             dx = m[,3],
+            ##             cl = m[,4])
             return(out)
         },
         fGCL = function(k){
