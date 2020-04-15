@@ -909,18 +909,20 @@ dynatopGIS <- R6::R6Class(
             j <- ((k-1)%/%nc) +1 # row
             i <- k - (j-1)*nc #column
 
+            
             ## distance
-            dx <- private$scope$res[1]
-            dxd <- dx*sqrt(2)
-            dst <- c(dxd,dx,dxd,dx,dx,dxd,dx,dxd)
+            ## dx <- private$scope$res[1]
+            ## dxd <- dx*sqrt(2)
+            ## dst <- c(dxd,dx,dxd,dx,dx,dxd,dx,dxd)
+            dst <- private$scope$res[1]*c(sqrt(2),1,sqrt(2),1,1,sqrt(2),1,sqrt(2))
             ## contour length
-            cl <- dx*c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)
+            cl <- private$scope$res[1]*c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)
 
             ## alt form for timing testing
             ii <- i + c(-1,0,1,-1,1,-1,0,1)
             jj <- j + c(-1,-1,-1,0,0,1,1,1)
             idx <- ii>0 & ii<=nc & jj>0 & jj<=nr
-            out <- list(idx = (jj[idx]-1)*nc + ii[idx],
+            out <- list(idx = ((jj-1)*nc + ii)[idx],
                         dx = dst[idx],
                         cl=cl[idx])
 
