@@ -276,11 +276,18 @@ This applies the given cuts to the supplied landscape layers to produce areal gr
 \subsection{Method \code{create_model()}}{
 Compute a Dynamic TOPMODEL
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(band = 5)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{band}}{How to cut the bands into the model, interpreted as for a cut in the classify method}
+}
+\if{html}{\out{</div>}}
+}
 \subsection{Returns}{
-a Dynamic TOPMODELGIS description suitable for the \code{dyantop} package
+a Dynamic TOPMODE description suitable for the \code{dyantop} package
 }
 }
 \if{html}{\out{<hr>}}

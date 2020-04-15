@@ -256,6 +256,10 @@ dynatopGIS <- R6::R6Class(
             if( length(all_names)!=length(unique(all_names)) ){
                 stop("Layer names can not be repeated")
             }
+            if( "band" %in% all_names ){
+                stop("The band can only be used in classification when generating the model")
+            }
+            
             if( !all(all_names %in% names(private$layers)) ){
                 stop(paste( "Missing layers:",
                            paste(setdiff(cut_names,names(ctch$layers)),collapse=" ")))
@@ -264,14 +268,16 @@ dynatopGIS <- R6::R6Class(
             private$apply_classify(cuts,burns)
         },
         #' @description Compute a Dynamic TOPMODEL
-        #'@return a Dynamic TOPMODELGIS description suitable for the \code{dyantop} package
-        create_model = function(){
+        #' @param band How to cut the bands into the model, interpreted as for a cut in the classify method
+        #' @return a Dynamic TOPMODE description suitable for the \code{dyantop} package
+        create_model = function(band=5){
             if( length(private$class$total) != length(private$layers$dem) ){
                 stop("There is no valid classification")
             }
             
-            private$apply_create_model()
+            private$apply_create_model(as.numeric(band))
         },
+        
         
         #' @description Return the index of neighbouring cells
         #' @param x index of cells for which to find neighbours
@@ -411,6 +417,12 @@ dynatopGIS <- R6::R6Class(
         ## Function to compute the properties
         apply_compute_properties = function(missing_grad,verbose){
 
+            ## create a list to store items used in verbose printing
+            ## stop them getting used elsewhere
+            verbose <- list(flag=verbose,
+                            cnt=0,
+                            print_at=0)
+
             ## initialise the new layers to be generated
             new_layers <- list()
             new_layers$gradient <- new_layers$band <- new_layers$atanb <- rep(NA,prod(private$scope$dim))
@@ -420,108 +432,102 @@ dynatopGIS <- R6::R6Class(
             n_higher <- rep(NA,prod(private$scope$dim)) ## number of higher cells
             grad_cl <- rep(NA,prod(private$scope$dim)) ## sum of gradient * contour length of flow paths
             
-            ## First pass to compute the number of higher cells, flow directions
+            ## First pass to compute the number of higher cells
             ## and variables that are not order specific
-            cat("Pass 1","\n")
-
             idx <- which(!is.na(private$layers$filled_dem))
+
+            if(verbose$flag){
+                cat("Pass 1: Compute properties that are not order specific","\n")
+                verbose$cnt <- 0
+                verbose$print_at <- floor(quantile(seq(1,length(idx)),seq(0.1,1,0.1)))
+            }
+ 
             for(ii in idx){
                 
-                ## cells with no land area shouldn't have values
-                if( private$layers$land_area[ii] <= 0 ){
-                    next
-                }
+                tmp <- private$fstatic(ii,missing_grad,private$scope$res[1])
                 
-                ## if cell has a channel_id then set flag
-                is_channel <- is.finite(private$layers$channel_id[ii])
-
-                ## direction properties
-                jj <- private$fGCL(ii)
-
-                ## number of higher cells
-                n_higher[ii] <- length(jj$is_higher) # na.rm ensure cells on edge are evaluated
-
-                ## work out the flow directions
-                if( is_channel ){
-                    ## use upslope cells
-                    if( n_higher[ii] > 0 ){
-                        ## use upslope cells for gradient if possible
-                        g <- -jj$grd[jj$is_higher]
-                        cl <- jj$cl[jj$is_higher]
-                    }else{
-                        ## else use mingrad with warning
-                        g <- missing_grad
-                        cl <- private$scope$res[1]
-                        #warning(paste("Cell",ii,"is a channel cell with no higher neighbours"))
-                    }
-                }else{
-                    ## cells with have no channel element
-                    if( length(jj$is_lower) > 0 ){
-                        ## use downslope cells for gradient if possible
-                        g <- jj$grd[jj$is_lower]
-                        cl <- jj$cl[jj$is_lower]
-                    }else{
-                        ## else use higher cells with warning
-                        stop(paste("Cell",ii,"is a hillslope cell with no lower neighbours"))
+                new_layers$gradient[ii] <- tmp$g
+                n_higher[ii] <- tmp$nh
+                grad_cl[ii] <- tmp$gcl
+                
+                if(verbose$flag){
+                    verbose$cnt <- verbose$cnt+1
+                    if(  verbose$cnt %in% verbose$print_at ){
+                        cat(names(verbose$print_at)[verbose$print_at %in% verbose$cnt],
+                            " complete","\n")
                     }
                 }
-                gcl <- g*cl
-                grad_cl[ii] <- sum(gcl)
-                new_layers$gradient[ii] <- grad_cl[ii] / sum(cl)
-                
             }
 
             
             
             
-            ## Second pass to compute ordered valraibles
-            cat("Pass 2","\n")         
-            
+            ## Second pass to compute ordered variables
+            if(verbose$flag){
+                cat("Pass 2: Compute properties that are order specific","\n")
+                verbose$cnt <- 0
+                
+                ## print at the same as first pass
+            }
+
             ## work down list of higher cells
             idx <- which(n_higher==0)
             cnt <- 0
             while( length(idx)>0 ){
                 cnt <- cnt + 1
-                if( verbose ){
-                    print(paste("Band",cnt))
-                }
-            
+
                 new_layers$band[idx] <- cnt
                 n_higher[idx] <- -1
                 idx_list <- list()
                 icnt <- 0
                 for(ii in idx){
-                                        
-                    ## move upslopre area downslope
+                    
+                    ## downstream cells and fractions
                     fd <- private$fFD(ii)
-                    kk <- fd$idx # private$layers$flowDir[[ii]]$idx
-                    ff <- fd$frc # private$layers$flowDir[[ii]]$frc
+
+                    ## trim to those with areas
+                    to_use <- private$layers$land_area[fd$idx]>0
+
+                    
+                    kk <- fd$idx[to_use] # private$layers$flowDir[[ii]]$idx
+                    ff <- fd$frc[to_use] # private$layers$flowDir[[ii]]$frc
+                                        
                     new_layers$upslope_area[kk] <- new_layers$upslope_area[kk] +
                         new_layers$upslope_area[ii]*ff
                     n_higher[kk] <- n_higher[kk] - 1
 
                     ## since these have no known n_higher
-                    nk <- kk[private$layers$land_area[kk]>0]
-                    nk <- nk[n_higher[nk]==0]
+                    ## nk <- kk[private$layers$land_area[kk]>0]
+                    ## nk <- nk[n_higher[nk]==0]
+                    nk <- kk[n_higher[kk]==0]
                     
                     if(length(nk)>0){
-                        icnt <- icnt+1
+                        icnt <- icnt+1                        
                         idx_list[[icnt]] <- nk
+                    }
+
+                    ## verbose printing
+                    if(verbose$flag){
+                        verbose$cnt <- verbose$cnt+1
+                        if(  verbose$cnt %in% verbose$print_at ){
+                            cat(names(verbose$print_at)[verbose$print_at %in% verbose$cnt],
+                                " complete","\n")
+                        }
                     }
                     
                 }
 
-                
                 ## find next set of cells to evaluate
                 idx <- unique(do.call(c,idx_list))
                 ## idx2 <- which(n_higher==0)
                 ## if( !all(idx %in% idx2) | length(idx)!=length(idx2) ){
                 ##     browser()
                 ## }
-                
+                ##print(cnt)
+                #print(idx)
             }
             
-            ## compute tographic index fromm summaries
+            ## compute topographic index from summaries
             
             new_layers$atanb <- log( new_layers$upslope_area / grad_cl )
             if( any(new_layers$atanb==Inf,na.rm=TRUE) ){       
@@ -532,8 +538,11 @@ dynatopGIS <- R6::R6Class(
             for(ii in names(new_layers)){
                 private$layers[[ii]] <- new_layers[[ii]]
             }
-            
-            
+
+            ## final bit of verbose printing
+            if(verbose$flag){
+                cat("Number of bands identified: ",max(new_layers$band,na.rm=TRUE),"\n")
+            }
         },
 
         ## split_to_class
@@ -546,7 +555,7 @@ dynatopGIS <- R6::R6Class(
                 if( length(brk)==1 & is.na(brk[1]) ){
                     x <- private$layers[[ii]]
                 }else{
-                    x <- cut(private$layers[[ii]],breaks=as.numeric(cuts[[ii]]),
+                    x <- cut(private$layers[[ii]],breaks=brk,
                              labels = FALSE)
                 }
                 private$class$partial[[ii]] <- x
@@ -571,69 +580,36 @@ dynatopGIS <- R6::R6Class(
             cp <- ucp[paste(cp)]
             
             ## add back into layer
-            private$class$total <- cp
+            private$class$total <- unname( cp )
             
             ## record in splits
             private$class$method <- list(cuts = cuts,burns=burns)
         },
     
-        apply_create_model = function(){
+        apply_create_model = function(brk){
             
             ## Initialise the model
             model <- list()
+            model$map$scope <- private$scope
+            model$map$channel <- private$layers$channel_id
             
-            ## create the model hillslope table and populate computations
-            uid <- unique(private$class$total)
-            uid <- uid[!is.na(uid)]
-            model$hillslope <- data.frame(
-                id = as.integer(uid),
-                area = rep(NA,length(uid)),
-                atb_bar = rep(NA,length(uid)),
-                s_bar = rep(NA,length(uid)),
-                delta_x = rep(NA,length(uid)),
-                ## class = rep(NA,length(uid)),
-                sz_band = rep(NA,length(uid)),
-                precip="unknown",
-                pet="unknown",
-                q_sfmax="q_sfmax_default",
-                s_rzmax="s_rzmax_default",
-                s_rz0="s_rz0_default",
-                ln_t0="ln_t0_default",
-                m="m_default",
-                t_d="t_d_default",
-                t_sf="t_sf_default",
-                stringsAsFactors=FALSE
-            )
-            
-            ## populate the general properties
-            for(id in model$hillslope$id){
-                ## row of data.frame
-                rw <- which(model$hillslope$id==id)
-                
-                ## index of hillslope points
-                idx <- which(private$class$total==id)
-                
-                area <- sum( private$layers$land_area[idx] )
-                model$hillslope$area[rw] <- area
-                
-                model$hillslope$atb_bar[rw] <- sum(
-                    private$layers$atanb[idx]*private$layers$land_area[idx] )/area
-                
-                model$hillslope$s_bar[rw] <- sum(
-                    private$layers$gradient[idx]*private$layers$land_area[idx] )/area
-                
-                model$hillslope$delta_x[rw] <- (diff(range(
-                    private$layers$band[idx]))+1) * private$scope$res[1]
-                
-                model$hillslope$sz_band[rw]  <-  min( private$layers$band[idx] )
-                
-                for(jj in names(private$class$partial)){
-                    model$hillslope[[ paste0(jj,"_class") ]] <- unique(
-                        private$class$partial[[jj]][idx])
-                }
+            ## Add banding split to the classification
+            if( length(brk)==1 & is.na(brk[1]) ){
+                x <- private$layers$band
+            }else{
+                x <- cut(private$layers$band,breaks=brk,
+                         labels = FALSE)
             }
-            
-            ## do the saem for the channel table
+            cp <- 0.5*(private$class$total+x)*(private$class$total+x+1)+x
+            ## renumber from cantour paring to get sequential values
+            ucp <- unique(cp,na.rm=TRUE)
+            ucp <- ucp[!is.na(ucp)]
+            ucp <- setNames( (1:length(ucp)) + max(private$layers$channel_id,na.rm=TRUE),
+                            paste(ucp) ) # only works since cp is an integer
+            model$map$hillslope <- unname( ucp[paste(cp)] )
+            rm(ucp,cp)
+
+            ## Create the channel table with properties
             uid <- private$channel$id
             model$channel <- data.frame(
                 id = uid,
@@ -648,66 +624,11 @@ dynatopGIS <- R6::R6Class(
                 stringsAsFactors=FALSE
             )
             
-            ## loop for hillslope flow directions           
-            receiving_id <- pmax(private$class$total,private$layers$channel_id,
-                                 na.rm=TRUE)
-            model$hillslope$sz_dir = rep(list(NULL),length(model$hillslope$id))
-            
-            bnd <- rep(NA,max(model$hillslope$id)) 
-            bnd[model$hillslope$id] <- model$hillslope$sz_band
-            bnd[model$channel$id] <- Inf #model$channel$sz_band
-            
-            for(id in model$hillslope$id){
-                rw <- which(model$hillslope$id == id)
-                
-                ## index of hillslope points
-                idx <- which(private$class$total==id)
-                
-                ## work out flow directions
-                rfrc <- rep(0,max(model$hillslope$id))
-                for(ii in idx){
-                    jj <- private$fFD(ii)
-                    jj$cls <- receiving_id[jj$idx]
-                    rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
-                }
-                
-                kdx <- which( (bnd > bnd[id]) & rfrc>0 )
-                model$hillslope$sz_dir[[rw]] <- list(
-                    band = model$hillslope$sz_band[[rw]],
-                    idx = kdx,
-                    frc = rfrc[kdx]/sum(rfrc[kdx])
-                )
-            }
-
-            ## handle HSU with no downslope by assigning to same class in later bands
-            keep <- rep(TRUE,nrow(model$hillslope))
-            for(ii in which(sapply(model$hillslop$sz_dir$idx,length)==0)){
-                jdx <- which(model$hillslop$sz_band > model$hillslop$sz_band[ii] &
-                             model$hillslope$class == model$hillslope$class[ii])
-                jdx <- jdx[ which.min(model$hillslop$sz_band[jdx] )]
-                if(length(jdx)>0){
-                    ## merge to later class
-                    model$hillslope$area
-                    atb_bar
-                    s_bar
-                    
-                }else{
-                    warning("Cannot reassign HSU",model$hillslope$id[ii],"dropping")
-                    keep[ii] <- FALSE
-                }
-            }
-            
-            ## set surface to saturated for lack of better knwoledge
-            model$hillslope$sf_dir <- model$hillslope$sz_dir
-
-            ## remove band from mode
-            model$hillslope$sz_band <- NULL
-                
             ## work out the channel flow directions
             model$channel$flow_dir = rep(list(NULL),length(model$channel$id))
             for(id in model$channel$id){
                 rw <- which( model$channel$id ==id )
-
+                
                 jj <- which( private$channel$id == id )
                 
                 jdx <- which(private$channel[['startNode']]==
@@ -718,6 +639,229 @@ dynatopGIS <- R6::R6Class(
                 }
             }
             
+            ## create the model hillslope table and populate computations
+            uid <- unique(model$map$hillslope)
+            uid <- uid[!is.na(uid)]
+            model$hillslope <- data.frame(
+                id = as.integer(uid),
+                area = rep(NA,length(uid)),
+                atb_bar = rep(NA,length(uid)),
+                s_bar = rep(NA,length(uid)),
+                delta_x = rep(NA,length(uid)),
+                class = rep(NA,length(uid)),
+                sz_band = rep(NA,length(uid)),
+                precip="unknown",
+                pet="unknown",
+                q_sfmax="q_sfmax_default",
+                s_rzmax="s_rzmax_default",
+                s_rz0="s_rz0_default",
+                ln_t0="ln_t0_default",
+                m="m_default",
+                t_d="t_d_default",
+                t_sf="t_sf_default",
+                stringsAsFactors=FALSE
+            )
+
+            ## populate classes and band for use in determining the flow directions
+            for(rw in 1:length(model$hillslope$id)){
+                id <- model$hillslope$id[rw]
+                
+                ## index of hillslope points
+                idx <- which(model$map$hillslope==id)
+
+                model$hillslope$sz_band[rw]  <-  max( private$layers$band[idx] )
+
+                model$hillslope$class[rw] <- unique( private$class$total[idx] )
+                
+                for(jj in names(private$class$partial)){
+                    model$hillslope[[ paste0(jj,"_class") ]] <- unique(
+                        private$class$partial[[jj]][idx])
+                }
+            }
+
+            ## determine flow directions for hillslope
+                       
+            ## what is the HSU id of teh part fo each raster cell which recieves inflow
+            receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
+                                 na.rm=TRUE)
+            
+            ## storage of flow directions
+            model$hillslope$sz_dir = rep(list(NULL),length(model$hillslope$id))
+
+            ## computational band for each HSU id
+            bnd <- rep(NA,max(model$hillslope$id)) 
+            bnd[model$hillslope$id] <- model$hillslope$sz_band
+            bnd[model$channel$id] <- Inf #model$channel$sz_band
+            
+            ## store if the hsu is valid
+            is_valid <- rep(FALSE,max(model$hillslope$id))
+            is_valid[model$channel$id] <- TRUE
+
+            it <- 0
+            delta <- 1e-3
+            while(!all(is_valid)){
+                it <- it+1
+                print(it)
+                ## process all hillslope HSUs that aren't valid
+                for(id in model$hillslope$id[ !is_valid[model$hillslope$id] ]){
+                    rw <- which(model$hillslope$id == id)
+                    ## index of hillslope points
+                    idx <- which(model$map$hillslope==id)
+                
+                    ## work out flow directions - store as area times fraction
+                    rfrc <- rep(0,max(model$hillslope$id))
+                    for(ii in idx){
+                        
+                        ## if cell has a channel_id then goes to channel
+                        if( is.finite(private$layers$channel_id[ii]) ){
+                            jj <- list(cls=private$layers$channel_id[ii],frc=1)
+                        }else{
+                            ## work out flow directions
+                            jj <- private$fFD(ii)
+                            jj$cls <- receiving_id[jj$idx]
+                        }
+                        ## add area to HSU flow directions
+                        rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
+                        
+                    }
+                
+                    ## work out which are moves to higher bands (more downslope)
+                    hdx <- which( (bnd > bnd[id]) & rfrc>0) # id of downslope
+                    edx <- which( (bnd == bnd[id]) & rfrc>0) # id of equal band
+                    if(length(hdx)>0){
+                        ## if there is send the flow to those cells
+                        ## compute flow directions
+                        model$hillslope$sz_dir[[rw]] <- list(
+                            band = bnd[id],
+                            idx = hdx,
+                            frc = rfrc[hdx]/sum(rfrc[hdx])
+                        )
+                        is_valid[id] <- TRUE
+                    }else{
+                        if(length(edx)>0){
+                            bnd[id] <- bnd[id]-delta
+                        }else{
+                            browser()
+                            stop("Should never get here!!")
+                        }
+                    }
+                }
+                browser()
+            }
+
+
+            ## ## what is the id of each rasater cell
+            ## receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
+            ##                      na.rm=TRUE)
+            
+            ## ## storage of flow directions
+            ## model$hillslope$sz_dir = rep(list(NULL),length(model$hillslope$id))
+
+            ## ## computational band for each HSU id
+            ## bnd <- rep(NA,max(model$hillslope$id)) 
+            ## bnd[model$hillslope$id] <- model$hillslope$sz_band
+            ## bnd[model$channel$id] <- Inf #model$channel$sz_band
+            ## is_valid <- rep(TRUE,max(model$hillslope$id)) 
+                            
+            ## ## loop HSUs computing flow directions
+            ## ## keep repeat loop if an HSU is dropped
+            ## loop_flag <- TRUE
+            ## while(loop_flag){
+            ##     print("looping")
+            ##     print(is_valid)
+            ##     ## presume we don't have to repeat
+            ##     loop_flag <- FALSE
+            ##     ## loop HSUs in order of band to compute flow direction or reassign
+            ##     for(id in model$hillslope$id[is_valid[model$hillslope$id]]){
+            ##         rw <- which(model$hillslope$id == id)
+            ##     ## for(rw in order(model$hillslope$sz_band)){
+            ##     ##     ## HSU id
+            ##     ##     id  <- model$hillslope$id[rw]
+                    
+            ##         ## index of hillslope points
+            ##         idx <- which(model$map$hillslope==id)
+                
+            ##         ## work out flow directions - store as area times fraction
+            ##         rfrc <- rep(0,max(model$hillslope$id))
+            ##         for(ii in idx){
+            ##             jj <- private$fFD(ii)
+            ##             jj$cls <- receiving_id[jj$idx]
+            ##             rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
+            ##         }
+
+            ##         ## work out which are moves to higher bands (more downslope)
+            ##         kdx <- which( (bnd > bnd[id]) & rfrc>0 & is_valid)
+            ##         if(length(kdx)>0){
+            ##             ## if there is send the flow to those cells
+            ##             ## compute flow directions
+            ##             model$hillslope$sz_dir[[rw]] <- list(
+            ##                 band = model$hillslope$sz_band[rw],
+            ##                 idx = kdx,
+            ##                 frc = rfrc[kdx]/sum(rfrc[kdx])
+            ##             )
+            ##         }else{
+            ##             ## see if there isn't see if their is the same class in a
+            ##             ## higher band which is valid
+            ##             jdx <- which(model$hillslope$sz_band > model$hillslope$sz_band[rw] &
+            ##                          model$hillslope$class == model$hillslope$class[rw])
+            ##             jdx <- jdx[ is_valid[model$hillslope$id[jdx]] ]
+                        
+            ##             if( length(jdx)>0 ){
+            ##                 ## there is so
+            ##                 ## in which case combine by sending all flow there
+            ##                 jdx <- jdx[ which.min(model$hillslope$sz_band[jdx]) ]
+            ##                 model$hillslope$sz_dir[[rw]] <- list(
+            ##                     band = model$hillslope$sz_band[rw],
+            ##                     idx = jdx,
+            ##                     frc = 1)
+            ##             }else{
+            ##                 ## there isn't...
+            ##                 ## remove class with warning
+            ##                 is_valid[id] <- FALSE
+            ##                 model$map$hillslope[idx] <- NA
+            ##                 loop_flag <- TRUE
+            ##             }
+                        
+            ##         }
+            ##     }
+            ## }
+            
+            ## ## drop HSUs from the table which are not valid
+            ## model$hillslope <- model$hillslope[model$hillslope$id %in% model$map$hillslope,]
+            ## ## tidy up numbering
+            ## ucp <- setNames( (1:nrow(model$hillslope)) + max(private$layers$channel_id,na.rm=TRUE),
+            ##                 paste(model$hillslope$id) ) # only works since cp is an integer
+            ## model$map$hillslope <- unname( ucp[paste(model$map$hillslope)] )
+            ## model$hillslope$id <- unname(ucp)
+            
+            ## ## remove band from the table - this now in flow direction description
+            ## model$hillslope$sz_band <- NULL
+            
+            ## compute reminaing properties
+            for(rw in 1:length(model$hillslope$id)){
+                id <- model$hillslope$id[rw]
+                
+                ## index of hillslope points
+                idx <- which(model$map$hillslope==id)
+                
+                area <- sum( private$layers$land_area[idx] )
+                model$hillslope$area[rw] <- area
+                
+                model$hillslope$atb_bar[rw] <- sum(
+                    private$layers$atanb[idx]*private$layers$land_area[idx] )/area
+                
+                model$hillslope$s_bar[rw] <- sum(
+                    private$layers$gradient[idx]*private$layers$land_area[idx] )/area
+                
+                model$hillslope$delta_x[rw] <- (diff(range(
+                    private$layers$band[idx]))+1) * private$scope$res[1]
+                
+            }
+            
+            ## set surface to saturated for lack of better knwoledge
+            model$hillslope$sf_dir <- model$hillslope$sz_dir
+
+
             ## parameter values
             model$param <- c(q_sfmax_default=Inf,
                              s_rzmax_default=0.05,
@@ -771,14 +915,16 @@ dynatopGIS <- R6::R6Class(
             dst <- c(dxd,dx,dxd,dx,dx,dxd,dx,dxd)
             ## contour length
             cl <- dx*c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)
-            ## make a matrix
+
+            ## alt form for timing testing
             ii <- i + c(-1,0,1,-1,1,-1,0,1)
             jj <- j + c(-1,-1,-1,0,0,1,1,1)
             idx <- ii>0 & ii<=nc & jj>0 & jj<=nr
             out <- list(idx = (jj[idx]-1)*nc + ii[idx],
                         dx = dst[idx],
                         cl=cl[idx])
-            
+
+            ## ## make a matrix
             ## m <- matrix(c(i-1,i,i+1,i-1,i+1,i-1,i,i+1,
             ##               j-1,j-1,j-1,j,j,j+1,j+1,j+1,
             ##               dst,
@@ -792,30 +938,73 @@ dynatopGIS <- R6::R6Class(
             ##             cl = m[,4])
             return(out)
         },
-        fGCL = function(k){
-            ## index of neighbours and distances
-            out <- private$fN(k)
-            ## compute gradient time contour length
-            out$grd <- (private$layers$filled_dem[k] - private$layers$filled_dem[out$idx])/out$dx
-            out$is_higher <- which( (out$grd < 0) &
-                                    !is.finite(private$layers$channel_id[out$idx]) )
-            out$is_lower <- numeric(0)
-            if( !is.finite(private$layers$channel_id[k]) ){
-                out$is_lower <- which( out$grd > 0 )
+        ## return gradient and contour length that is applicable for cell
+        fstatic = function(k,missing_grad,missing_length){
+
+            ## don't compute for 0 land areas
+            if( private$layers$land_area[k] <=0 ){
+                return( list(nh=NA,
+                             g=NA,
+                             gcl=NA) )
             }
             
+            ## work out if a channel
+            is_channel <- is.finite(private$layers$channel_id[k])
+            
+            ## index of neighbours, distances and contour lengths
+            ngh <- private$fN(k)
+            
+            ## compute gradient
+            grd <- (private$layers$filled_dem[k] - private$layers$filled_dem[ngh$idx])/ngh$dx
+            is_higher <-  is.finite(grd) & (grd < 0) &
+                !is.finite(private$layers$channel_id[ngh$idx])
+
+            if( is_channel ){
+                to_use <- is_higher
+            }else{
+                to_use <- is.finite(grd) & (grd > 0)
+            }
+
+            if(any(to_use)){
+                ## then compute gradient
+                gcl <- sum(grd[to_use]*ngh$cl[to_use])
+                if(is_channel){gcl <- -gcl}
+                g <- gcl / sum(ngh$cl[to_use])
+            }else{
+                ## then default if channel otherwise error
+                if(is_channel){
+                    g <- missing_grad
+                    gcl <- missing_grad * missing_length
+                }else{
+                    stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
+                }
+            }
+            out <- list(nh = sum(is_higher),
+                        g = g,
+                        gcl = gcl)
             return(out)
         },
         fFD =function(k){
-            tmp <- private$fGCL(k)
-            out <- list(idx=numeric(0),
-                        frc=numeric(0))
-            if( length(tmp$is_lower)>0 ){
-                gcl <- tmp$grd[tmp$is_lower]*tmp$cl[tmp$is_lower]
-                out$idx <- tmp$idx[tmp$is_lower]
-                out$frc <- gcl/sum(gcl)
+            ## work out if a channel
+            is_channel <- is.finite(private$layers$channel_id[k])
+
+            if(is_channel){
+                return( list(idx=numeric(0),frc=numeric(0)) )
             }
-            return(out)
+            
+            ## index of neighbours, distances and contour lengths
+            ngh <- private$fN(k)
+            
+            ## compute gradient
+            grd <- (private$layers$filled_dem[k] - private$layers$filled_dem[ngh$idx])/ngh$dx
+
+            to_use <- is.finite(grd) & (grd > 0)
+
+            gcl <- grd[to_use]*ngh$cl[to_use]
+
+            return( list(idx = ngh$idx[to_use],
+                         frc = gcl / sum(gcl)) )
+            
         }
 
         

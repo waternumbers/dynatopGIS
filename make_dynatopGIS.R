@@ -23,14 +23,14 @@ property_names <- c(channel_id="identifier",
                      length="length")
 
 profvis::profvis({
-c2 <- dynatopGIS$new(dem)
-c2$add_channel(shp,property_names)
-
-c2$sink_fill() #verbose=TRUE)
-c2$compute_properties()
-
-c2$classify(list(atanb=20,band=5))
-mdl <- c2$create_model()
+    c2 <- dynatopGIS$new(dem)
+    c2$add_channel(shp,property_names)
+    c2$sink_fill(verbose=TRUE)
+    c2$compute_properties(verbose=TRUE)
+    c2$classify(list(atanb=20))
+    mdl <- c2$create_model()
+    c3 <- borg(c2)
 })
-saveRDS(mdl,"./Swindale_from_r6.rds")
+
+saveRDS(mdl,"./dynatop/inst/extdata/Swindale_from_r6.rds")
 

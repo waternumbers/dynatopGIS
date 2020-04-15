@@ -34,7 +34,9 @@ borg <- function(old_object,force=FALSE){
 
     ## get classification
     cls <- old_object$get_class()
-    new_object$classify(cuts=cls$cuts,burns=cls$burns)
+    if(length(cls)>0){
+        new_object$classify(cuts=cls$cuts,burns=cls$burns)
+    }
 
     return(new_object)
 }
