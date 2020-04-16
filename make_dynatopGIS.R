@@ -14,10 +14,11 @@ pkgdown::build_site(pacPath)
 
 
 ## This code runs to generate the model used in the dynatop examples
+## it also checks the verbose mode code
 rm(list=ls())
-## pacPath_ <- './dynatopGIS'
-## devtools::load_all(pacPath)
-library("dynatopGIS")
+pacPath_ <- './dynatopGIS'
+devtools::load_all(pacPath)
+##library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS"))
 shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS"))
 property_names <- c(channel_id="identifier",

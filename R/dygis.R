@@ -788,7 +788,7 @@ dynatopGIS <- R6::R6Class(
                     }
 
                     if(verbose$flag){
-                        cat("    Iteration ",cnt,": ",sum(is_valid)," of ",length(is_valid)," HSUs valid","\n")
+                        cat("    Iteration ",it,": ",sum(is_valid)," of ",length(is_valid)," HSUs valid","\n")
                     }
                 }
             }
