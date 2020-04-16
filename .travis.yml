@@ -1,9 +1,7 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
 language: r
 r:
-  - oldrel
   - release
-  - devel
 apt_packages:
   - libgdal-dev
 cache: packages
@@ -12,4 +10,4 @@ os:
   - linux
   - osx
 after_success:
-  - Rscript -e 'covr::coveralls(type = "all")'
+  - Rscript -e 'covr::codecov()'
