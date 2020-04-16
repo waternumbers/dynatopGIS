@@ -1,4 +1,5 @@
 #' R6 Class for processing a catchment to make a Dynamic TOPMODEL
+#' @export
 dynatopGIS <- R6::R6Class(
     "dynatopGIS",
     public = list(
@@ -10,7 +11,7 @@ dynatopGIS <- R6::R6Class(
         #' @details Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.
         #' @return A new `dynatopGIS` object
         initialize = function(dem, fill_na=TRUE){
-            #browser()
+
             ## check the file is a raster layer
             if(!("RasterLayer" %in% class(dem))){
                 stop("dem should be a RasterLayer")
@@ -47,18 +48,6 @@ dynatopGIS <- R6::R6Class(
             ## return so can be chained
             invisible(self)
         },
-
-        #' @description List the available of geographical layers
-        #' @param is_class should layers of partial classification be returned
-        ## @return a character vector of names
-        list_layers =function(is_class=FALSE){
-            if( is_class ){
-                names(private$class$partial)
-            }else{
-                names(private$layers)
-            }
-        },
-
         #' @description Add a layer of geographical information
         #' @param raster_layer a RasterLayer object to add
         #' @param layer_name name to give to the layer
@@ -86,41 +75,34 @@ dynatopGIS <- R6::R6Class(
             private$layers[[layer_name]] <- raster::getValues(raster_layer)
             
             invisible(self)
-        },
- 
-        #' @description Get a layer of geographical information
+        }, 
+        #' @description Get a layer of geographical information or a list of layer names
         #' @param layer_name name of the layer give to the layer
-        #' @param is_class logical if the class based on this layer should be returned
-        #' @return a RasterLayer of the requested information
-        #' @details Setting is_class to TRUE and not providing a layer_name returns the overall classification
-        get_layer = function(layer_name=character(0), is_class=FALSE){
-            if( is_class ){
-                if(length(layer_name)==0){
-                    x <- private$class$total
-                }else{
-                    if( !(layer_name %in% names(private$class$partial)) ){
-                        stop("Classification does not exist")}
-                    x <- private$class$partial[[layer_name]]
-                }
-            }else{
-                if( !(layer_name %in% names(private$layers)) ){
-                    stop("layer does not exist")}
-                x <- private$layers[[layer_name]]
+        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
+        get_layer = function(layer_name=character(0)){
+            poss_val <- names(private$layers)
+            ## handle case where a list of layers is requested
+            if( length(layer_name) == 0 ){
+                return( poss_val )
             }
-            
+            ## check layer name exists
+            layer_name <- match.arg(layer_name,poss_val)
+            ## if( !(layer_name %in% names(private$layers)) ){
+            ##     stop("Requested layer name does not exist")
+            ## }
+            ## make raster and return
             raster(crs = private$scope$crs,
                    ext = private$scope$ext,
                    resolution = private$scope$res,
-                   vals = x)
+                   vals = private$layers[[layer_name]])
         },
         #' @description Plot a layer
         #' @param layer_name the name of layer to plot
         #' @param add_channel shouel the channel be added to the plot
-        #' @param is_class logical if the class based on this layer should be returned
-        #' @details Setting is_class to TRUE and not providing a layer_name returns a plot of the overall classification
         #' @return a plot
-        plot = function(layer_name=character(0),add_channel=TRUE,is_class=FALSE){
-            raster::plot( self$get_layer(layer_name,is_class) )
+        plot_layer = function(layer_name,add_channel=TRUE){
+            layer_name <- match.arg(layer_name,self$get_layer())
+            raster::plot( self$get_layer(layer_name) )
             if( add_channel ){ raster::plot( self$get_channel(), add=TRUE ) }
         },
         #' @description Import channel data from an OGR file to the `dynatopGIS` object
@@ -267,18 +249,67 @@ dynatopGIS <- R6::R6Class(
             
             private$apply_classify(cuts,burns)
         },
-        #' @description Compute a Dynamic TOPMODEL
-        #' @param band How to cut the bands into the model, interpreted as for a cut in the classify method
-        #' @return a Dynamic TOPMODE description suitable for the \code{dyantop} package
-        create_model = function(band=5){
-            if( length(private$class$total) != length(private$layers$dem) ){
-                stop("There is no valid classification")
+        #' @description Get a classification layer of geographical information or a list of layer names
+        #' @param layer_name name of the layer give to the layer
+        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
+        get_class = function(layer_name=character(0)){
+            poss_val <- c("final",names(private$class$partial))
+            if( length(layer_name) == 0){
+                return(poss_val)
             }
-            
-            private$apply_create_model(as.numeric(band))
+            layer_name <- match.arg(layer_name,poss_val)
+            if(layer_name == "final"){
+                x <- private$class$total
+            }else{
+                private$class$partial[[layer_name]]
+            }
+            ## make raster and return
+            raster(crs = private$scope$crs,
+                   ext = private$scope$ext,
+                   resolution = private$scope$res,
+                   vals = x)
+        },
+        #' @description Plot a classification layer
+        #' @param layer_name the name of layer to plot
+        #' @param add_channel shouel the channel be added to the plot
+        #' @return a plot
+        plot_class = function(layer_name="final",add_channel=TRUE){
+            layer_name <- match.arg(layer_name,self$get_class())
+            raster::plot( self$get_class(layer_name) )
+            if( add_channel ){ raster::plot( self$get_channel(), add=TRUE ) }
         },
         
-        
+        #' @description Compute a Dynamic TOPMODEL
+        #' @param band How to cut the bands into the model, interpreted as for a cut in the classify method
+        #' @param verbose print out additional diagnostic information        
+        create_model = function(band=5,verbose=FALSE){
+            if( length(private$class$total) != length(private$layers$dem) ){
+                stop("There is no valid classification")
+            }            
+            private$apply_create_model(as.numeric(band),verbose)
+            
+            invisible(self)
+        },
+        #' @description Get the model is a form suitable for dynatop
+        #' @return a Dynamic TOPMODE description suitable for the \code{dyantop} package
+        get_model = function(){
+            private$model
+        },
+        #' @description Plot the spatial properties of a model
+        #' @param add_channel should the channel be added to the plot
+        plot_model = function(add_channel=TRUE){
+            raster::plot( raster(crs = private$model$map$scope$crs,
+                                 ext = private$model$map$scope$ext,
+                                 resolution = private$model$map$scope$res,
+                                 vals = private$model$map$hillslope) )
+            if( add_channel ){
+                raster::plot( raster(crs = private$model$map$scope$crs,
+                                     ext = private$model$map$scope$ext,
+                                     resolution = private$model$map$scope$res,
+                                     vals = private$model$map$channel) ,add=TRUE)
+            }
+            
+        },
         #' @description Return the index of neighbouring cells
         #' @param x index of cells for which to find neighbours
         #' @return a list of indexes of neighbours
@@ -288,7 +319,7 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description get the cuts and burns used to classify
         #' @return a list with two elements, cuts and burns
-        get_class = function(){
+        get_class_method = function(){
             private$class$method
         },
         
@@ -305,13 +336,14 @@ dynatopGIS <- R6::R6Class(
         version = 0.1,
         reserved_layer_names=c("dem","filled_dem","land_area",
                                "channel_area","channel_id",
-                               "atanb","gradient","upslope_area","band"),
+                               "atanb","gradient","upslope_area","band","final"),
         scope=list(),
         layers=list(),
         class=list(total=NULL,
                    method=list(),
                    partial=list()),
         channel=NULL,
+        model=NULL,
         
         apply_add_channel = function(){
             ## create a land area raster
@@ -523,12 +555,7 @@ dynatopGIS <- R6::R6Class(
 
                 ## find next set of cells to evaluate
                 idx <- unique(do.call(c,idx_list))
-                ## idx2 <- which(n_higher==0)
-                ## if( !all(idx %in% idx2) | length(idx)!=length(idx2) ){
-                ##     browser()
-                ## }
-                ##print(cnt)
-                #print(idx)
+
             }
             
             ## compute topographic index from summaries
@@ -590,12 +617,18 @@ dynatopGIS <- R6::R6Class(
             private$class$method <- list(cuts = cuts,burns=burns)
         },
     
-        apply_create_model = function(brk){
+        apply_create_model = function(brk,verbose){
+
+            ## create a list to store items used in verbose printing
+            ## stop them getting used elsewhere
+            verbose <- list(flag=verbose)
             
             ## Initialise the model
             model <- list()
             model$map$scope <- private$scope
             model$map$channel <- private$layers$channel_id
+
+            if(verbose$flag){ cat("Adding bands to create HSUs hillslope classes","\n") }
             
             ## Add banding split to the classification
             if( length(brk)==1 & is.na(brk[1]) ){
@@ -613,6 +646,8 @@ dynatopGIS <- R6::R6Class(
             model$map$hillslope <- unname( ucp[paste(cp)] )
             rm(ucp,cp)
 
+            if(verbose$flag){ cat("Creating Channel tables","\n") }
+            
             ## Create the channel table with properties
             uid <- private$channel$id
             model$channel <- data.frame(
@@ -642,6 +677,8 @@ dynatopGIS <- R6::R6Class(
                                                          frc= 1/length(jdx))
                 }
             }
+
+            if(verbose$flag){ cat("Initialising Hillslope table","\n") }
             
             ## create the model hillslope table and populate computations
             uid <- unique(model$map$hillslope)
@@ -684,7 +721,8 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## determine flow directions for hillslope
-                       
+            if(verbose$flag){ cat("Determining Hillslope flow directions","\n") }
+            
             ## what is the HSU id of teh part fo each raster cell which recieves inflow
             receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
                                  na.rm=TRUE)
@@ -703,7 +741,7 @@ dynatopGIS <- R6::R6Class(
 
             it <- 0
             delta <- 1e-3
-            while(!all(is_valid)){
+            while(!all(is_valid) & it < 100){
                 it <- it+1
                 print(it)
                 ## process all hillslope HSUs that aren't valid
@@ -745,102 +783,18 @@ dynatopGIS <- R6::R6Class(
                         if(length(edx)>0){
                             bnd[id] <- bnd[id]-delta
                         }else{
-                            browser()
                             stop("Should never get here!!")
                         }
                     }
+
+                    if(verbose$flag){
+                        cat("    Iteration ",cnt,": ",sum(is_valid)," of ",length(is_valid)," HSUs valid","\n")
+                    }
                 }
-                browser()
             }
-
-
-            ## ## what is the id of each rasater cell
-            ## receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
-            ##                      na.rm=TRUE)
             
-            ## ## storage of flow directions
-            ## model$hillslope$sz_dir = rep(list(NULL),length(model$hillslope$id))
+            if(verbose$flag){ cat("Computing remaining Hillslope properties","\n") }
 
-            ## ## computational band for each HSU id
-            ## bnd <- rep(NA,max(model$hillslope$id)) 
-            ## bnd[model$hillslope$id] <- model$hillslope$sz_band
-            ## bnd[model$channel$id] <- Inf #model$channel$sz_band
-            ## is_valid <- rep(TRUE,max(model$hillslope$id)) 
-                            
-            ## ## loop HSUs computing flow directions
-            ## ## keep repeat loop if an HSU is dropped
-            ## loop_flag <- TRUE
-            ## while(loop_flag){
-            ##     print("looping")
-            ##     print(is_valid)
-            ##     ## presume we don't have to repeat
-            ##     loop_flag <- FALSE
-            ##     ## loop HSUs in order of band to compute flow direction or reassign
-            ##     for(id in model$hillslope$id[is_valid[model$hillslope$id]]){
-            ##         rw <- which(model$hillslope$id == id)
-            ##     ## for(rw in order(model$hillslope$sz_band)){
-            ##     ##     ## HSU id
-            ##     ##     id  <- model$hillslope$id[rw]
-                    
-            ##         ## index of hillslope points
-            ##         idx <- which(model$map$hillslope==id)
-                
-            ##         ## work out flow directions - store as area times fraction
-            ##         rfrc <- rep(0,max(model$hillslope$id))
-            ##         for(ii in idx){
-            ##             jj <- private$fFD(ii)
-            ##             jj$cls <- receiving_id[jj$idx]
-            ##             rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
-            ##         }
-
-            ##         ## work out which are moves to higher bands (more downslope)
-            ##         kdx <- which( (bnd > bnd[id]) & rfrc>0 & is_valid)
-            ##         if(length(kdx)>0){
-            ##             ## if there is send the flow to those cells
-            ##             ## compute flow directions
-            ##             model$hillslope$sz_dir[[rw]] <- list(
-            ##                 band = model$hillslope$sz_band[rw],
-            ##                 idx = kdx,
-            ##                 frc = rfrc[kdx]/sum(rfrc[kdx])
-            ##             )
-            ##         }else{
-            ##             ## see if there isn't see if their is the same class in a
-            ##             ## higher band which is valid
-            ##             jdx <- which(model$hillslope$sz_band > model$hillslope$sz_band[rw] &
-            ##                          model$hillslope$class == model$hillslope$class[rw])
-            ##             jdx <- jdx[ is_valid[model$hillslope$id[jdx]] ]
-                        
-            ##             if( length(jdx)>0 ){
-            ##                 ## there is so
-            ##                 ## in which case combine by sending all flow there
-            ##                 jdx <- jdx[ which.min(model$hillslope$sz_band[jdx]) ]
-            ##                 model$hillslope$sz_dir[[rw]] <- list(
-            ##                     band = model$hillslope$sz_band[rw],
-            ##                     idx = jdx,
-            ##                     frc = 1)
-            ##             }else{
-            ##                 ## there isn't...
-            ##                 ## remove class with warning
-            ##                 is_valid[id] <- FALSE
-            ##                 model$map$hillslope[idx] <- NA
-            ##                 loop_flag <- TRUE
-            ##             }
-                        
-            ##         }
-            ##     }
-            ## }
-            
-            ## ## drop HSUs from the table which are not valid
-            ## model$hillslope <- model$hillslope[model$hillslope$id %in% model$map$hillslope,]
-            ## ## tidy up numbering
-            ## ucp <- setNames( (1:nrow(model$hillslope)) + max(private$layers$channel_id,na.rm=TRUE),
-            ##                 paste(model$hillslope$id) ) # only works since cp is an integer
-            ## model$map$hillslope <- unname( ucp[paste(model$map$hillslope)] )
-            ## model$hillslope$id <- unname(ucp)
-            
-            ## ## remove band from the table - this now in flow direction description
-            ## model$hillslope$sz_band <- NULL
-            
             ## compute reminaing properties
             for(rw in 1:length(model$hillslope$id)){
                 id <- model$hillslope$id[rw]
@@ -867,6 +821,7 @@ dynatopGIS <- R6::R6Class(
 
 
             ## parameter values
+            if(verbose$flag){ cat("Setting default parameter values","\n") }
             model$param <- c(q_sfmax_default=Inf,
                              s_rzmax_default=0.05,
                              s_rz0_default=0.99,
@@ -879,7 +834,7 @@ dynatopGIS <- R6::R6Class(
             ## ############################################
             ## Add gauges at all outlets from river network
             ## ############################################
-            
+            if(verbose$flag){ cat("Adding gauges at the outlets","\n") }
             idx <- which(sapply(model$channel$flow_dir,length)==0)
             model$gauge <- data.frame(
                 name = paste("channel",model$channel$id[idx],sep="_"),
@@ -892,18 +847,20 @@ dynatopGIS <- R6::R6Class(
             ## Add point inflow table
             ## ##################################
             ## blank point inflow table
+            if(verbose$flag){ cat("Adding a blank point_inflow table","\n") }
             model$point_inflow <- data.frame(
                 name = character(0),
                 id = integer(0),
                 fraction = numeric(0),
                 stringsAsFactors=FALSE
             )
-            
-            return(model)
+
+            ## add model to record
+            private$model <- model
             
         },
         
-        
+        ## function to locate neighbours
         fN = function(k){
             nr <- private$scope$dim[1]
             nc <- private$scope$dim[2]
@@ -944,7 +901,7 @@ dynatopGIS <- R6::R6Class(
             ##             cl = m[,4])
             return(out)
         },
-        ## return gradient and contour length that is applicable for cell
+        ## returns properties of a hillslope pixel not dependent upon the hillslope order
         fstatic = function(k,missing_grad,missing_length){
 
             ## don't compute for 0 land areas
@@ -990,6 +947,7 @@ dynatopGIS <- R6::R6Class(
                         gcl = gcl)
             return(out)
         },
+        ## returns the downslope flow directions with a fractional split
         fFD =function(k){
             ## work out if a channel
             is_channel <- is.finite(private$layers$channel_id[k])

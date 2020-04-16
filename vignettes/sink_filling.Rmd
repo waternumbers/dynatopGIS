@@ -15,10 +15,8 @@ knitr::opts_chunk$set(
 ```
 
 ```{r echo=FALSE}
-##devtools::load_all("c:/Users/d251l/OneDrive/Documents/Software/dynatopGIS")
-##/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
-                                        #library("dynatopGIS")
-devtools::load_all("/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
+## devtools::load_all("/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
+library("dynatopGIS")
 library("raster")
 ```
 The purpose of this vignette is to outline the sink filling routine used by
@@ -96,8 +94,8 @@ ex1_chn[1,1] <- 1
 ex1 <- dynatopGIS$new(ex1_dem)
 ex1$add_layer(ex1_chn,"channel_id",FALSE)
 ex1$sink_fill()
-ex1$plot("dem",FALSE)
-ex1$plot("filled_dem",FALSE)
+ex1$plot_layer("dem",FALSE)
+ex1$plot_layer("filled_dem",FALSE)
 ```
 
 ## handling of a single isleland
@@ -111,6 +109,6 @@ ex2_chn[1,1] <- 1
 ex2 <-  dynatopGIS$new(ex1_dem)
 ex2$add_layer(ex2_chn,"channel_id",FALSE)
 ex2$sink_fill()
-ex2$plot("dem",add=FALSE)
-ex2$plot("filled_dem",add=FALSE)
+ex2$plot_layer("dem",add=FALSE)
+ex2$plot_layer("filled_dem",add=FALSE)
 ```

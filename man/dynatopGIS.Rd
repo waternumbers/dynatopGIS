@@ -11,18 +11,21 @@ This package contains the code for setting up a dynamic TOPMODEL implimentation
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{dynatopGIS$new()}}
-\item \href{#method-list_layers}{\code{dynatopGIS$list_layers()}}
 \item \href{#method-add_layer}{\code{dynatopGIS$add_layer()}}
 \item \href{#method-get_layer}{\code{dynatopGIS$get_layer()}}
-\item \href{#method-plot}{\code{dynatopGIS$plot()}}
+\item \href{#method-plot_layer}{\code{dynatopGIS$plot_layer()}}
 \item \href{#method-add_channel}{\code{dynatopGIS$add_channel()}}
 \item \href{#method-get_channel}{\code{dynatopGIS$get_channel()}}
 \item \href{#method-sink_fill}{\code{dynatopGIS$sink_fill()}}
 \item \href{#method-compute_properties}{\code{dynatopGIS$compute_properties()}}
 \item \href{#method-classify}{\code{dynatopGIS$classify()}}
-\item \href{#method-create_model}{\code{dynatopGIS$create_model()}}
-\item \href{#method-neighbour}{\code{dynatopGIS$neighbour()}}
 \item \href{#method-get_class}{\code{dynatopGIS$get_class()}}
+\item \href{#method-plot_class}{\code{dynatopGIS$plot_class()}}
+\item \href{#method-create_model}{\code{dynatopGIS$create_model()}}
+\item \href{#method-get_model}{\code{dynatopGIS$get_model()}}
+\item \href{#method-plot_model}{\code{dynatopGIS$plot_model()}}
+\item \href{#method-neighbour}{\code{dynatopGIS$neighbour()}}
+\item \href{#method-get_class_method}{\code{dynatopGIS$get_class_method()}}
 \item \href{#method-get_version}{\code{dynatopGIS$get_version()}}
 \item \href{#method-clone}{\code{dynatopGIS$clone()}}
 }
@@ -50,22 +53,6 @@ Reads in the dem using the raster package. If fill_na all NA values other then t
 
 \subsection{Returns}{
 A new `dynatopGIS` object
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-list_layers"></a>}}
-\subsection{Method \code{list_layers()}}{
-List the available of geographical layers
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$list_layers(is_class = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{is_class}}{should layers of partial classification be returned}
-}
-\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -98,38 +85,28 @@ suitable for chaining
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_layer"></a>}}
 \subsection{Method \code{get_layer()}}{
-Get a layer of geographical information
+Get a layer of geographical information or a list of layer names
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_layer(layer_name = character(0), is_class = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_layer(layer_name = character(0))}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{layer_name}}{name of the layer give to the layer}
-
-\item{\code{is_class}}{logical if the class based on this layer should be returned}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Details}{
-Setting is_class to TRUE and not providing a layer_name returns the overall classification
-}
-
 \subsection{Returns}{
-a RasterLayer of the requested information
+a RasterLayer of the requested information if layer_name is given else a vector of layer names
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plot"></a>}}
-\subsection{Method \code{plot()}}{
+\if{html}{\out{<a id="method-plot_layer"></a>}}
+\subsection{Method \code{plot_layer()}}{
 Plot a layer
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot(
-  layer_name = character(0),
-  add_channel = TRUE,
-  is_class = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot_layer(layer_name, add_channel = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -138,15 +115,9 @@ Plot a layer
 \item{\code{layer_name}}{the name of layer to plot}
 
 \item{\code{add_channel}}{shouel the channel be added to the plot}
-
-\item{\code{is_class}}{logical if the class based on this layer should be returned}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Details}{
-Setting is_class to TRUE and not providing a layer_name returns a plot of the overall classification
-}
-
 \subsection{Returns}{
 a plot
 }
@@ -272,22 +243,89 @@ This applies the given cuts to the supplied landscape layers to produce areal gr
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_class"></a>}}
+\subsection{Method \code{get_class()}}{
+Get a classification layer of geographical information or a list of layer names
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class(layer_name = character(0))}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{layer_name}}{name of the layer give to the layer}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+a RasterLayer of the requested information if layer_name is given else a vector of layer names
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plot_class"></a>}}
+\subsection{Method \code{plot_class()}}{
+Plot a classification layer
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot_class(layer_name = "final", add_channel = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{layer_name}}{the name of layer to plot}
+
+\item{\code{add_channel}}{shouel the channel be added to the plot}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+a plot
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-create_model"></a>}}
 \subsection{Method \code{create_model()}}{
 Compute a Dynamic TOPMODEL
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(band = 5)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(band = 5, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{band}}{How to cut the bands into the model, interpreted as for a cut in the classify method}
+
+\item{\code{verbose}}{print out additional diagnostic information}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_model"></a>}}
+\subsection{Method \code{get_model()}}{
+Get the model is a form suitable for dynatop
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_model()}\if{html}{\out{</div>}}
+}
+
 \subsection{Returns}{
 a Dynamic TOPMODE description suitable for the \code{dyantop} package
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plot_model"></a>}}
+\subsection{Method \code{plot_model()}}{
+Plot the spatial properties of a model
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot_model(add_channel = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{add_channel}}{should the channel be added to the plot}
+}
+\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -310,11 +348,11 @@ a list of indexes of neighbours
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_class"></a>}}
-\subsection{Method \code{get_class()}}{
+\if{html}{\out{<a id="method-get_class_method"></a>}}
+\subsection{Method \code{get_class_method()}}{
 get the cuts and burns used to classify
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class_method()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{

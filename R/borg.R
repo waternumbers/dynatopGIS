@@ -28,12 +28,12 @@ borg <- function(old_object,force=FALSE){
     new_object$add_channel(old_object$get_channel())
 
     ## copy other layers
-    for(nm in old_object$list_layers()){
+    for(nm in old_object$get_layer()){
         new_object$add_layer(old_object$get_layer(nm),nm,FALSE)
     }
 
     ## get classification
-    cls <- old_object$get_class()
+    cls <- old_object$get_class_method()
     if(length(cls)>0){
         new_object$classify(cuts=cls$cuts,burns=cls$burns)
     }

@@ -14,7 +14,10 @@ pkgdown::build_site(pacPath)
 
 
 ## This code runs to generate the model used in the dynatop examples
-devtools::load_all(pacPath)
+rm(list=ls())
+## pacPath_ <- './dynatopGIS'
+## devtools::load_all(pacPath)
+library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS"))
 shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS"))
 property_names <- c(channel_id="identifier",
@@ -28,7 +31,8 @@ profvis::profvis({
     c2$sink_fill(verbose=TRUE)
     c2$compute_properties(verbose=TRUE)
     c2$classify(list(atanb=20))
-    mdl <- c2$create_model()
+    c2$create_model(verbose=TRUE)
+    mdl <- c2$get_model()
     c3 <- borg(c2)
 })
 
