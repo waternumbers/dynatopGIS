@@ -141,18 +141,21 @@
 
 <ul>
 <li><p><a href='#method-new'><code>dynatopGIS$new()</code></a></p></li>
-<li><p><a href='#method-list_layers'><code>dynatopGIS$list_layers()</code></a></p></li>
 <li><p><a href='#method-add_layer'><code>dynatopGIS$add_layer()</code></a></p></li>
 <li><p><a href='#method-get_layer'><code>dynatopGIS$get_layer()</code></a></p></li>
-<li><p><a href='#method-plot'><code>dynatopGIS$plot()</code></a></p></li>
+<li><p><a href='#method-plot_layer'><code>dynatopGIS$plot_layer()</code></a></p></li>
 <li><p><a href='#method-add_channel'><code>dynatopGIS$add_channel()</code></a></p></li>
 <li><p><a href='#method-get_channel'><code>dynatopGIS$get_channel()</code></a></p></li>
 <li><p><a href='#method-sink_fill'><code>dynatopGIS$sink_fill()</code></a></p></li>
 <li><p><a href='#method-compute_properties'><code>dynatopGIS$compute_properties()</code></a></p></li>
 <li><p><a href='#method-classify'><code>dynatopGIS$classify()</code></a></p></li>
-<li><p><a href='#method-create_model'><code>dynatopGIS$create_model()</code></a></p></li>
-<li><p><a href='#method-neighbour'><code>dynatopGIS$neighbour()</code></a></p></li>
 <li><p><a href='#method-get_class'><code>dynatopGIS$get_class()</code></a></p></li>
+<li><p><a href='#method-plot_class'><code>dynatopGIS$plot_class()</code></a></p></li>
+<li><p><a href='#method-create_model'><code>dynatopGIS$create_model()</code></a></p></li>
+<li><p><a href='#method-get_model'><code>dynatopGIS$get_model()</code></a></p></li>
+<li><p><a href='#method-plot_model'><code>dynatopGIS$plot_model()</code></a></p></li>
+<li><p><a href='#method-neighbour'><code>dynatopGIS$neighbour()</code></a></p></li>
+<li><p><a href='#method-get_class_method'><code>dynatopGIS$get_class_method()</code></a></p></li>
 <li><p><a href='#method-get_version'><code>dynatopGIS$get_version()</code></a></p></li>
 <li><p><a href='#method-clone'><code>dynatopGIS$clone()</code></a></p></li>
 </ul>
@@ -174,16 +177,6 @@
 <h3>Returns</h3>
 <p>A new `dynatopGIS` object</p>
 <p><hr>
-<a id="method-list_layers"></a></p><h3>Method <code>list_layers()</code></h3>
-<p>List the available of geographical layers</p><h3>Usage</h3>
-<p><div class="r"></p><pre>dynatopGIS$list_layers(is_class = FALSE)</pre><p></div></p>
-
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
-<dt><code>is_class</code></dt><dd><p>should layers of partial classification be returned</p></dd>
-
-</dl><p></div></p>
-<p><hr>
 <a id="method-add_layer"></a></p><h3>Method <code>add_layer()</code></h3>
 <p>Add a layer of geographical information</p><h3>Usage</h3>
 <p><div class="r"></p><pre>dynatopGIS$add_layer(raster_layer, layer_name, check_name = TRUE)</pre><p></div></p>
@@ -204,29 +197,20 @@
 <p>suitable for chaining</p>
 <p><hr>
 <a id="method-get_layer"></a></p><h3>Method <code>get_layer()</code></h3>
-<p>Get a layer of geographical information</p><h3>Usage</h3>
-<p><div class="r"></p><pre>dynatopGIS$get_layer(layer_name = character(0), is_class = FALSE)</pre><p></div></p>
+<p>Get a layer of geographical information or a list of layer names</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_layer(layer_name = character(0))</pre><p></div></p>
 
 <h3>Arguments</h3>
 <p><div class="arguments"></p><dl class='dl-horizontal'>
 <dt><code>layer_name</code></dt><dd><p>name of the layer give to the layer</p></dd>
 
-<dt><code>is_class</code></dt><dd><p>logical if the class based on this layer should be returned</p></dd>
-
 </dl><p></div></p>
-<h3>Details</h3>
-<p>Setting is_class to TRUE and not providing a layer_name returns the overall classification</p>
-
 <h3>Returns</h3>
-<p>a RasterLayer of the requested information</p>
+<p>a RasterLayer of the requested information if layer_name is given else a vector of layer names</p>
 <p><hr>
-<a id="method-plot"></a></p><h3>Method <code><a href='https://rdrr.io/r/graphics/plot.html'>plot()</a></code></h3>
+<a id="method-plot_layer"></a></p><h3>Method <code>plot_layer()</code></h3>
 <p>Plot a layer</p><h3>Usage</h3>
-<p><div class="r"></p><pre>dynatopGIS$plot(
-  layer_name = character(0),
-  add_channel = TRUE,
-  is_class = FALSE
-)</pre><p></div></p>
+<p><div class="r"></p><pre>dynatopGIS$plot_layer(layer_name, add_channel = TRUE)</pre><p></div></p>
 
 <h3>Arguments</h3>
 <p><div class="arguments"></p><dl class='dl-horizontal'>
@@ -234,12 +218,7 @@
 
 <dt><code>add_channel</code></dt><dd><p>shouel the channel be added to the plot</p></dd>
 
-<dt><code>is_class</code></dt><dd><p>logical if the class based on this layer should be returned</p></dd>
-
 </dl><p></div></p>
-<h3>Details</h3>
-<p>Setting is_class to TRUE and not providing a layer_name returns a plot of the overall classification</p>
-
 <h3>Returns</h3>
 <p>a plot</p>
 <p><hr>
@@ -329,12 +308,60 @@ The function opulates the channel_id &amp; channel_area layers and alters the la
 <p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given.</p>
 
 <p><hr>
+<a id="method-get_class"></a></p><h3>Method <code>get_class()</code></h3>
+<p>Get a classification layer of geographical information or a list of layer names</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_class(layer_name = character(0))</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>layer_name</code></dt><dd><p>name of the layer give to the layer</p></dd>
+
+</dl><p></div></p>
+<h3>Returns</h3>
+<p>a RasterLayer of the requested information if layer_name is given else a vector of layer names</p>
+<p><hr>
+<a id="method-plot_class"></a></p><h3>Method <code>plot_class()</code></h3>
+<p>Plot a classification layer</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$plot_class(layer_name = "final", add_channel = TRUE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>layer_name</code></dt><dd><p>the name of layer to plot</p></dd>
+
+<dt><code>add_channel</code></dt><dd><p>shouel the channel be added to the plot</p></dd>
+
+</dl><p></div></p>
+<h3>Returns</h3>
+<p>a plot</p>
+<p><hr>
 <a id="method-create_model"></a></p><h3>Method <code>create_model()</code></h3>
 <p>Compute a Dynamic TOPMODEL</p><h3>Usage</h3>
-<p><div class="r"></p><pre>dynatopGIS$create_model()</pre><p></div></p>
+<p><div class="r"></p><pre>dynatopGIS$create_model(band = 5, verbose = FALSE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>band</code></dt><dd><p>How to cut the bands into the model, interpreted as for a cut in the classify method</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>print out additional diagnostic information</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-get_model"></a></p><h3>Method <code>get_model()</code></h3>
+<p>Get the model is a form suitable for dynatop</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$get_model()</pre><p></div></p>
 
 <h3>Returns</h3>
-<p>a Dynamic TOPMODELGIS description suitable for the <code>dyantop</code> package</p>
+<p>a Dynamic TOPMODE description suitable for the <code>dyantop</code> package</p>
+<p><hr>
+<a id="method-plot_model"></a></p><h3>Method <code>plot_model()</code></h3>
+<p>Plot the spatial properties of a model</p><h3>Usage</h3>
+<p><div class="r"></p><pre>dynatopGIS$plot_model(add_channel = TRUE)</pre><p></div></p>
+
+<h3>Arguments</h3>
+<p><div class="arguments"></p><dl class='dl-horizontal'>
+<dt><code>add_channel</code></dt><dd><p>should the channel be added to the plot</p></dd>
+
+</dl><p></div></p>
 <p><hr>
 <a id="method-neighbour"></a></p><h3>Method <code>neighbour()</code></h3>
 <p>Return the index of neighbouring cells</p><h3>Usage</h3>
@@ -348,9 +375,9 @@ The function opulates the channel_id &amp; channel_area layers and alters the la
 <h3>Returns</h3>
 <p>a list of indexes of neighbours</p>
 <p><hr>
-<a id="method-get_class"></a></p><h3>Method <code>get_class()</code></h3>
+<a id="method-get_class_method"></a></p><h3>Method <code>get_class_method()</code></h3>
 <p>get the cuts and burns used to classify</p><h3>Usage</h3>
-<p><div class="r"></p><pre>dynatopGIS$get_class()</pre><p></div></p>
+<p><div class="r"></p><pre>dynatopGIS$get_class_method()</pre><p></div></p>
 
 <h3>Returns</h3>
 <p>a list with two elements, cuts and burns</p>

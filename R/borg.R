@@ -1,12 +1,13 @@
 #' update a dynatopGIS class object
 #' 
-#' @description Update a dynatopGIS object while keeping layers and channel
+#' @description Update a dynatopGIS object while keeping layers, channel and classification
 #'
 #' @param old_object the current dynatopGIS object
 #' @param force force conversion even to an older version
 #' 
-#' @return a dynatopGIS updated to the current version of the methods
-#' @details Setting is_class to TRUE and not providing a layer_name returns the overall classification
+#' @return an object of class dynatopGIS updated to the current version of the methods
+#' 
+#' @details Currently the model is not copied
 #' @export
 borg <- function(old_object,force=FALSE){
     if(!("dynatopGIS" %in% class(old_object))){

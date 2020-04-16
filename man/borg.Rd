@@ -12,11 +12,11 @@ borg(old_object, force = FALSE)
 \item{force}{force conversion even to an older version}
 }
 \value{
-a dynatopGIS updated to the current version of the methods
+an object of class dynatopGIS updated to the current version of the methods
 }
 \description{
-Update a dynatopGIS object while keeping layers and channel
+Update a dynatopGIS object while keeping layers, channel and classification
 }
 \details{
-Setting is_class to TRUE and not providing a layer_name returns the overall classification
+Currently the model is not copied
 }

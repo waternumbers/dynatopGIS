@@ -125,41 +125,46 @@
       <small>Source: <a href='https://github.com/waternumbers/dynatopGIS/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="dynatop-01" class="section level1">
+    <div id="dynatopgis-01" class="section level1">
 <h1 class="page-header">
-<a href="#dynatop-01" class="anchor"></a>dynatop 0.1</h1>
-<div id="todo" class="section level2">
+<a href="#dynatopgis-01" class="anchor"></a>dynatopGIS 0.1</h1>
+<div id="breaking-changes" class="section level2">
 <h2 class="hasAnchor">
-<a href="#todo" class="anchor"></a>TODO</h2>
+<a href="#breaking-changes" class="anchor"></a>Breaking Changes</h2>
 <ul>
-<li>WIRTE THIS</li>
-<li>add verbose to make model</li>
-<li>Speed up fN - slow parts are matrix creation and trimming</li>
+<li>Code base reformulated in an Object orientated form using the <code>R6</code> package. except for change below algorithms as for v0.0.4</li>
+<li>Output format of model changed to reflect <code>dynatop</code> v0.1</li>
+</ul>
+</div>
+<div id="new-features" class="section level2">
+<h2 class="hasAnchor">
+<a href="#new-features" class="anchor"></a>New Features</h2>
+<ul>
+<li>Reformulation allows for data and code to saved in a single object allowing full reproducibility</li>
+<li>Additional plotting functions</li>
+<li>Model creation algorithm changes to:
+<ul>
+<li>take sequence for most downslope band (rather then upslope)</li>
+<li>Adjusts sequence rather then merging or dropping areas (still experimental) to ensure connectivity</li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
     <div id="dynatopgis-004" class="section level1">
 <h1 class="page-header">
 <a href="#dynatopgis-004" class="anchor"></a>dynatopGIS 0.0.4</h1>
-<div id="to-do" class="section level2">
+<div id="breaking-changes-1" class="section level2">
 <h2 class="hasAnchor">
-<a href="#to-do" class="anchor"></a>TO DO</h2>
-<ul>
-<li>better sink_filling examples for vignette</li>
-</ul>
-<p>Complete rewrite of implimentation.</p>
-</div>
-<div id="breaking-changes" class="section level2">
-<h2 class="hasAnchor">
-<a href="#breaking-changes" class="anchor"></a>Breaking Changes</h2>
+<a href="#breaking-changes-1" class="anchor"></a>Breaking Changes</h2>
 <ul>
 <li>Uses a single multilayer raster file rather then a folder of raster files</li>
 <li>New algorithms will not produce identical results to v0.0.3</li>
 </ul>
 </div>
-<div id="new-features" class="section level2">
+<div id="new-features-1" class="section level2">
 <h2 class="hasAnchor">
-<a href="#new-features" class="anchor"></a>New Features</h2>
+<a href="#new-features-1" class="anchor"></a>New Features</h2>
 <ul>
 <li>New sink fill algorithm which should use fewer passes of the DEM
 <ul>
@@ -167,7 +172,7 @@
 <li>Drops non-connected cells on the edge of the catchment</li>
 </ul>
 </li>
-<li>Rewritten computation of HSU properties based on Quinn et al. 1995 and implimneted in two passes of the DEM</li>
+<li>Rewritten computation of HSU properties based on Quinn et al. 1995 and implemented in two passes of the DEM</li>
 </ul>
 </div>
 </div>
@@ -185,9 +190,9 @@
     <div id="dynatopgis-002" class="section level1">
 <h1 class="page-header">
 <a href="#dynatopgis-002" class="anchor"></a>dynatopGIS 0.0.2</h1>
-<div id="new-features-1" class="section level2">
+<div id="new-features-2" class="section level2">
 <h2 class="hasAnchor">
-<a href="#new-features-1" class="anchor"></a>New features</h2>
+<a href="#new-features-2" class="anchor"></a>New features</h2>
 <ul>
 <li>Added ability to continue a run of sink_fill by starting with previous filled dem</li>
 </ul>
@@ -227,18 +232,18 @@
 <h2 class="hasAnchor">
 <a href="#context" class="anchor"></a>Context</h2>
 <p>This package is the result of an almost complete rewrite of the dynatopmodel package formally on CRAN and the associated development code (not in the public domain).</p>
-<p>This package contains the code for extracting teh GIS summaries required for dynamic TOPMODEL and helpers for inserting default parameters. The package [dynatop]{<a href="http://bbc.co.uk" class="uri">http://bbc.co.uk</a>} contains the code for performing simulations.</p>
+<p>This package contains the code for extracting the GIS summaries required for dynamic TOPMODEL and helpers for inserting default parameters. The package [dynatop]{<a href="https://waternumbers.github.io/dynatop/" class="uri">https://waternumbers.github.io/dynatop/</a>} contains the code for performing simulations.</p>
 </div>
-<div id="new-features-2" class="section level2">
+<div id="new-features-3" class="section level2">
 <h2 class="hasAnchor">
-<a href="#new-features-2" class="anchor"></a>New Features</h2>
+<a href="#new-features-3" class="anchor"></a>New Features</h2>
 <ul>
-<li>Change in approach to wrting all intermediate files to - produce a record of analysis - allow for future developments with larger size GIS data</li>
-<li>Porting of sink_fill and atb calculations from orginal topmodel CRAN package to Rcpp</li>
+<li>Change in approach to writing all intermediate files to - produce a record of analysis - allow for future developments with larger size GIS data</li>
+<li>Porting of sink_fill and atb calculations from original topmodel CRAN package to Rcpp</li>
 <li>Improved method of determining river network intersection with DEM from shape files</li>
 <li>Changes to sink filling and atb calculations to recognise burnt in river network and correctly split flow by gradient</li>
 <li>Alterations to output mew style dynamic TOPMODEL object</li>
-<li>Vignettes added documeting function usage</li>
+<li>Vignettes added documenting function usage</li>
 </ul>
 </div>
 <div id="regressions-of-note" class="section level2">
@@ -255,7 +260,7 @@
     <div id="tocnav">
       <h2>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
-        <li><a href="#dynatop-01">0.1</a></li>
+        <li><a href="#dynatopgis-01">0.1</a></li>
         <li><a href="#dynatopgis-004">0.0.4</a></li>
         <li><a href="#dynatopgis-003">0.0.3</a></li>
         <li><a href="#dynatopgis-002">0.0.2</a></li>
