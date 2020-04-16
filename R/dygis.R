@@ -53,7 +53,7 @@ dynatopGIS <- R6::R6Class(
         ## @return a character vector of names
         list_layers =function(is_class=FALSE){
             if( is_class ){
-                names(provate$class$partial)
+                names(private$class$partial)
             }else{
                 names(private$layers)
             }
@@ -354,12 +354,15 @@ dynatopGIS <- R6::R6Class(
     
             ## extract dem and channel_id values
             if(hot_start){
-                w <- provate$layer$filled_dem
+                w <- private$layer$filled_dem
             }else{
                 w <- private$layers$dem
                 w[!is.na(w)] <- Inf
                 w[is.finite(private$layers$channel_id)] <- private$layers$dem[is.finite(private$layers$channel_id)]
             }
+
+            ## set flag if w > dem
+            w_greater <- is.finite(private$layers$dem) & (w>private$layers$dem)
             
             finite_neighbour <- rep(FALSE,length(w))
             for(ii in which(is.finite(w))){
@@ -373,8 +376,8 @@ dynatopGIS <- R6::R6Class(
             eflag <- FALSE
             while( something_done ){
                 something_done <- FALSE
-                idx <- which( (w > private$layers$dem) & finite_neighbour )
-
+                ## idx <- which( (w > private$layers$dem) & finite_neighbour )
+                idx <- which( w_greater & finite_neighbour )
                 if( verbose ){
                     cat("Iteration",it,"\n")
                     cat("\t","Cells to evaluate:",length(idx),"\n")
@@ -392,6 +395,7 @@ dynatopGIS <- R6::R6Class(
                         w[ii] <- private$layers$dem[ii]
                         something_done <- TRUE
                         finite_neighbour[jj$idx] <- TRUE
+                        w_greater[ii] <- FALSE
                     }else{
                         if( w[ii] > w_min ){
                             w[ii] <- w_min
@@ -900,7 +904,7 @@ dynatopGIS <- R6::R6Class(
         },
         
         
-        fN = function(k,pflg=FALSE){
+        fN = function(k){
             nr <- private$scope$dim[1]
             nc <- private$scope$dim[2]
             if( k > nc*nr | k < 1){ return(rep(NA,8)) }

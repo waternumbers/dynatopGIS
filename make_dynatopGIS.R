@@ -25,9 +25,6 @@ property_names <- c(channel_id="identifier",
 profvis::profvis({
     c2 <- dynatopGIS$new(dem)
     c2$add_channel(shp,property_names)
-    c2$sink_fill()
-})
-
     c2$sink_fill(verbose=TRUE)
     c2$compute_properties(verbose=TRUE)
     c2$classify(list(atanb=20))
