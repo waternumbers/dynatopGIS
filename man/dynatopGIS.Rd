@@ -238,7 +238,7 @@ Split a catchment into a set hydrological response units (HRUs) according to any
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given.
+This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Changing teh classification removes the current model ensuring the two are always syncronised.
 }
 
 }

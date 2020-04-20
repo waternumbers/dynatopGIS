@@ -224,7 +224,7 @@ dynatopGIS <- R6::R6Class(
         #' @description Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layer cuts or burns
         #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
         #' @param burns a vector of layer names which are to be used as burns
-        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given.
+        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Changing teh classification removes the current model ensuring the two are always syncronised.
         classify = function(cuts,burns=NULL){
 
             ## check cuts
@@ -615,6 +615,9 @@ dynatopGIS <- R6::R6Class(
             
             ## record in splits
             private$class$method <- list(cuts = cuts,burns=burns)
+            
+            ## clear the model
+            private$model <- NULL
         },
     
         apply_create_model = function(brk,verbose){
@@ -852,6 +855,15 @@ dynatopGIS <- R6::R6Class(
                 name = character(0),
                 id = integer(0),
                 fraction = numeric(0),
+                stringsAsFactors=FALSE
+            )
+            
+            ## ##################################
+            ## Add diffuse inflow table
+            if(verbose$flag){ cat("Adding a blank diffuse_inflow table","\n") }
+            model$diffuse_inflow <- data.frame(
+                name = character(0),
+                id = integer(0),
                 stringsAsFactors=FALSE
             )
 

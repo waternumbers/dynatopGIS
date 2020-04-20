@@ -37,5 +37,5 @@ profvis::profvis({
     c3 <- borg(c2)
 })
 
-saveRDS(mdl,"./dynatop/inst/extdata/Swindale_from_r6.rds")
+saveRDS(mdl,"./dynatop/inst/extdata/Swindale.rds")
 

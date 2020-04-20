@@ -3,7 +3,7 @@
 ## Breaking Changes
 
 - Code base reformulated in an Object orientated form using the `R6`
-  package. except for change below algorithms as for v0.0.4
+  package. Except for change below algorithms as for v0.0.4
 - Output format of model changed to reflect `dynatop` v0.1
 
 ## New Features
