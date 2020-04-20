@@ -705,7 +705,10 @@ dynatopGIS <- R6::R6Class(
                 t_sf="t_sf_default",
                 stringsAsFactors=FALSE
             )
-
+            for(jj in names(private$class$partial)){
+                model$hillslope[[ paste0(jj,"_class") ]] <- NA
+            }
+            
             ## populate classes and band for use in determining the flow directions
             for(rw in 1:length(model$hillslope$id)){
                 id <- model$hillslope$id[rw]
@@ -718,7 +721,7 @@ dynatopGIS <- R6::R6Class(
                 model$hillslope$class[rw] <- unique( private$class$total[idx] )
                 
                 for(jj in names(private$class$partial)){
-                    model$hillslope[[ paste0(jj,"_class") ]] <- unique(
+                    model$hillslope[[ paste0(jj,"_class") ]][rw] <- unique(
                         private$class$partial[[jj]][idx])
                 }
             }
