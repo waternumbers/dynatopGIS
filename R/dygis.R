@@ -102,7 +102,8 @@ dynatopGIS <- R6::R6Class(
         #' @return a plot
         plot_layer = function(layer_name,add_channel=TRUE){
             layer_name <- match.arg(layer_name,self$get_layer())
-            raster::plot( self$get_layer(layer_name) )
+            raster::plot( self$get_layer(layer_name),
+                         main = layer_name)
             if( add_channel ){ raster::plot( self$get_channel(), add=TRUE ) }
         },
         #' @description Import channel data from an OGR file to the `dynatopGIS` object
@@ -261,7 +262,7 @@ dynatopGIS <- R6::R6Class(
             if(layer_name == "final"){
                 x <- private$class$total
             }else{
-                private$class$partial[[layer_name]]
+                x <- private$class$partial[[layer_name]]
             }
             ## make raster and return
             raster(crs = private$scope$crs,
@@ -275,7 +276,8 @@ dynatopGIS <- R6::R6Class(
         #' @return a plot
         plot_class = function(layer_name="final",add_channel=TRUE){
             layer_name <- match.arg(layer_name,self$get_class())
-            raster::plot( self$get_class(layer_name) )
+            raster::plot( self$get_class(layer_name) ,
+                         main=layer_name)
             if( add_channel ){ raster::plot( self$get_channel(), add=TRUE ) }
         },
         
