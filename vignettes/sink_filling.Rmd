@@ -12,10 +12,12 @@ knitr::opts_chunk$set(
                     collapse = TRUE,
                     comment = "#>"
                   )
-##devtools::load_all("c:/Users/d251l/OneDrive/Documents/Software/dynatopGIS")
-##/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
-library(dynatopGIS)
-library(raster)
+```
+
+```{r echo=FALSE}
+## devtools::load_all("/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")
+library("dynatopGIS")
+library("raster")
 ```
 The purpose of this vignette is to outline the sink filling routine used by
 the `sink_fill` function and provide some simple demonstrations.
@@ -83,27 +85,30 @@ fake <- raster::raster(M,
 ## handling of a larger area of missing
 
 ```{r, example1}
-ex1 <- fake
-ex1[c(23:26,33:36,44:45)] <- NA
+ex1_dem <- fake
+ex1_dem[c(23:26,33:36,44:45)] <- NA
+ex1_chn <- fake; ex1_chn[] <- NA
+ex1_chn[1,1] <- 1
 
-ex1 <- create_catchment(ex1)
-ex1[['channel_id']][1,1] <- 1
-ex1 <- sink_fill(ex1)
-plot(ex1[['dem']])
-plot(ex1[['filled_dem']])
-plot(ex1[['filled_dem']] - fake)
+
+ex1 <- dynatopGIS$new(ex1_dem)
+ex1$add_layer(ex1_chn,"channel_id",FALSE)
+ex1$sink_fill()
+ex1$plot_layer("dem",FALSE)
+ex1$plot_layer("filled_dem",FALSE)
 ```
 
 ## handling of a single isleland
 
 ```{r, example2}
-ex2 <- fake
-ex2[c(13:17,24,26,34:36)] <- NA
+ex2_dem <- fake
+ex2_dem[c(23:26,33:36,44:45)] <- NA
+ex2_chn <- fake; ex2_chn[] <- NA
+ex2_chn[1,1] <- 1
 
-ex2 <- create_catchment(ex2)
-ex2[['channel_id']][1,1] <- 1
-ex2 <- sink_fill(ex2)
-
-plot(ex2[['filled_dem']])
-plot(ex2[['filled_dem']] - fake)
+ex2 <-  dynatopGIS$new(ex1_dem)
+ex2$add_layer(ex2_chn,"channel_id",FALSE)
+ex2$sink_fill()
+ex2$plot_layer("dem",add=FALSE)
+ex2$plot_layer("filled_dem",add=FALSE)
 ```

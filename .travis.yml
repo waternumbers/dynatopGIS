@@ -1,13 +1,13 @@
 # R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
-
-language: R
+language: r
+r:
+  - release
+apt_packages:
+  - libgdal-dev
 cache: packages
 warnings_are_errors: true
 os:
   - linux
   - osx
-environment:
-  global:
-    WARNINGS_ARE_ERRORS: 1
 after_success:
-  - Rscript -e 'covr::coveralls(type = "all")'
+  - Rscript -e 'covr::codecov()'

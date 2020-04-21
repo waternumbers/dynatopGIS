@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
       </span>
     </div>
 
@@ -57,6 +57,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/Banding.html">Banding of HSUs</a>
+    </li>
+    <li>
       <a href="../articles/sink_filling.html">Filling sinks and gaps in the DEM</a>
     </li>
   </ul>
@@ -96,41 +99,38 @@
     
     
 <p>The purpose of this vignette is to provide an outline of the steps needed to build a dynamic TOPMODEL implementation using the dynatopGIS package.</p>
-<div id="principles-behind-dynatopgis" class="section level1">
+<div id="implimentation-notes" class="section level1">
 <h1 class="hasAnchor">
-<a href="#principles-behind-dynatopgis" class="anchor"></a>Principles behind dynatopGIS</h1>
-<p>The dynatopGIS package is designed to work with a structured data flow, where by GIS data are processed through intermediate stages until one or more dynamic TOPMODEL implementations are produced. The processed GIS data are stored within two objects; a RasterStack and a SpatialPolygonsDataFrame.</p>
-<p>At any point in the analysis the these two objects can be written to disk and reloaded using the commands within the <code>raster</code> package. There is no formal linkage between the RasterStack and SpatialPolygonsDataFrame object so spurious models may be produced if incorrect file combinations are used. Creating a document such as this vignette which documents the work flow used should significantly enhance the chances of ensuring the work is reproducible.</p>
+<a href="#implimentation-notes" class="anchor"></a>Implimentation notes</h1>
+<p>The dynatopGIS package impliments a structured, object orientated, data flow. The steps outliend below create a <code>dynatopGIS</code> catchment object to which actions are then applied to generate a model. At any point in the analysis the object can be written to disk using the usual R commands such as <code>saveRDS</code>.</p>
+<p>The <code>dynatopGIS</code> package is written using the object orientated framework provided by the <code>R6</code> package. This means that some aspects of working with the objects may appear ìdiosymatic for some R users. In using the package as outliend in this vignette these problems are largely obscured, except for the call structure. However before adapting the code, or doing more compelx analysis users should read about <code>R6</code> class objects (e.g. in the <code>R6</code> package vignettes or in the Advanced R book). One particuler gotya is when coping an object. Using</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">my_new_object  &lt;-<span class="st">  </span>my_object</a></code></pre></div>
+<p>creates a pointer, that is altering <code>my_new_object</code> also alters <code>my_object</code>. To create a new independent copy of <code>my_object</code> use</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">my_new_object  &lt;-<span class="st">  </span>my_object<span class="op">$</span><span class="kw">clone</span>()</a></code></pre></div>
 </div>
 <div id="getting-started" class="section level1">
 <h1 class="hasAnchor">
 <a href="#getting-started" class="anchor"></a>Getting started</h1>
+<p>First load the library</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(<span class="st">"dynatopGIS"</span>)</a></code></pre></div>
 <p>The basis of the analysis are a rasterised Digital Elevation Model (DEM) of the catchment and a vectorised representation of the river network with attributes. Current these can be in any format supported by the <code>raster</code> and <code>sp</code> libraries respectivly.</p>
-<p>However within the calculations used for sink filling, flow routing and topographic index calculations the raster DEM is presumed to be projected so that is has square or rectangular cells such that the difference between the cells centers (in meters) does not alter.</p>
+<p>However within the calculations used for sink filling, flow routing and topographic index calculations the raster DEM is presumed to be projected so that is has square cells such that the difference between the cells centers (in meters) does not alter.</p>
 <div id="swindale" class="section level2">
 <h2 class="hasAnchor">
 <a href="#swindale" class="anchor"></a>Swindale</h2>
-<p>The use of the dynatopGIS package is demonstrated using data from the Swindale catchment in the UK. This is included in the external data directory of the package with the following file paths.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span>(dynatopGIS)</a>
-<a class="sourceLine" id="cb1-2" title="2"><span class="co">##devtools::load_all("/home/paul/Documents/Software/dynamic_topmodel/dynatopGIS")</span></a>
-<a class="sourceLine" id="cb1-3" title="3">dem_file &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"SwindaleDTM4mFilled.tif"</span>, <span class="dt">package=</span><span class="st">"dynatopGIS"</span>)</a>
-<a class="sourceLine" id="cb1-4" title="4">channel_file &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, <span class="dt">package=</span><span class="st">"dynatopGIS"</span>)</a></code></pre></div>
+<p>The use of the dynatopGIS package is demonstrated using data from the Swindale catchment in the UK. This is included in the external data directory of the package and can be accessed at the follwoing paths.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">dem_file &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"SwindaleDTM4mFilled.tif"</span>, <span class="dt">package=</span><span class="st">"dynatopGIS"</span>)</a>
+<a class="sourceLine" id="cb4-2" title="2">channel_file &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span>(<span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, <span class="dt">package=</span><span class="st">"dynatopGIS"</span>)</a></code></pre></div>
 </div>
 </div>
-<div id="initialising-the-gis-objects" class="section level1">
+<div id="initialising-the-dynatopgis-objects" class="section level1">
 <h1 class="hasAnchor">
-<a href="#initialising-the-gis-objects" class="anchor"></a>Initialising the GIS objects</h1>
-<p>The package contains functions to correctly initialise the GIS objects populated during the analysis.</p>
-<p>In the case of the RasterStack the initialisation function takes the DEM (either as a rasterLayer or file name). The stack in initialised by calling <code>create_brick</code> as follow</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">stck &lt;-<span class="st"> </span><span class="kw"><a href="../reference/catchment_file.html">create_catchment</a></span>(dem_file)</a>
-<a class="sourceLine" id="cb2-2" title="2"><span class="co">#&gt; Loading required namespace: igraph</span></a></code></pre></div>
-<p>The returned RasterStack has a number of layers</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://rdrr.io/r/base/names.html">names</a></span>(stck)</a>
-<a class="sourceLine" id="cb3-2" title="2"><span class="co">#&gt;  [1] "dem"            "filled_dem"     "land_area"      "channel_area"  </span></a>
-<a class="sourceLine" id="cb3-3" title="3"><span class="co">#&gt;  [5] "channel_id"     "atanb"          "gradient"       "upslope_area"  </span></a>
-<a class="sourceLine" id="cb3-4" title="4"><span class="co">#&gt;  [9] "contour_length" "order"</span></a></code></pre></div>
-<p>These are the minimum requirements for a catchment descriptiiona and are populated in the following steps. The projection information is taken from the DEM.</p>
-<p>Reading the river channel data data is more complex. Each vector object in the GIS file of channel information is treated as a length of river reach and requires the following properties</p>
+<a href="#initialising-the-dynatopgis-objects" class="anchor"></a>Initialising the <code>dynatopGIS</code> objects</h1>
+<p>A <code>dynatopGIS</code> object is initialised using a RasterLayer containing the DEM. All information about spatial extent and project are taken from this. For the example we intialise as follows</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">dem &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/raster.html">raster</a></span>(dem_file)</a>
+<a class="sourceLine" id="cb5-2" title="2">ctch &lt;-<span class="st"> </span>dynatopGIS<span class="op">$</span><span class="kw">new</span>(dem)</a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="co">#&gt; Loading required namespace: igraph</span></a></code></pre></div>
+<p>Adding river channel data is mroe complex. The <code>add_channel</code> method requires a <code>SpatialLinesDataFrame</code> or <code>SpatialPolygonsDataFrame</code> as generated by the <code>sp</code> package. Each entry in the data.frame is treated as a length of river channel which requires the following properties</p>
 <ul>
 <li>
 <em>endNode</em> - a label for the downstream end of the river length</li>
@@ -139,77 +139,67 @@
 <li>
 <em>length</em> - the length in meters</li>
 </ul>
-<p>Additional proporties are currently ignored with two exceptions: - <em>id</em> - this is overwrittem with a warning and used internally - <em>width</em> - if the channel is specified a line sections then the <em>width</em> property is used to buffer the lines to create channle polygons.</p>
-<p>Since it is possible that these properties are present in the current data but under different names the <code>create_channel</code> function allows for renaming. To illustrate this let us examine the river network for Swindale</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">shp &lt;-<span class="st"> </span>rgdal<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/rgdal/man/readOGR.html">readOGR</a></span>(channel_file)</a>
-<a class="sourceLine" id="cb4-2" title="2"><span class="co">#&gt; OGR data source with driver: ESRI Shapefile </span></a>
-<a class="sourceLine" id="cb4-3" title="3"><span class="co">#&gt; Source: "/tmp/RtmpAc4iNQ/temp_libpathbd33b30785/dynatopGIS/extdata/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span></a>
-<a class="sourceLine" id="cb4-4" title="4"><span class="co">#&gt; with 19 features</span></a>
-<a class="sourceLine" id="cb4-5" title="5"><span class="co">#&gt; It has 11 fields</span></a>
-<a class="sourceLine" id="cb4-6" title="6"><span class="co">#&gt; Integer64 fields read as strings:  length</span></a>
-<a class="sourceLine" id="cb4-7" title="7"><span class="co">#&gt; Warning in rgdal::readOGR(channel_file): Z-dimension discarded</span></a>
-<a class="sourceLine" id="cb4-8" title="8"><span class="kw"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(shp)</a>
-<a class="sourceLine" id="cb4-9" title="9"><span class="co">#&gt; class       : SpatialLinesDataFrame </span></a>
-<a class="sourceLine" id="cb4-10" title="10"><span class="co">#&gt; features    : 6 </span></a>
-<a class="sourceLine" id="cb4-11" title="11"><span class="co">#&gt; extent      : 349884.5, 351675.7, 508614.5, 513074.7  (xmin, xmax, ymin, ymax)</span></a>
-<a class="sourceLine" id="cb4-12" title="12"><span class="co">#&gt; crs         : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs </span></a>
-<a class="sourceLine" id="cb4-13" title="13"><span class="co">#&gt; variables   : 11</span></a>
-<a class="sourceLine" id="cb4-14" title="14"><span class="co">#&gt; names       :         name1,                           identifier,                            startNode,                              endNode,        form,         flow, fictitious, length, name2, sinkdepth,    Shape_Leng </span></a>
-<a class="sourceLine" id="cb4-15" title="15"><span class="co">#&gt; min values  : Hawthorn Gill, 16D0AC09-E0B6-4727-83B8-567E8DE9C533, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, inlandRiver, in direction,      false,     29,    NA,        -1, 29.1895135281 </span></a>
-<a class="sourceLine" id="cb4-16" title="16"><span class="co">#&gt; max values  : Mosedale Beck, ED03FEDD-0F4B-40C7-86E8-6F0EA8BAC182, D968F174-FB80-404A-A4A7-2862CC722482, D649B60C-E631-47FA-971E-CA388DBDDE63, inlandRiver, in direction,      false,    740,    NA,        -1,  739.76377764</span></a></code></pre></div>
-<p>The main properties are present under appropriate names and a call to <code>create_channel</code> with no options would be successful. However if we want to carry over the addition information in the “indentifier” as “channel_id” a named vector giving the variable names to be used could be provided. In this case:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">property_names &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">channel_id=</span><span class="st">"identifier"</span>,</a>
-<a class="sourceLine" id="cb5-2" title="2">                    <span class="dt">endNode=</span><span class="st">"endNode"</span>,</a>
-<a class="sourceLine" id="cb5-3" title="3">                    <span class="dt">startNode=</span><span class="st">"startNode"</span>,</a>
-<a class="sourceLine" id="cb5-4" title="4">                    <span class="dt">length=</span><span class="st">"length"</span>)</a></code></pre></div>
+<p>Additional proporties are currently ignored with two exceptions: - <em>id</em> - this is overwrittem with a warning and used internally - <em>width</em> - if the channel is specified with a line sections then the <em>width</em> property is used to buffer the lines to create channle polygons.</p>
+<p>Since it is possible that these properties are present in a data file under different names the <code>add_channel</code> method allows for renaming. To illustrate this let us examine the river network for Swindale</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">sp_lines &lt;-<span class="st"> </span>rgdal<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/rgdal/man/readOGR.html">readOGR</a></span>(channel_file)</a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="co">#&gt; OGR data source with driver: ESRI Shapefile </span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="co">#&gt; Source: "/tmp/Rtmp8BD1ck/temp_libpath369144804485/dynatopGIS/extdata/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span></a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="co">#&gt; with 19 features</span></a>
+<a class="sourceLine" id="cb6-5" title="5"><span class="co">#&gt; It has 11 fields</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="co">#&gt; Integer64 fields read as strings:  length</span></a>
+<a class="sourceLine" id="cb6-7" title="7"><span class="co">#&gt; Warning in rgdal::readOGR(channel_file): Z-dimension discarded</span></a>
+<a class="sourceLine" id="cb6-8" title="8"><span class="kw"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(sp_lines)</a>
+<a class="sourceLine" id="cb6-9" title="9"><span class="co">#&gt; class       : SpatialLinesDataFrame </span></a>
+<a class="sourceLine" id="cb6-10" title="10"><span class="co">#&gt; features    : 6 </span></a>
+<a class="sourceLine" id="cb6-11" title="11"><span class="co">#&gt; extent      : 349884.5, 351675.7, 508614.5, 513074.7  (xmin, xmax, ymin, ymax)</span></a>
+<a class="sourceLine" id="cb6-12" title="12"><span class="co">#&gt; crs         : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs </span></a>
+<a class="sourceLine" id="cb6-13" title="13"><span class="co">#&gt; variables   : 11</span></a>
+<a class="sourceLine" id="cb6-14" title="14"><span class="co">#&gt; names       :         name1,                           identifier,                            startNode,                              endNode,        form,         flow, fictitious, length, name2, sinkdepth,    Shape_Leng </span></a>
+<a class="sourceLine" id="cb6-15" title="15"><span class="co">#&gt; min values  : Hawthorn Gill, 16D0AC09-E0B6-4727-83B8-567E8DE9C533, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, inlandRiver, in direction,      false,     29,    NA,        -1, 29.1895135281 </span></a>
+<a class="sourceLine" id="cb6-16" title="16"><span class="co">#&gt; max values  : Mosedale Beck, ED03FEDD-0F4B-40C7-86E8-6F0EA8BAC182, D968F174-FB80-404A-A4A7-2862CC722482, D649B60C-E631-47FA-971E-CA388DBDDE63, inlandRiver, in direction,      false,    740,    NA,        -1,  739.76377764</span></a></code></pre></div>
+<p>The main properties are present under appropriate names and a call to the <code>add_channel</code> method with no options would be successful. However if we want to carry over the addition information in the “indentifier” as “channel_id” a named vector giving the variable names to be used could be provided. In this case:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">property_names &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dt">channel_id=</span><span class="st">"identifier"</span>,</a>
+<a class="sourceLine" id="cb7-2" title="2">                    <span class="dt">endNode=</span><span class="st">"endNode"</span>,</a>
+<a class="sourceLine" id="cb7-3" title="3">                    <span class="dt">startNode=</span><span class="st">"startNode"</span>,</a>
+<a class="sourceLine" id="cb7-4" title="4">                    <span class="dt">length=</span><span class="st">"length"</span>)</a></code></pre></div>
 <p>Since the data set for Swindale does not contain a channel width we use the default width of 2m in <code>create_channel</code>. The river network can then be created in the correct format by</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">chn &lt;-<span class="st"> </span><span class="kw"><a href="../reference/create_channel.html">create_channel</a></span>(shp,property_names)</a>
-<a class="sourceLine" id="cb6-2" title="2"><span class="co">#&gt; Warning in create_channel(shp, property_names): Modifying to spatial polygons</span></a>
-<a class="sourceLine" id="cb6-3" title="3"><span class="co">#&gt; using default width</span></a>
-<a class="sourceLine" id="cb6-4" title="4"><span class="kw"><a href="https://rdrr.io/r/utils/head.html">head</a></span>(chn<span class="op">@</span>data)</a>
-<a class="sourceLine" id="cb6-5" title="5"><span class="co">#&gt;                             channel_id                              endNode</span></a>
-<a class="sourceLine" id="cb6-6" title="6"><span class="co">#&gt; 0 16D0AC09-E0B6-4727-83B8-567E8DE9C533 72B1A40B-E106-42A9-A261-4B7720037ADB</span></a>
-<a class="sourceLine" id="cb6-7" title="7"><span class="co">#&gt; 1 643017BB-01BC-4738-898F-1C62B84164BF A19E0D3A-2FA1-4E6D-AEA4-472F91ABC2AC</span></a>
-<a class="sourceLine" id="cb6-8" title="8"><span class="co">#&gt; 2 D2C2703E-A32F-4D88-A022-4E27EA52FC5C D649B60C-E631-47FA-971E-CA388DBDDE63</span></a>
-<a class="sourceLine" id="cb6-9" title="9"><span class="co">#&gt; 3 991D9896-CA0C-492F-A6EE-8BA3972DDA3C 1FDBFCFF-799C-41CF-A2CB-8A56368BD438</span></a>
-<a class="sourceLine" id="cb6-10" title="10"><span class="co">#&gt; 4 CC8639D7-00D2-4C26-9252-350E5A748D51 7C251581-3764-4DEE-8031-EC98FABC1F87</span></a>
-<a class="sourceLine" id="cb6-11" title="11"><span class="co">#&gt; 5 ED03FEDD-0F4B-40C7-86E8-6F0EA8BAC182 673269DF-9E48-4EA0-B439-3D565A023DD2</span></a>
-<a class="sourceLine" id="cb6-12" title="12"><span class="co">#&gt;                              startNode length id width</span></a>
-<a class="sourceLine" id="cb6-13" title="13"><span class="co">#&gt; 0 730F01D2-0F4F-4E27-AF55-B1782F0F844B    431  1     2</span></a>
-<a class="sourceLine" id="cb6-14" title="14"><span class="co">#&gt; 1 9B06188C-F4C7-436C-8108-3956D5FFD5CD    513  2     2</span></a>
-<a class="sourceLine" id="cb6-15" title="15"><span class="co">#&gt; 2 B03DB3BD-0E33-4E10-A935-997832752609    740  3     2</span></a>
-<a class="sourceLine" id="cb6-16" title="16"><span class="co">#&gt; 3 D968F174-FB80-404A-A4A7-2862CC722482    573  4     2</span></a>
-<a class="sourceLine" id="cb6-17" title="17"><span class="co">#&gt; 4 1FDBFCFF-799C-41CF-A2CB-8A56368BD438     29  5     2</span></a>
-<a class="sourceLine" id="cb6-18" title="18"><span class="co">#&gt; 5 D3A1AEA9-93A6-4ACF-9A11-363F9517723F    413  6     2</span></a></code></pre></div>
-<p>The resulting data can be plotted using standard <code>raster</code> package commands</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>(stck[[<span class="st">'dem'</span>]])</a>
-<a class="sourceLine" id="cb7-2" title="2">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>(chn,<span class="dt">add=</span><span class="ot">TRUE</span>)</a></code></pre></div>
-<p><img src="dynatopGIS_files/figure-html/plot_raw-1.png" width="700"></p>
-</div>
-<div id="combining-the-river-network-and-dem" class="section level1">
-<h1 class="hasAnchor">
-<a href="#combining-the-river-network-and-dem" class="anchor"></a>Combining the river network and DEM</h1>
-<p>Having initialised the analysis the next stage is to combine the DEm and channel network. The <code>add_channel</code> function achieves this by intersecting the DEM and river network to determine which of the raster cells contain parts of the river network. From this three layers of the brick are populated: - land_area - the area in the DEM cell covered by land - channel_area - the area in the DEM cell covered by channel - channel_id - the id of the channel within the cell, corresponding to the id in the channel object.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">ctch<span class="op">$</span><span class="kw">add_channel</span>(sp_lines,property_names)</a>
+<a class="sourceLine" id="cb8-2" title="2"><span class="co">#&gt; Warning in ctch$add_channel(sp_lines, property_names): Modifying to spatial</span></a>
+<a class="sourceLine" id="cb8-3" title="3"><span class="co">#&gt; polygons using default width</span></a></code></pre></div>
+<p>The <code>add_channel</code> method intersects the DEM and river network to determine which of the raster cells contain parts of the river network. From this three layers of the brick are populated: - land_area - the area in the DEM cell covered by land - channel_area - the area in the DEM cell covered by channel - channel_id - the id of the channel within the cell, corresponding to the id in the channel object.</p>
 <p>If multiple river lengths intersect a DEM cell the properties of the channel length with the largest area of intersection are used.</p>
-<p>The following shows the impact of the properties of the raster brick after applying the channel network in Swindale.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1"><span class="co">#print(stck)</span></a>
-<a class="sourceLine" id="cb8-2" title="2"><span class="co">#print(chn)</span></a>
-<a class="sourceLine" id="cb8-3" title="3">stck &lt;-<span class="st"> </span><span class="kw"><a href="../reference/add_channel.html">add_channel</a></span>(stck,chn)</a>
-<a class="sourceLine" id="cb8-4" title="4"><span class="co">#print(stck)</span></a></code></pre></div>
+<div id="getting-and-plotting-catchment-information" class="section level3">
+<h3 class="hasAnchor">
+<a href="#getting-and-plotting-catchment-information" class="anchor"></a>Getting and plotting catchment information</h3>
+<p>The <code>dynatopGIS</code> class has methods for returning and plotting the GIS data. A list of all the different GIS information stored is returned by</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">ctch<span class="op">$</span><span class="kw">get_layer</span>()</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="co">#&gt; [1] "dem"          "land_area"    "channel_area" "channel_id"</span></a></code></pre></div>
+<p>These can be plotted (with or without the channel), for example</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">ctch<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">"dem"</span>)</a></code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/plot-1.png" width="700"></p>
+<p>and returned as <code>RasterLayer</code> objects</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">ctch<span class="op">$</span><span class="kw">get_layer</span>(<span class="st">"dem"</span>)</a>
+<a class="sourceLine" id="cb11-2" title="2"><span class="co">#&gt; class      : RasterLayer </span></a>
+<a class="sourceLine" id="cb11-3" title="3"><span class="co">#&gt; dimensions : 1605, 1213, 1946865  (nrow, ncol, ncell)</span></a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="co">#&gt; resolution : 4, 4  (x, y)</span></a>
+<a class="sourceLine" id="cb11-5" title="5"><span class="co">#&gt; extent     : 347774, 352626, 507304, 513724  (xmin, xmax, ymin, ymax)</span></a>
+<a class="sourceLine" id="cb11-6" title="6"><span class="co">#&gt; crs        : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.1502,0.247,0.8421,-20.4894 +units=m +no_defs </span></a>
+<a class="sourceLine" id="cb11-7" title="7"><span class="co">#&gt; source     : memory</span></a>
+<a class="sourceLine" id="cb11-8" title="8"><span class="co">#&gt; names      : layer </span></a>
+<a class="sourceLine" id="cb11-9" title="9"><span class="co">#&gt; values     : 261.3676, 711.2502  (min, max)</span></a></code></pre></div>
+</div>
 </div>
 <div id="filling-sinks" class="section level1">
 <h1 class="hasAnchor">
 <a href="#filling-sinks" class="anchor"></a>Filling sinks</h1>
 <p>For the hill slope to be connected to the river network the hill slope parts of the DEM must drain to the DEM cells which intersect with the river network.</p>
-<p>While no check is enforced on the full connectivity of the catchment a basic requirement is that there are no sinks: that is DEM pixels which are lower then their neighbors and not intersected by the network. The algorithm implemented in the <code>sink_fill</code> function tries to ensure this using a relatively simple iterative algorithm. The execution time of the function is limited by capping the number of iterations of the algorithm, however the algorithm can be restarted and the minimum gradient adjust from the default of 1m in 1km.</p>
-<p>For Swindale, where the example DEM is already partially filled the algorithm finishes quickly and the changes in the DEM are minor</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1">stck &lt;-<span class="st"> </span><span class="kw"><a href="../reference/sink_fill.html">sink_fill</a></span>(stck)</a>
-<a class="sourceLine" id="cb9-2" title="2">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( <span class="kw"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(stck[[<span class="st">'filled_dem'</span>]]) <span class="op">-</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/NA.html">is.na</a></span>(stck[[<span class="st">'dem'</span>]]),</a>
-<a class="sourceLine" id="cb9-3" title="3">             <span class="dt">main=</span><span class="st">"Areas dropped due to connectivity"</span>)</a></code></pre></div>
+<p>The algorithm of <todo add ref> implimented in the <code>sink_fill</code> method ensures this is the case. Since the algorithm is iterative the execution time of the function is limited by capping setting a maximum number fo iterations. If this limit is reached without completion the method can call again with the “hot start” option to continue from where it finished.</todo></p>
+<p>For Swindale, where the example DEM is already partially filled the algorithm only alters a small area near the foot of the catchment.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">ctch<span class="op">$</span><span class="kw">sink_fill</span>()</a>
+<a class="sourceLine" id="cb12-2" title="2"></a>
+<a class="sourceLine" id="cb12-3" title="3">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( ctch<span class="op">$</span><span class="kw">get_layer</span>(<span class="st">'filled_dem'</span>) <span class="op">-</span><span class="st"> </span>ctch<span class="op">$</span><span class="kw">get_layer</span>(<span class="st">'dem'</span>),</a>
+<a class="sourceLine" id="cb12-4" title="4">             <span class="dt">main=</span><span class="st">"Changes to height"</span>)</a></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/sink_fill-1.png" width="700"></p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( stck[[<span class="st">'filled_dem'</span>]] <span class="op">-</span><span class="st"> </span>stck[[<span class="st">'dem'</span>]],</a>
-<a class="sourceLine" id="cb10-2" title="2">             <span class="dt">main=</span><span class="st">"Changes to height"</span>)</a></code></pre></div>
-<p><img src="dynatopGIS_files/figure-html/sink_fill-2.png" width="700"></p>
 <div id="computing-summary-properties" class="section level2">
 <h2 class="hasAnchor">
 <a href="#computing-summary-properties" class="anchor"></a>Computing summary properties</h2>
@@ -217,54 +207,63 @@
 <p>These are computed using the formulea in Quinn 1991 (TO DO add ref).</p>
 <p>The upstream area is computed by routing down slope with the fraction of the area being routed to the next downstream pixel being proportional to the gradient times the contour length.</p>
 <p>The local value of the gradient is computed using the average of a subset of between pixel gradients. For a normal ‘hill slope’ cell these are the gradients to downslope pixels weighted by contour length. In the case of pixels which contain river channels the average of the gradients from upslope pixels weighted by contour length us used.</p>
-<p>These properties (and others) are computed in an algorithm that passes over the data twice. First to compute identify ‘peaks’ in the dem, dsecondly to travel downslope. It is called as follows</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">stck &lt;-<span class="st"> </span><span class="kw"><a href="../reference/compute_properties.html">compute_properties</a></span>(stck)</a>
-<a class="sourceLine" id="cb11-2" title="2"><span class="co">#&gt; [1] 2753</span></a>
-<a class="sourceLine" id="cb11-3" title="3"><span class="co">## plot of topographic index (log(a/tan b))</span></a>
-<a class="sourceLine" id="cb11-4" title="4">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( stck[[<span class="st">'atanb'</span>]])</a></code></pre></div>
+<p>These properties (and others) are computed in an algorithm that passes over the data twice. First to compute identify ‘peaks’ in the dem, then to travel downslope. It is called as follows</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">ctch<span class="op">$</span><span class="kw">compute_properties</span>()</a>
+<a class="sourceLine" id="cb13-2" title="2"></a>
+<a class="sourceLine" id="cb13-3" title="3"><span class="co">## plot of topographic index (log(a/tan b))</span></a>
+<a class="sourceLine" id="cb13-4" title="4">ctch<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">'atanb'</span>)</a></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/calc_atb-1.png" width="700"></p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="co">## plot of order of pixels (1 highest)</span></a>
-<a class="sourceLine" id="cb12-2" title="2">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( stck[[<span class="st">'order'</span>]] )</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1"></a>
+<a class="sourceLine" id="cb14-2" title="2"><span class="co">## plot of order of pixels (1 highest)</span></a>
+<a class="sourceLine" id="cb14-3" title="3">ctch<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">'band'</span>)</a></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/calc_atb-2.png" width="700"></p>
 </div>
-<div id="splitting-into-hydrological-response-units" class="section level2">
+<div id="classifying-into-hydrological-similarity-units" class="section level2">
 <h2 class="hasAnchor">
-<a href="#splitting-into-hydrological-response-units" class="anchor"></a>Splitting into Hydrological response units</h2>
-<p>Hill slope hydrological response units can be created from the underlying data in two ways within the <code>dynatopGIS</code> package. The first method, <em>splitting</em> allows the landscape to be divided up based on breaks in the values of landscape feature values. The second <em>burning</em> enforces classes onto distinct area. It is presumed that burnt classes will always be imposed upon an initial characterization through splitting.</p>
+<a href="#classifying-into-hydrological-similarity-units" class="anchor"></a>Classifying into Hydrological Similarity Units</h2>
+<p>Methods are provided for the classification of the catchment into Hydrological Similarity Units (HSUs). A <code>dynatopGIS</code> object can hold an single classification at a time.</p>
+<p>By definition each channel length is treated as a single HSU. Two ways are provided for dividing the hillslope up into HSUS. The first way is <em>splitting</em> where one or more landscape properties are divided up into classes and HSUs defined by each unique combination of classes. The second <em>burning</em> enforces classes onto distinct areas.</p>
+<p>The <code>classify</code> method of a <code>dynatopGIS</code> allows the use of both methods, first <em>splitting</em> then <em>burning</em> to create hillslope HSUs.</p>
 <div id="splitting" class="section level3">
 <h3 class="hasAnchor">
 <a href="#splitting" class="anchor"></a>Splitting</h3>
-<p>To split a catchment into HRUs the breaks between the classes need to be specified. This is done by forming a named <code>list</code> of cuts. the names correspond to GeoTiff files within the project directory while the values of the variables should be numeric and define either the number of bands (single value) or breaks between split classes (multiple values).</p>
-<p>For example to generate HRUs for Swindale by dividing the topographic index into 21 classes and save the output classes as “atb_split.tif” in the project folder:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">cuts &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">atanb=</span><span class="dv">20</span>)</a>
-<a class="sourceLine" id="cb13-2" title="2">stck &lt;-<span class="st"> </span><span class="kw"><a href="../reference/split_to_class.html">split_to_class</a></span>(stck,<span class="st">'atb_split'</span>,cuts)</a>
-<a class="sourceLine" id="cb13-3" title="3">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( stck[[<span class="st">'atb_split'</span>]] )</a></code></pre></div>
-<p><img src="dynatopGIS_files/figure-html/atb_split-1.png" width="700"> TO DO comment of sequential numbering used</p>
-</div>
-<div id="burns" class="section level3">
-<h3 class="hasAnchor">
-<a href="#burns" class="anchor"></a>Burns</h3>
-<p>Suppose in the above example we want to burn in an additional HRU class for all areas above 500m that aren’t channels.</p>
-<p>Firstly we add an additional layer to the brick to which these locations are identified.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1">stck[[<span class="st">'greater_500'</span>]] &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/reclassify.html">reclassify</a></span>(stck[[<span class="st">'filled_dem'</span>]],</a>
-<a class="sourceLine" id="cb14-2" title="2">                                            <span class="kw"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">0</span>,<span class="dv">500</span>,<span class="ot">NA</span>,</a>
-<a class="sourceLine" id="cb14-3" title="3">                                                     <span class="dv">500</span>,<span class="dv">1000</span>,raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/cellStats.html">cellStats</a></span>(stck[[<span class="st">'atb_split'</span>]],<span class="st">'max'</span>)<span class="op">+</span><span class="dv">1</span>),<span class="dv">2</span>,<span class="dt">byrow=</span><span class="ot">TRUE</span>))</a></code></pre></div>
-<p>Note we have given the cells a value of one greater then the maximum value of splits we will burn this into to maintain the sequential numbering of the HRUs</p>
-<p>It can then be burnt in as follows</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">stck &lt;-<span class="st"> </span><span class="kw"><a href="../reference/burn_in_class.html">burn_in_class</a></span>(stck,<span class="st">"atb_split"</span>,<span class="st">"atb_500_split"</span>,<span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="st">"greater_500"</span>))</a>
-<a class="sourceLine" id="cb15-2" title="2">raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>(stck[[<span class="st">"atb_500_split"</span>]])</a></code></pre></div>
-<p><img src="dynatopGIS_files/figure-html/burn_in-1.png" width="700"></p>
+<p>To split a catchment into HRUs the breaks between the classes need to be specified. This is done by forming a named <code>list</code> of cuts. The names correspond to layers of GIS data within the <code>dynatopGIS</code> object. The values of the variables should be numeric and are used as follows:</p>
+<ul>
+<li>
+<code>NA</code>: use the layer ‘as is’; i.e. presume it is already classified</li>
+<li>Single value: defines the number of splits which are automatically selected</li>
+<li>Vector of values: treated as the breaks between classes</li>
+</ul>
+<p>To demonstate this HSUs for Swindale based on dividing the topographic index into 21 classes and adding a single class for all areas higher then 500m can be generated by first creating an additional layer for areas greater then 500 m</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">tmp &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/reclassify.html">reclassify</a></span>( ctch<span class="op">$</span><span class="kw">get_layer</span>(<span class="st">"filled_dem"</span>), <span class="co">#RasterLayer</span></a>
+<a class="sourceLine" id="cb15-2" title="2">                          <span class="kw"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">0</span>,<span class="dv">500</span>,<span class="ot">NA</span>,</a>
+<a class="sourceLine" id="cb15-3" title="3">                                   <span class="dv">500</span>,<span class="dv">1000</span>,<span class="op">-</span><span class="dv">999</span>),</a>
+<a class="sourceLine" id="cb15-4" title="4">                                   <span class="dt">byrow=</span><span class="ot">TRUE</span>))</a>
+<a class="sourceLine" id="cb15-5" title="5">ctch<span class="op">$</span><span class="kw">add_layer</span>(tmp,<span class="st">'greater_500'</span>) <span class="co">## add the layer to ctch</span></a></code></pre></div>
+<p>then classifying</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1">ctch<span class="op">$</span><span class="kw">classify</span>(<span class="dt">cuts=</span><span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">atanb=</span><span class="dv">20</span>),<span class="dt">burns=</span><span class="st">"greater_500"</span>)</a></code></pre></div>
+<p>Note that by giving the area to be burnt in negative value we have ensured that the values do not clash whith those generated by the cuts which will (except potentially when a cut is NA) will always be positive.</p>
+<p>The a list of the resulting parital and final classifications available is available with</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1">ctch<span class="op">$</span><span class="kw">get_class</span>()</a>
+<a class="sourceLine" id="cb17-2" title="2"><span class="co">#&gt; [1] "final" "atanb"</span></a></code></pre></div>
+<p>and can be accessed and plotted using <code>ctch$get_class</code> and <code>ctch$plot_layer</code> which work in a similar manor <code>ctch$get_layer</code> and <code>ctch$plot_layer</code>. The final classificationcan be plotted with</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" title="1">ctch<span class="op">$</span><span class="kw">plot_class</span>()</a></code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/plot_class-1.png" width="700"></p>
 </div>
 </div>
 </div>
 <div id="generating-a-dynamic-topmodel" class="section level1">
 <h1 class="hasAnchor">
 <a href="#generating-a-dynamic-topmodel" class="anchor"></a>Generating a dynamic TOPMODEL</h1>
-<p>As final stage dynamic TOPMODELs can be generated from the GIS data for use with the <code>dynatop</code> package for simulation. The required model structure is given in the vignettes of <code>dynatop</code>, here we show that an appropriate models can be generated with the <code>compute_model</code> function for a specified set of HRUs.</p>
-<p>For example in the case of the division of Swindale by topographic index into 21 classes the resulting model can be generated by</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1">model &lt;-<span class="st"> </span><span class="kw"><a href="../reference/create_model.html">create_model</a></span>(stck,chn,<span class="st">'atb_split'</span>)</a></code></pre></div>
-<p>We can then use the dynatop package to check the validity of the model</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="co"># dynatop::check_model(model)</span></a></code></pre></div>
+<p>A Dynamic TOPMODEL sutiable for use with the <code>dynatop</code> package can be generated using the <code>create_model</code> method. This used the current classification to generate the model. The required model structure is given in the vignettes of <code>dynatop</code> package and is not described here in details.</p>
+<p>Since <code>dynatop</code> simulations make use of ordered HSUs to work downslope, a seperation by the <code>band</code> property which represents the ordered downslope sequencing of the pixels is used to enforce ordering. The <code>create_model</code> method takes an input in the same format as the specification of a <code>split</code> in the <code>classify</code> method. This is applied to the <code>band</code> layer as a final stage in the HSU clasification. Further can be found in the seperate vignette (TODO).</p>
+<p>For example in the case of the division of Swindale by topographic index into 21 classes and the bands into 6 classes the resulting model can be generated by</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" title="1">ctch<span class="op">$</span><span class="kw">classify</span>(<span class="dt">cuts=</span><span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="dt">atanb=</span><span class="dv">20</span>))</a>
+<a class="sourceLine" id="cb19-2" title="2">ctch<span class="op">$</span><span class="kw">create_model</span>(<span class="dt">band=</span><span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb19-3" title="3"><span class="co">#&gt; [1] 1</span></a></code></pre></div>
+<p>The <code>get_model</code> method returns the resulting model in a format suitable for teh <code>dynatop</code> package. The model can be plotted with</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" title="1">ctch<span class="op">$</span><span class="kw">plot_model</span>()</a></code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/plot_model-1.png" width="700"></p>
 </div>
   </div>
 
@@ -274,18 +273,17 @@
       <h2 class="hasAnchor">
 <a href="#tocnav" class="anchor"></a>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
-<li><a href="#principles-behind-dynatopgis">Principles behind dynatopGIS</a></li>
+<li><a href="#implimentation-notes">Implimentation notes</a></li>
       <li>
 <a href="#getting-started">Getting started</a><ul class="nav nav-pills nav-stacked">
 <li><a href="#swindale">Swindale</a></li>
       </ul>
 </li>
-      <li><a href="#initialising-the-gis-objects">Initialising the GIS objects</a></li>
-      <li><a href="#combining-the-river-network-and-dem">Combining the river network and DEM</a></li>
+      <li><a href="#initialising-the-dynatopgis-objects">Initialising the <code>dynatopGIS</code> objects</a></li>
       <li>
 <a href="#filling-sinks">Filling sinks</a><ul class="nav nav-pills nav-stacked">
 <li><a href="#computing-summary-properties">Computing summary properties</a></li>
-      <li><a href="#splitting-into-hydrological-response-units">Splitting into Hydrological response units</a></li>
+      <li><a href="#classifying-into-hydrological-similarity-units">Classifying into Hydrological Similarity Units</a></li>
       </ul>
 </li>
       <li><a href="#generating-a-dynamic-topmodel">Generating a dynamic TOPMODEL</a></li>

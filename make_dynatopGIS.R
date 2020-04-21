@@ -4,7 +4,7 @@ graphics.off()
 
 ## path of the package
 pacPath <- './dynatopGIS'
-Rcpp::compileAttributes(pacPath)
+## Rcpp::compileAttributes(pacPath)
 devtools::document(pacPath)
 devtools::check(pacPath)
 tmp <- devtools::build(pacPath)
@@ -14,25 +14,28 @@ pkgdown::build_site(pacPath)
 
 
 ## This code runs to generate the model used in the dynatop examples
-devtools::load_all(pacPath)
-dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS")
-channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS")
-stck <- create_catchment(dem_file)
-shp <- rgdal::readOGR(channel_file)
+## it also checks the verbose mode code
+rm(list=ls())
+#pacPath <- './dynatopGIS'
+#devtools::load_all(pacPath)
+library("dynatopGIS")
+dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS"))
+shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS"))
 property_names <- c(channel_id="identifier",
-                    endNode="endNode",
-                    startNode="startNode",
-                    length="length")
-chn <- create_channel(shp,property_names)
-stck <- add_channel(stck,chn)
-stck <- sink_fill(stck)
-stck <- compute_properties(stck)
-cuts <- list(atanb=20)
-stck <- split_to_class(stck,'atb_split',cuts)
-model <- create_model(stck,chn,'atb_split')
-saveRDS(model,"./dynatop/inst/extdata/Swindale.rds")
+                     endNode="endNode",
+                     startNode="startNode",
+                     length="length")
 
+profvis::profvis({
+    c2 <- dynatopGIS$new(dem)
+    c2$add_channel(shp,property_names)
+    c2$sink_fill(verbose=TRUE)
+    c2$compute_properties(verbose=TRUE)
+    c2$classify(list(atanb=20))
+    c2$create_model(verbose=TRUE)
+    mdl <- c2$get_model()
+    c3 <- borg(c2)
+})
 
-
-
+saveRDS(mdl,"./dynatop/inst/extdata/Swindale.rds")
 

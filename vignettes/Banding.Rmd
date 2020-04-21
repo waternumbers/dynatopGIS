@@ -1,0 +1,48 @@
+---
+title: "Banding of HSUs"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Creating a Dynamic TOPMODEL}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+--- 
+
+# Banding
+
+This document tries to explain the process of creating a Dynamic TOPMODEL from
+the GIS data by agglomorating the raster cells into HSUs.
+
+The computation of the average topographic index or gradient for a number of
+raster cells grouped into an HSU is straight forward. The main challange is in
+determining the computational sequence of the HSUs and there connectivity.
+
+The computational sequence of the HSUs is required for the solutions of the 
+the surface and saturated zone routings within the `dynatop` package; which
+presume the inflow to the HSU is available at the time of solution.
+
+To compute the HSUs in an appropriate computational sequence the "physical
+classification" by spatial characteristics (e.g. topographic index, raster maps
+of soil parameters, rainfall inputs etc.) is augmented by an additional "band
+classification" based on the band of the raster cell.
+
+The band of the raster pixel is computed from the flow directions between the
+pixels such that all the cells upslope of a raster cell in band $n$ are in
+cells $1$ to $n-1$. In this sense "upslope" is determined by considering any
+higher pixel to be "upslope".
+
+One option is to treat each band as it's own class. In this case the
+computational sequence can exactly match the "band classification". This allows all the
+connectivity between the raster cells to be represented.
+
+However if we create a "band classification" that merges bands
+together the situation is more challanging. It is presumed that bands are merged in
+order: that is band $n$ can be merged with bands $n-1$ and/or band $n+1$ but
+cannot be merged with band $n-1$ and/or $n+2$ unless it is also merged with the
+intervining band.
+
+Suppose that some merging of the computational bands is used, so that when
+used alongside a "physical classification" a number of HSUs are produced. To
+each HSUs we ascribe an order number which is the maximum band value taken by
+a pixel within the HSU. Note that multiple HSUs may have the same order.
+
+The pixels....to be continued....

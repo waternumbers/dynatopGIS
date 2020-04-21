@@ -1,9 +1,22 @@
+# dynatopGIS 0.1
+
+## Breaking Changes
+
+- Code base reformulated in an Object orientated form using the `R6`
+  package. Except for change below algorithms as for v0.0.4
+- Output format of model changed to reflect `dynatop` v0.1
+
+## New Features
+
+- Reformulation allows for data and code to saved in a single object allowing full
+  reproducibility
+- Additional plotting functions
+- Model creation algorithm changes to:
+    - take sequence for most downslope band (rather then upslope)
+	- Adjusts sequence rather then merging or dropping areas (still
+  experimental) to ensure connectivity
+
 # dynatopGIS 0.0.4
-
-## TO DO
-- better sink_filling examples for vignette
-
-Complete rewrite of implimentation.
 
 ## Breaking Changes
 
@@ -16,7 +29,7 @@ Complete rewrite of implimentation.
 	- Fills from the sink with lowest possible value first.
 	- Drops non-connected cells on the edge of the catchment
 - Rewritten computation of HSU properties based on Quinn et al. 1995 and
-  implimneted in two passes of the DEM
+  implemented in two passes of the DEM
 
 # dynatopGIS 0.0.3
 
@@ -50,21 +63,21 @@ This package is the result of an almost complete rewrite of the dynatopmodel pac
 formally on CRAN and the associated development code (not in the public
 domain).
 
-This package contains the code for extracting teh GIS summaries required for
-dynamic TOPMODEL and helpers for inserting default parameters. The package [dynatop]{http://bbc.co.uk} contains the
+This package contains the code for extracting the GIS summaries required for
+dynamic TOPMODEL and helpers for inserting default parameters. The package [dynatop]{https://waternumbers.github.io/dynatop/} contains the
 code for performing simulations.
 
 ## New Features
-- Change in approach to wrting all intermediate files to
+- Change in approach to writing all intermediate files to
       - produce a record of analysis
 	  - allow for future developments with larger size GIS data
-- Porting of sink_fill and atb calculations from orginal topmodel CRAN package
+- Porting of sink_fill and atb calculations from original topmodel CRAN package
   to Rcpp
 - Improved method of determining river network intersection with DEM from shape files
 - Changes to sink filling and atb calculations to recognise burnt in river network
   and correctly split flow by gradient
 - Alterations to output mew style dynamic TOPMODEL object
-- Vignettes added documeting function usage
+- Vignettes added documenting function usage
 
 ## Regressions of note
 - No processing of distance histogram for river routing

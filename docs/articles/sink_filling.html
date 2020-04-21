@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
       </span>
     </div>
 
@@ -57,6 +57,9 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/Banding.html">Banding of HSUs</a>
+    </li>
+    <li>
       <a href="../articles/sink_filling.html">Filling sinks and gaps in the DEM</a>
     </li>
   </ul>
@@ -95,6 +98,7 @@
 
     
     
+<pre><code>#&gt; Loading required package: sp</code></pre>
 <p>The purpose of this vignette is to outline the sink filling routine used by the <code>sink_fill</code> function and provide some simple demonstrations.</p>
 <p>The routine used is deliberately simple, doing the minimum required to populate sinks and missing data to produce valid flow directions. More complex routines can by found in many GIS packages and published work.</p>
 <div id="algorithm" class="section level1">
@@ -142,40 +146,40 @@
 <h1 class="hasAnchor">
 <a href="#examples" class="anchor"></a>Examples</h1>
 <p>Example dates is generated randomly</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">M &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>,<span class="dv">10</span>,<span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb1-2" title="2">fake &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/raster.html">raster</a></span>(M,</a>
-<a class="sourceLine" id="cb1-3" title="3">                       <span class="dt">crs=</span><span class="st">"+init=epsg:27700"</span>) <span class="co"># UK OS projection</span></a></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">M &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="dv">1</span><span class="op">:</span><span class="dv">100</span>,<span class="dv">10</span>,<span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb2-2" title="2">fake &lt;-<span class="st"> </span>raster<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/raster/man/raster.html">raster</a></span>(M,</a>
+<a class="sourceLine" id="cb2-3" title="3">                       <span class="dt">crs=</span><span class="st">"+init=epsg:27700"</span>) <span class="co"># UK OS projection</span></a></code></pre></div>
 <div id="handling-of-a-larger-area-of-missing" class="section level2">
 <h2 class="hasAnchor">
 <a href="#handling-of-a-larger-area-of-missing" class="anchor"></a>handling of a larger area of missing</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">ex1 &lt;-<span class="st"> </span>fake</a>
-<a class="sourceLine" id="cb2-2" title="2">ex1[<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">23</span><span class="op">:</span><span class="dv">26</span>,<span class="dv">33</span><span class="op">:</span><span class="dv">36</span>,<span class="dv">44</span><span class="op">:</span><span class="dv">45</span>)] &lt;-<span class="st"> </span><span class="ot">NA</span></a>
-<a class="sourceLine" id="cb2-3" title="3"></a>
-<a class="sourceLine" id="cb2-4" title="4">ex1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/catchment_file.html">create_catchment</a></span>(ex1)</a>
-<a class="sourceLine" id="cb2-5" title="5"><span class="co">#&gt; Loading required namespace: igraph</span></a>
-<a class="sourceLine" id="cb2-6" title="6">ex1[[<span class="st">'channel_id'</span>]][<span class="dv">1</span>,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb2-7" title="7">ex1 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/sink_fill.html">sink_fill</a></span>(ex1)</a>
-<a class="sourceLine" id="cb2-8" title="8"><span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(ex1[[<span class="st">'dem'</span>]])</a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1">ex1_dem &lt;-<span class="st"> </span>fake</a>
+<a class="sourceLine" id="cb3-2" title="2">ex1_dem[<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">23</span><span class="op">:</span><span class="dv">26</span>,<span class="dv">33</span><span class="op">:</span><span class="dv">36</span>,<span class="dv">44</span><span class="op">:</span><span class="dv">45</span>)] &lt;-<span class="st"> </span><span class="ot">NA</span></a>
+<a class="sourceLine" id="cb3-3" title="3">ex1_chn &lt;-<span class="st"> </span>fake; ex1_chn[] &lt;-<span class="st"> </span><span class="ot">NA</span></a>
+<a class="sourceLine" id="cb3-4" title="4">ex1_chn[<span class="dv">1</span>,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb3-5" title="5"></a>
+<a class="sourceLine" id="cb3-6" title="6"></a>
+<a class="sourceLine" id="cb3-7" title="7">ex1 &lt;-<span class="st"> </span>dynatopGIS<span class="op">$</span><span class="kw">new</span>(ex1_dem)</a>
+<a class="sourceLine" id="cb3-8" title="8"><span class="co">#&gt; Loading required namespace: igraph</span></a>
+<a class="sourceLine" id="cb3-9" title="9">ex1<span class="op">$</span><span class="kw">add_layer</span>(ex1_chn,<span class="st">"channel_id"</span>,<span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb3-10" title="10">ex1<span class="op">$</span><span class="kw">sink_fill</span>()</a>
+<a class="sourceLine" id="cb3-11" title="11">ex1<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">"dem"</span>,<span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb3-12" title="12">ex1<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">"filled_dem"</span>,<span class="ot">FALSE</span>)</a></code></pre></div>
 <p><img src="sink_filling_files/figure-html/example1-1.png" width="700"></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(ex1[[<span class="st">'filled_dem'</span>]])</a></code></pre></div>
-<p><img src="sink_filling_files/figure-html/example1-2.png" width="700"></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1"><span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(ex1[[<span class="st">'filled_dem'</span>]] <span class="op">-</span><span class="st"> </span>fake)</a></code></pre></div>
-<p><img src="sink_filling_files/figure-html/example1-3.png" width="700"></p>
 </div>
 <div id="handling-of-a-single-isleland" class="section level2">
 <h2 class="hasAnchor">
 <a href="#handling-of-a-single-isleland" class="anchor"></a>handling of a single isleland</h2>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">ex2 &lt;-<span class="st"> </span>fake</a>
-<a class="sourceLine" id="cb5-2" title="2">ex2[<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">13</span><span class="op">:</span><span class="dv">17</span>,<span class="dv">24</span>,<span class="dv">26</span>,<span class="dv">34</span><span class="op">:</span><span class="dv">36</span>)] &lt;-<span class="st"> </span><span class="ot">NA</span></a>
-<a class="sourceLine" id="cb5-3" title="3"></a>
-<a class="sourceLine" id="cb5-4" title="4">ex2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/catchment_file.html">create_catchment</a></span>(ex2)</a>
-<a class="sourceLine" id="cb5-5" title="5">ex2[[<span class="st">'channel_id'</span>]][<span class="dv">1</span>,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
-<a class="sourceLine" id="cb5-6" title="6">ex2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/sink_fill.html">sink_fill</a></span>(ex2)</a>
-<a class="sourceLine" id="cb5-7" title="7"></a>
-<a class="sourceLine" id="cb5-8" title="8"><span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(ex2[[<span class="st">'filled_dem'</span>]])</a></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">ex2_dem &lt;-<span class="st"> </span>fake</a>
+<a class="sourceLine" id="cb4-2" title="2">ex2_dem[<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">23</span><span class="op">:</span><span class="dv">26</span>,<span class="dv">33</span><span class="op">:</span><span class="dv">36</span>,<span class="dv">44</span><span class="op">:</span><span class="dv">45</span>)] &lt;-<span class="st"> </span><span class="ot">NA</span></a>
+<a class="sourceLine" id="cb4-3" title="3">ex2_chn &lt;-<span class="st"> </span>fake; ex2_chn[] &lt;-<span class="st"> </span><span class="ot">NA</span></a>
+<a class="sourceLine" id="cb4-4" title="4">ex2_chn[<span class="dv">1</span>,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb4-5" title="5"></a>
+<a class="sourceLine" id="cb4-6" title="6">ex2 &lt;-<span class="st">  </span>dynatopGIS<span class="op">$</span><span class="kw">new</span>(ex1_dem)</a>
+<a class="sourceLine" id="cb4-7" title="7">ex2<span class="op">$</span><span class="kw">add_layer</span>(ex2_chn,<span class="st">"channel_id"</span>,<span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb4-8" title="8">ex2<span class="op">$</span><span class="kw">sink_fill</span>()</a>
+<a class="sourceLine" id="cb4-9" title="9">ex2<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">"dem"</span>,<span class="dt">add=</span><span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb4-10" title="10">ex2<span class="op">$</span><span class="kw">plot_layer</span>(<span class="st">"filled_dem"</span>,<span class="dt">add=</span><span class="ot">FALSE</span>)</a></code></pre></div>
 <p><img src="sink_filling_files/figure-html/example2-1.png" width="700"></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1"><span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(ex2[[<span class="st">'filled_dem'</span>]] <span class="op">-</span><span class="st"> </span>fake)</a></code></pre></div>
-<p><img src="sink_filling_files/figure-html/example2-2.png" width="700"></p>
 </div>
 </div>
   </div>
