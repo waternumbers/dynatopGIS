@@ -244,7 +244,7 @@ dynatopGIS <- R6::R6Class(
             
             if( !all(all_names %in% names(private$layers)) ){
                 stop(paste( "Missing layers:",
-                           paste(setdiff(cut_names,names(ctch$layers)),collapse=" ")))
+                           paste(setdiff(cut_names,names(private$layers)),collapse=" ")))
             }
             
             private$apply_classify(cuts,burns)
