@@ -679,7 +679,7 @@ dynatopGIS <- R6::R6Class(
                              private$channel[['endNode']][jj])
                 if( length(jdx) > 0 ){
                     model$channel$flow_dir[[rw]] <- list(idx=jdx,
-                                                         frc= 1/length(jdx))
+                                                         frc= rep(1/length(jdx),length(jdx)))
                 }
             }
 
