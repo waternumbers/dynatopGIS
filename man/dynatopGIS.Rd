@@ -32,6 +32,7 @@ This package contains the code for setting up a dynamic TOPMODEL implimentation
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 Reads the DEM file, sets up the raster catchment description
 \subsection{Usage}{
@@ -57,6 +58,7 @@ A new `dynatopGIS` object
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-add_layer"></a>}}
+\if{latex}{\out{\hypertarget{method-add_layer}{}}}
 \subsection{Method \code{add_layer()}}{
 Add a layer of geographical information
 \subsection{Usage}{
@@ -84,6 +86,7 @@ suitable for chaining
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_layer"></a>}}
+\if{latex}{\out{\hypertarget{method-get_layer}{}}}
 \subsection{Method \code{get_layer()}}{
 Get a layer of geographical information or a list of layer names
 \subsection{Usage}{
@@ -103,6 +106,7 @@ a RasterLayer of the requested information if layer_name is given else a vector 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plot_layer"></a>}}
+\if{latex}{\out{\hypertarget{method-plot_layer}{}}}
 \subsection{Method \code{plot_layer()}}{
 Plot a layer
 \subsection{Usage}{
@@ -124,6 +128,7 @@ a plot
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-add_channel"></a>}}
+\if{latex}{\out{\hypertarget{method-add_channel}{}}}
 \subsection{Method \code{add_channel()}}{
 Import channel data from an OGR file to the `dynatopGIS` object
 \subsection{Usage}{
@@ -157,6 +162,7 @@ suitable for chaining
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_channel"></a>}}
+\if{latex}{\out{\hypertarget{method-get_channel}{}}}
 \subsection{Method \code{get_channel()}}{
 Get the channel description
 \subsection{Usage}{
@@ -169,6 +175,7 @@ an SpatialPolygonDataFrame containing the channels
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-sink_fill"></a>}}
+\if{latex}{\out{\hypertarget{method-sink_fill}{}}}
 \subsection{Method \code{sink_fill()}}{
 The sink filling algorithm of Planchona and Darboux 2001
 \subsection{Usage}{
@@ -200,6 +207,7 @@ The algorithm implimented in Planchona and Darboux, "A fast, simple and versatil
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-compute_properties"></a>}}
+\if{latex}{\out{\hypertarget{method-compute_properties}{}}}
 \subsection{Method \code{compute_properties()}}{
 Computes statistics e.g. log(a/tanb) for raster cells
 \subsection{Usage}{
@@ -222,6 +230,7 @@ The algorithm works in two passes. The first computes the number of upstream pix
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-classify"></a>}}
+\if{latex}{\out{\hypertarget{method-classify}{}}}
 \subsection{Method \code{classify()}}{
 Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layer cuts or burns
 \subsection{Usage}{
@@ -244,6 +253,7 @@ This applies the given cuts to the supplied landscape layers to produce areal gr
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_class"></a>}}
+\if{latex}{\out{\hypertarget{method-get_class}{}}}
 \subsection{Method \code{get_class()}}{
 Get a classification layer of geographical information or a list of layer names
 \subsection{Usage}{
@@ -263,6 +273,7 @@ a RasterLayer of the requested information if layer_name is given else a vector 
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plot_class"></a>}}
+\if{latex}{\out{\hypertarget{method-plot_class}{}}}
 \subsection{Method \code{plot_class()}}{
 Plot a classification layer
 \subsection{Usage}{
@@ -284,6 +295,7 @@ a plot
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-create_model"></a>}}
+\if{latex}{\out{\hypertarget{method-create_model}{}}}
 \subsection{Method \code{create_model()}}{
 Compute a Dynamic TOPMODEL
 \subsection{Usage}{
@@ -302,6 +314,7 @@ Compute a Dynamic TOPMODEL
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_model"></a>}}
+\if{latex}{\out{\hypertarget{method-get_model}{}}}
 \subsection{Method \code{get_model()}}{
 Get the model is a form suitable for dynatop
 \subsection{Usage}{
@@ -314,6 +327,7 @@ a Dynamic TOPMODE description suitable for the \code{dyantop} package
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plot_model"></a>}}
+\if{latex}{\out{\hypertarget{method-plot_model}{}}}
 \subsection{Method \code{plot_model()}}{
 Plot the spatial properties of a model
 \subsection{Usage}{
@@ -330,6 +344,7 @@ Plot the spatial properties of a model
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-neighbour"></a>}}
+\if{latex}{\out{\hypertarget{method-neighbour}{}}}
 \subsection{Method \code{neighbour()}}{
 Return the index of neighbouring cells
 \subsection{Usage}{
@@ -349,6 +364,7 @@ a list of indexes of neighbours
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_class_method"></a>}}
+\if{latex}{\out{\hypertarget{method-get_class_method}{}}}
 \subsection{Method \code{get_class_method()}}{
 get the cuts and burns used to classify
 \subsection{Usage}{
@@ -361,6 +377,7 @@ a list with two elements, cuts and burns
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_version"></a>}}
+\if{latex}{\out{\hypertarget{method-get_version}{}}}
 \subsection{Method \code{get_version()}}{
 get the version number
 \subsection{Usage}{
@@ -377,6 +394,7 @@ a numeric version number
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{
