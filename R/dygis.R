@@ -335,7 +335,7 @@ dynatopGIS <- R6::R6Class(
                
     ),
     private = list(
-        version = 0.1,
+        version = 0.101,
         reserved_layer_names=c("dem","filled_dem","land_area",
                                "channel_area","channel_id",
                                "atanb","gradient","upslope_area","band","final"),
@@ -356,6 +356,7 @@ dynatopGIS <- R6::R6Class(
 
             ## Loop and add the chanel id and channel area
             ch_area <- raster::area(private$channel) # areas of river channels
+            
             for(ii in 1:length(ch_cell)){
                 ch_cell[[ii]] <- data.frame( id = private$channel[['id']][ii],
                                             land_area = ch_cell[[ii]][,'value'],
@@ -363,9 +364,13 @@ dynatopGIS <- R6::R6Class(
                                             cell = ch_cell[[ii]][,'cell'],
                                             stringsAsFactors=FALSE)
             }
-
+            
             ## merge the list
             ch_cell <- do.call(rbind,ch_cell)
+
+            ## remove all without land area - this allows us to keep channels going outside the dem
+            ch_cell <- ch_cell[is.finite(ch_cell$land_area),]
+            
             
             ## assign the cells with multiple chanel id to the
             ## one with the largest area in the cell (equals returns first in list)
@@ -623,7 +628,7 @@ dynatopGIS <- R6::R6Class(
         },
     
         apply_create_model = function(brk,verbose){
-
+                        
             ## create a list to store items used in verbose printing
             ## stop them getting used elsewhere
             verbose <- list(flag=verbose)
