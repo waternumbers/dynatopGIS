@@ -831,7 +831,9 @@ dynatopGIS <- R6::R6Class(
             
             ## set surface to saturated for lack of better knwoledge
             model$hillslope$sf_dir <- model$hillslope$sz_dir
-
+            
+            ## remove the sz_band
+            model$hillslope$sz_band <- NULL
 
             ## parameter values
             if(verbose$flag){ cat("Setting default parameter values","\n") }
