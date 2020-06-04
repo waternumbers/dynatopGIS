@@ -68,8 +68,8 @@ The use of the dynatopGIS package is demonstrated using data from the Swindale
 catchment in the UK. This is included in the external data directory of the
 package and can be accessed at the follwoing paths.
 ```{r, initialization}
-dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopGIS")
-channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS")
+dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData", mustWork = TRUE)
+channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData", mustWork = TRUE)
 ```
 
 # Initialising the `dynatopGIS` objects

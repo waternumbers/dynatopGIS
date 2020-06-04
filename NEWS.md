@@ -1,3 +1,10 @@
+# dynatop 0.11
+
+## Other Changes
+
+- Data sets for vigneete split off into dynatopData package
+- Under the hood changes to package build 
+
 # dynatopGIS 0.1
 
 ## Breaking Changes

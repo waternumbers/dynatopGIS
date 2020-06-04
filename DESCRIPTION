@@ -1,6 +1,6 @@
 Package: dynatopGIS
 Title: GIS tools for helping build dynamic TOPMODEL implementations
-Version: 0.11
+Version: 0.110
 Authors@R: 
     person(given = "Paul",
            family = "Smith",
@@ -27,5 +27,7 @@ RoxygenNote: 7.1.0
 Suggests: 
     knitr,
     rmarkdown,
-    covr
+    covr,
+    pkgdown,
+    dynatopData
 VignetteBuilder: knitr
