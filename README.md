@@ -40,3 +40,5 @@ the devtools package:
 devtools::install_github("waternumbers/dynatopGIS")
 ```
 
+Prebuild packages (usually including the latest
+version) are available from the waternumbers drat repository [here](https://github.com/waternumbers/drat).
