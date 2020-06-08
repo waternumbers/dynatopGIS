@@ -2,6 +2,8 @@
 language: r
 r:
   - release
+repos:
+  drat: https://waternumbers.github.io/drat/
 apt_packages:
   - libgdal-dev
 cache: packages
