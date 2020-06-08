@@ -31,3 +31,5 @@ Suggests:
     pkgdown,
     dynatopData
 VignetteBuilder: knitr
+Remotes:
+    waternumbers/dynatopData
