@@ -249,6 +249,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             private$apply_classify(cuts,burns)
+            invisible(self)
         },
         #' @description Get a classification layer of geographical information or a list of layer names
         #' @param layer_name name of the layer give to the layer
