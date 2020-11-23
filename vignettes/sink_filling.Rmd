@@ -45,15 +45,16 @@ edge of the DEM are identified. This is done by
 3. Taking all clumps that do not touch the extent of the raster DEM to be
    missing data.
 
-Cells with missing data are assigned a value of `Inf` ($\infty$). Initialise
-$\mathcal{R}$ at set of locations where the DEM value needs replacement with
-there location (the associated values of $k$).
+Cells with missing data are assigned a value of `-Inf` ($-\infty$). Initialise
+a set $\mathcal{S}$ of the locations where the DEM value needs replacement with
+the location of the `-Inf` values. The locations are stored a single numerical
+index of the DEM cell.
 
 ### Determining sinks within the DEM
 
 A sink is any pixel in the DEM for which $z_{k} \leq \min_{j \in
 \mathcal{N}_k} \left(z_{j}\right)$. A pass through the DEM can be used to
-identify sinks. Where a sink is identified set $z_{k}$ to `Inf` ($\infty$), add $k$ to $\mathcal{R}$ and check the neighbouring cells to ensure they are not now sinks.
+identify sinks. Where a sink is identified set $z_{k}$ to `-Inf` ($-\infty$), add $k$ to $\mathcal{S}$ and check the neighbouring cells to ensure they are not now sinks.
 
 ## Replacing values
 
@@ -62,7 +63,7 @@ relaced by a single pass through the points in $\mathcal{R}$. However since
 the values are not known this not possible. Instead we approximate this by:
 
 1. For each $k \in \mathcal{R}$ compute $m_k = \min_{j \in
-\hat{\mathcal{N}}_k} \left(z_{j}\zright)$
+\hat{\mathcal{N}}_k} \left(z_{j}\right)$
 2. Take $\tilde{k}$ and value of $k$ for which $m_k$ is at a minimum.
 3. Set $z_k = \mean_{j \in \hat{\mathcal{N}}_k} \left(z_{j}\right)$
 4. Remove $k$ from $\mathcal{R}$ and return to step 1
