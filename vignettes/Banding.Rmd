@@ -2,7 +2,7 @@
 title: "Banding of HSUs"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Creating a Dynamic TOPMODEL}
+  %\VignetteIndexEntry{Banding of HSUs}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 --- 
