@@ -392,7 +392,7 @@ dynatopGIS <- R6::R6Class(
             private$layers$channel_id[ch_cell$cell]  <- ch_cell$id
         },
         apply_sink_fill = function(min_grad,max_it,verbose,hot_start){
-    
+            browser()
             ## extract dem and channel_id values
             if(hot_start){
                 w <- private$layer$filled_dem
@@ -403,7 +403,7 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## set flag if w > dem
-            w_greater <- is.finite(private$layers$dem) & (w>private$layers$dem)
+            w_greater <- !is.na(private$layers$dem) & (w>private$layers$dem)
             
             finite_neighbour <- rep(FALSE,length(w))
             for(ii in which(is.finite(w))){
