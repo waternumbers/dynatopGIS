@@ -339,7 +339,8 @@ dynatopGIS <- R6::R6Class(
         version = 0.101,
         reserved_layer_names=c("dem","filled_dem","land_area",
                                "channel_area","channel_id",
-                               "atanb","gradient","upslope_area","band","final"),
+                               "atanb","gradient","upslope_area","band","final",
+                               "contour_length"),
         scope=list(),
         layers=list(),
         class=list(total=NULL,
@@ -470,6 +471,7 @@ dynatopGIS <- R6::R6Class(
             ## initialise the new layers to be generated
             new_layers <- list()
             new_layers$gradient <- new_layers$band <- new_layers$atanb <- rep(NA,prod(private$scope$dim))
+            new_layers$contour_length <- rep(NA,prod(private$scope$dim))
             new_layers$upslope_area <- private$layers$land_area
 
             ## initialise the local storage vectors
@@ -493,6 +495,7 @@ dynatopGIS <- R6::R6Class(
                 new_layers$gradient[ii] <- tmp$g
                 n_higher[ii] <- tmp$nh
                 grad_cl[ii] <- tmp$gcl
+                new_layers$contour_length[ii] <- tmp$cl
                 
                 if(verbose$flag){
                     verbose$cnt <- verbose$cnt+1
@@ -673,6 +676,8 @@ dynatopGIS <- R6::R6Class(
                 v_ch="v_ch_default",
                 stringsAsFactors=FALSE
             )
+            ## Sometiems small channel can have no area. In that case the above code fills with NA - when it should be 0
+            model$channel$area[is.na(model$channel$area)] <- 0.0
             
             ## work out the channel flow directions
             model$channel$flow_dir = rep(list(NULL),length(model$channel$id))
@@ -700,11 +705,12 @@ dynatopGIS <- R6::R6Class(
                 atb_bar = rep(NA,length(uid)),
                 s_bar = rep(NA,length(uid)),
                 delta_x = rep(NA,length(uid)),
+                width = rep(NA,length(uid)),
                 class = rep(NA,length(uid)),
-                sz_band = rep(NA,length(uid)),
+                band = rep(NA,length(uid)),
                 precip="unknown",
                 pet="unknown",
-                q_sfmax="q_sfmax_default",
+                r_sfmax="r_sfmax_default",
                 s_rzmax="s_rzmax_default",
                 s_rz0="s_rz0_default",
                 ln_t0="ln_t0_default",
@@ -724,7 +730,7 @@ dynatopGIS <- R6::R6Class(
                 ## index of hillslope points
                 idx <- which(model$map$hillslope==id)
 
-                model$hillslope$sz_band[rw]  <-  max( private$layers$band[idx] )
+                model$hillslope$band[rw]  <-  max( private$layers$band[idx] )
 
                 model$hillslope$class[rw] <- unique( private$class$total[idx] )
                 
@@ -737,16 +743,16 @@ dynatopGIS <- R6::R6Class(
             ## determine flow directions for hillslope
             if(verbose$flag){ cat("Determining Hillslope flow directions","\n") }
             
-            ## what is the HSU id of teh part fo each raster cell which recieves inflow
+            ## what is the HSU id of the part of each raster cell which recieves inflow
             receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
                                  na.rm=TRUE)
             
             ## storage of flow directions
-            model$hillslope$sz_dir = rep(list(NULL),length(model$hillslope$id))
+            model$hillslope$flow_dir = rep(list(NULL),length(model$hillslope$id))
 
             ## computational band for each HSU id
             bnd <- rep(NA,max(model$hillslope$id)) 
-            bnd[model$hillslope$id] <- model$hillslope$sz_band
+            bnd[model$hillslope$id] <- model$hillslope$band
             bnd[model$channel$id] <- Inf #model$channel$sz_band
             
             ## store if the hsu is valid
@@ -766,11 +772,14 @@ dynatopGIS <- R6::R6Class(
                 
                     ## work out flow directions - store as area times fraction
                     rfrc <- rep(0,max(model$hillslope$id))
+                    ## stor contour lengths as well
+                    rcl <- rep(0,max(model$hillslope$id))
                     for(ii in idx){
                         
                         ## if cell has a channel_id then goes to channel
                         if( is.finite(private$layers$channel_id[ii]) ){
-                            jj <- list(cls=private$layers$channel_id[ii],frc=1)
+                            jj <- list(cls=private$layers$channel_id[ii],frc=1,
+                                       cl=mean(private$scope$res))
                         }else{
                             ## work out flow directions
                             jj <- private$fFD(ii)
@@ -778,7 +787,8 @@ dynatopGIS <- R6::R6Class(
                         }
                         ## add area to HSU flow directions
                         rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
-                        
+                        ## add contour length to flow directions
+                        rcl[jj$cls] <- rcl[jj$cls] + jj$cl
                     }
                 
                     ## work out which are moves to higher bands (more downslope)
@@ -787,11 +797,12 @@ dynatopGIS <- R6::R6Class(
                     if(length(hdx)>0){
                         ## if there is send the flow to those cells
                         ## compute flow directions
-                        model$hillslope$sz_dir[[rw]] <- list(
+                        model$hillslope$flow_dir[[rw]] <- list(
                             band = bnd[id],
                             idx = hdx,
                             frc = rfrc[hdx]/sum(rfrc[hdx])
                         )
+                        model$hillslope$width[rw] <- sum(rcl[hdx])
                         is_valid[id] <- TRUE
                     }else{
                         if(length(edx)>0){
@@ -933,7 +944,8 @@ dynatopGIS <- R6::R6Class(
             if( private$layers$land_area[k] <=0 ){
                 return( list(nh=NA,
                              g=NA,
-                             gcl=NA) )
+                             gcl=NA,
+                             cl=NA) )
             }
             
             ## work out if a channel
@@ -957,19 +969,22 @@ dynatopGIS <- R6::R6Class(
                 ## then compute gradient
                 gcl <- sum(grd[to_use]*ngh$cl[to_use])
                 if(is_channel){gcl <- -gcl}
-                g <- gcl / sum(ngh$cl[to_use])
+                cl <- sum(ngh$cl[to_use])
+                g <- gcl / cl #sum(ngh$cl[to_use])
             }else{
                 ## then default if channel otherwise error
                 if(is_channel){
                     g <- missing_grad
                     gcl <- missing_grad * missing_length
+                    cl <- missing_length
                 }else{
                     stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
                 }
             }
             out <- list(nh = sum(is_higher),
                         g = g,
-                        gcl = gcl)
+                        gcl = gcl,
+                        cl=cl)
             return(out)
         },
         ## returns the downslope flow directions with a fractional split
@@ -978,7 +993,7 @@ dynatopGIS <- R6::R6Class(
             is_channel <- is.finite(private$layers$channel_id[k])
 
             if(is_channel){
-                return( list(idx=numeric(0),frc=numeric(0)) )
+                return( list(idx=numeric(0),frc=numeric(0),cl=numeric(0)) )
             }
             
             ## index of neighbours, distances and contour lengths
@@ -990,9 +1005,11 @@ dynatopGIS <- R6::R6Class(
             to_use <- is.finite(grd) & (grd > 0)
 
             gcl <- grd[to_use]*ngh$cl[to_use]
+            cl <- ngh$cl[to_use]
 
             return( list(idx = ngh$idx[to_use],
-                         frc = gcl / sum(gcl)) )
+                         frc = gcl / sum(gcl),
+                         cl = cl) )
             
         }
 
