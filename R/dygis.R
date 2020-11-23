@@ -763,7 +763,7 @@ dynatopGIS <- R6::R6Class(
             delta <- 1e-3
             while(!all(is_valid) & it < 100){
                 it <- it+1
-                print(it)
+                
                 ## process all hillslope HSUs that aren't valid
                 for(id in model$hillslope$id[ !is_valid[model$hillslope$id] ]){
                     rw <- which(model$hillslope$id == id)
@@ -810,11 +810,10 @@ dynatopGIS <- R6::R6Class(
                         }else{
                             stop("Should never get here!!")
                         }
-                    }
-
-                    if(verbose$flag){
-                        cat("    Iteration ",it,": ",sum(is_valid)," of ",length(is_valid)," HSUs valid","\n")
-                    }
+                    } 
+                }
+                if(verbose$flag){
+                    cat("    Iteration ",it,": ",sum(is_valid)," of ",length(is_valid)," HSUs valid","\n")
                 }
             }
             

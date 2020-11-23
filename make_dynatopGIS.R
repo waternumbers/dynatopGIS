@@ -42,9 +42,9 @@ drat::pruneRepo(dratPath,pkg=pkgName,remove="git")## this only does source files
 ## This code runs to generate the model used in the dynatop examples
 ## it also checks the verbose mode code
 rm(list=ls())
-#pacPath <- './dynatopGIS'
-#devtools::load_all(pacPath)
-library("dynatopGIS")
+pacPath <- './dynatopGIS'
+devtools::load_all(pacPath)
+#library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData"))
 shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData"))
 property_names <- c(channel_id="identifier",
