@@ -811,8 +811,11 @@ dynatopGIS <- R6::R6Class(
             
             ## populate classes, band and data inc flow directions
             for(rw in 1:length(model$hillslope$id)){
-                id <- model$hillslope$id[rw]
                 
+                id <- model$hillslope$id[rw]
+                if(verbose$flag){
+                    cat("Processing id: ",id,"\n")
+                }
                 ## index of hillslope points
                 idx <- which(model$map$hillslope==id)
                 ## determine band
@@ -836,12 +839,12 @@ dynatopGIS <- R6::R6Class(
                 model$hillslope$delta_x[rw] <- (diff(range(
                                            private$layers$band[idx]))+1) * private$scope$res[1]
                 ## determine downslope flow directions
-                rfrc <- rep(0,length(receiving_id))
+                rfrc <- rep(0,max(model$channel$id,model$hillslope$id))
                 model$hillslope$width[rw] <- 0
                 ## Look at all cells which are at the boundary
                 for(jj in idx[ is.finite(private$layers$channel_id[idx]) |
                                private$layers$band[idx] == model$hillslope$band[rw] ] ){
-                    ngh <- fN(jj)
+                    ngh <- private$fN(jj)
                     grd <- (private$layers$filled_dem[jj] - private$layers$filled_dem[ngh$idx])/ngh$dx
                     if(is.finite(private$layers$channel_id[jj])){
                         to_use <- is.finite(grd) & grd<0 &
@@ -856,24 +859,25 @@ dynatopGIS <- R6::R6Class(
                                 model$hillslope$width[rw] + cl
                         }
                     }else{
-                        ngh <- fN(jj)
-                        grd <- (private$layers$filled_dem[jj] - private$layers$filled_dem[ngh$idx])/ngh$dx
                         to_use <- is.finite(grd) & (grd > 0)
                         if(any(to_use)){
                             gcl <- grd[to_use]*ngh$cl[to_use]
-                            cl <- ngh$cl[to_use]
-                            rdx <- private$model$hillslope[ngh$idx[to_use]]
-                            rfrc[ rdx ]  <-
-                                rfrc[ rdx ] + private$layers$upslope_area[jj]*gcl
+                            cl <- sum(ngh$cl[to_use])
+                            rdx <- receiving_id[ngh$idx[to_use]]
+                            for(rr in 1:length(rdx)){
+                                rfrc[rdx[rr]] <- rfrc[rdx[rr]] +
+                                    private$layers$upslope_area[jj]*gcl[rr]
+                            }
                             model$hillslope$width[rw] <-
                                 model$hillslope$width[rw] + cl
                         }
                     }
                 }
-                jdx <- which(rfrc>)
-                model$hillslope$$flow_dir[[rw]] <- list(
+                rfrc <- rfrc/sum(rfrc)
+                jdx <- which(rfrc>0.0)
+                model$hillslope$flow_dir[[rw]] <- list(
                                      idx=jdx,
-                                     frc=rfrc[jdx]/sum(rfrc[jdx]))
+                                     frc=rfrc[jdx])
             }
 
             ## ## determine flow directions for hillslope

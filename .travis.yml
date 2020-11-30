@@ -7,6 +7,8 @@ repos:
   drat: https://waternumbers.github.io/drat
 apt_packages:
   - libgdal-dev
+  - libharfbuzz-dev
+  - libfribidi-dev
 cache: packages
 warnings_are_errors: true
 os:
