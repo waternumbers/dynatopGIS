@@ -336,7 +336,7 @@ dynatopGIS <- R6::R6Class(
                
     ),
     private = list(
-        version = 0.101,
+        version = 0.2.0.9001,
         reserved_layer_names=c("dem","filled_dem","land_area",
                                "channel_area","channel_id",
                                "atanb","gradient","upslope_area","band","final",
@@ -798,7 +798,7 @@ dynatopGIS <- R6::R6Class(
                 ln_t0="ln_t0_default",
                 m="m_default",
                 t_d="t_d_default",
-                t_sf="t_sf_default",
+                c_sf="c_sf_default",
                 stringsAsFactors=FALSE
             )
             for(jj in names(private$class$partial)){
@@ -989,7 +989,7 @@ dynatopGIS <- R6::R6Class(
                              ln_t0_default=19,
                              m_default=0.004,
                              t_d_default=20,
-                             t_sf_default=100,
+                             c_sf_default=0.01,
                              v_ch_default=100)
             
             ## ############################################
