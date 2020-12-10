@@ -336,7 +336,7 @@ dynatopGIS <- R6::R6Class(
                
     ),
     private = list(
-        version = 0.2.0.9001,
+        version = "0.2.0.9001",
         reserved_layer_names=c("dem","filled_dem","land_area",
                                "channel_area","channel_id",
                                "atanb","gradient","upslope_area","band","final",

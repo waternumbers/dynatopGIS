@@ -1,3 +1,24 @@
+# dynatopGIS 0.2.0.9001
+
+## Breaking changes
+
+- Altered model structure output to match change to surface zone celerity from
+  time constant in dynatop v0.2.0.9001
+
+# dynatopGIS 0.2.0.9000
+
+## Breaking Changes
+
+- Altered analysis of catchment to provide data for the bottom cross section
+  of the HSU. This effects:
+    - Derivation of flow directions and fractions for the HSU
+	- Estimation of the width is now based on contour length
+
+## Other changes
+
+- More efficent implimentation of property computation using few passes of the
+  data
+  
 # dynatop 0.11
 
 ## Other Changes
