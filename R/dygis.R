@@ -482,7 +482,8 @@ dynatopGIS <- R6::R6Class(
             new_layers$upslope_area <- private$layers$land_area
             
             new_layers$band <- as.integer(is.finite(private$layers$land_area)) # 1 or 0
-
+            new_layers$band[new_layers$band==0] <- NA
+            
             ## in principle the filled_Dem is ordered so that all water flows from high to low
             ## by passing down the cells from high to low we should be able to compute all values
             ## index all cells with land_area in decreasing order of altitude
@@ -714,7 +715,7 @@ dynatopGIS <- R6::R6Class(
         },
     
         apply_create_model = function(brk,verbose){
-                        
+            browser()            
             ## create a list to store items used in verbose printing
             ## stop them getting used elsewhere
             verbose <- list(flag=verbose)
@@ -727,7 +728,7 @@ dynatopGIS <- R6::R6Class(
             if(verbose$flag){ cat("Adding bands to create HSUs hillslope classes","\n") }
             
             ## Add banding split to the classification
-            if( length(brk)==1 & is.na(brk[1]) ){
+            if( length(brk)==1 | is.na(brk[1]) ){
                 x <- private$layers$band
             }else{
                 x <- cut(private$layers$band,breaks=brk,
