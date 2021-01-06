@@ -811,11 +811,12 @@ dynatopGIS <- R6::R6Class(
                                  na.rm=TRUE)
             
             ## populate classes, band and data inc flow directions
-            for(rw in 1:length(model$hillslope$id)){
+            nrw <- length(model$hillslope$id)
+            for(rw in 1:nrw){
                 
                 id <- model$hillslope$id[rw]
                 if(verbose$flag){
-                    cat("Processing id: ",id,"\n")
+                    cat("Processing id: ",id," of ",nrw,"\n")
                 }
                 ## index of hillslope points
                 idx <- which(model$map$hillslope==id)
