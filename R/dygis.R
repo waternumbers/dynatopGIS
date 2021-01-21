@@ -715,7 +715,7 @@ dynatopGIS <- R6::R6Class(
         },
     
         apply_create_model = function(brk,verbose){
-            browser()            
+
             ## create a list to store items used in verbose printing
             ## stop them getting used elsewhere
             verbose <- list(flag=verbose)
@@ -728,7 +728,7 @@ dynatopGIS <- R6::R6Class(
             if(verbose$flag){ cat("Adding bands to create HSUs hillslope classes","\n") }
             
             ## Add banding split to the classification
-            if( length(brk)==1 | is.na(brk[1]) ){
+            if( length(brk)==1 & is.na(brk[1]) ){
                 x <- private$layers$band
             }else{
                 x <- cut(private$layers$band,breaks=brk,
