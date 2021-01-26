@@ -89,7 +89,7 @@ dynatopGIS <- R6::R6Class(
         #' @param check_name logical indicating if name should be checked against reserved names
         #' @details The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
         #' @return suitable for chaining
-        add_layer = function(file_path,layer_name){
+        add_layer = function(layer_name,file_path){
             layer_name <- as.character(layer_name)
             file_path <- normalizePath(file_path)
             
@@ -197,7 +197,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @details The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min. 
         #' @param verbose print out additional diagnostic information        
-        create_model = function(class_layer,dist_layer,brk,layer_name,
+        create_model = function(layer_name,class_layer,dist_layer,brk,
                                 delta_min=sqrt(sum(private$meta$resolution^2)),
                                 verbose=FALSE){
             private$apply_create_model(class_layer,dist_layer,brk,layer_name,delta_min,verbose)            
