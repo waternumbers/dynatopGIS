@@ -47,14 +47,13 @@ dynatopGIS <- R6::R6Class(
             private$wdir <- file_path
             invisible(self)
         },
-        #' @description Import channel data from an OGR file to the `dynatopGIS` object
+        #' @description Import a dem to the `dynatopGIS` object
         #'
-        #' @param sp_object a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information
-        #' @param property_names named vector of columns of the spatial data frame to use for channel properties
-        #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
+        #' @param dem a \code{RasterLayer} object or the path to file containing one which is the DEM
+        #' @param fill_na  should NA values in dem be filled. See details
+        #' @param verbose Should additional progress information be printed
         #'
-        #' @details Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
-        #' The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+        #' @details If not a \code{rasterLayer} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
         #'
         #' @return suitable for chaining              
         add_dem = function(dem,fill_na=TRUE,verbose=FALSE){
@@ -63,7 +62,7 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Import channel data from an OGR file to the `dynatopGIS` object
         #'
-        #' @param sp_object a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information
+        #' @param channel a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information
         #' @param property_names named vector of columns of the spatial data frame to use for channel properties
         #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
         #'
@@ -84,10 +83,11 @@ dynatopGIS <- R6::R6Class(
             invisible(self)
         },
         #' @description Add a layer of geographical information
-        #' @param raster_layer a RasterLayer object to add
+        #'
         #' @param layer_name name to give to the layer
-        #' @param check_name logical indicating if name should be checked against reserved names
-        #' @details The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
+        #' @param file_path the location of the file containing the new layer
+        #'
+        #' @details The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
         #' @return suitable for chaining
         add_layer = function(layer_name,file_path){
             layer_name <- as.character(layer_name)
@@ -171,12 +171,15 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Computes flow length for each pixel to the channel
         #'
+        #' @param verbose print out additional diagnostic information
+        #'
         #' @details The algorithm passed through the cells in increaing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow diection with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
         compute_flow_lengths = function(verbose=FALSE){
             private$apply_flow_lengths(verbose)
             invisible(self)
         }, 
         #' @description Create a catchment classification based on any number of landscape layer cuts or burns
+        #' @param layer_name name of the new layer to create
         #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
         #' @param burns a vector of layer names which are to be burnt on
         #'
@@ -196,7 +199,6 @@ dynatopGIS <- R6::R6Class(
         #' @param verbose print more details of progress
         #'
         #' @details The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min. 
-        #' @param verbose print out additional diagnostic information        
         create_model = function(layer_name,class_layer,dist_layer,brk,
                                 delta_min=sqrt(sum(private$meta$resolution^2)),
                                 verbose=FALSE){
@@ -206,7 +208,7 @@ dynatopGIS <- R6::R6Class(
         #' @description Compute HSU fractional inputs
         #'
         #' @param hsu_layer layer of the model
-        #' @param input_raster raster of values containing the input class
+        #' @param input_layer raster of values containing the input class
         #' @param hsu_label string containing the label to add the values of hsu_layer
         #' @param input_label string containing the label to add the values of input_layer
         #'
@@ -221,6 +223,7 @@ dynatopGIS <- R6::R6Class(
             private$version
         },
         #' @description get the cuts and burns used to classify
+        #' @param layer_name the name of layer whose classification method is returned
         #' @return a list with two elements, cuts and burns
         get_class_method = function(layer_name){
             layer_name <- match.arg(layer_name,private$find_layer())
@@ -570,11 +573,12 @@ dynatopGIS <- R6::R6Class(
                     }
                 }
                 to_eval <- to_eval & to_be_valid #& !is_valid
-                cat("Iteration",it,"\n")
-                cat("\t","Cells to evaluate:",sum(to_eval),"\n")
-                cat("\t","Percentage Complete:",
-                    round(100*sum(is_valid)/sum(!is.na(d)),1),"\n") #to_be_valid),1),"\n")
-                
+                if(verbose){
+                    cat("Iteration",it,"\n")
+                    cat("\t","Cells to evaluate:",sum(to_eval),"\n")
+                    cat("\t","Percentage Complete:",
+                        round(100*sum(is_valid)/sum(!is.na(d)),1),"\n") #to_be_valid),1),"\n")
+                }
                 ## alter min value for the evaluation cells
                 idx <- which(to_eval,arr.ind=TRUE) # index of changed cells
                 jdx <- idx
@@ -660,7 +664,10 @@ dynatopGIS <- R6::R6Class(
             if(verbose){
                 print_step <- round(n_to_eval/20)
                 next_print <- print_step
+            }else{
+                next_print <- Inf
             }
+            
             
             for(ii in idx){
                 is_channel <- is.finite(ch[ii]) ## if a channel
@@ -781,6 +788,8 @@ dynatopGIS <- R6::R6Class(
             if(verbose){
                 print_step <- round(n_to_eval/20)
                 next_print <- print_step
+            }else{
+                next_print <- Inf
             }
             for(ii in idx){
                 if(is.finite(ch[ii])){
@@ -893,8 +902,8 @@ dynatopGIS <- R6::R6Class(
 
             ## add in burns
             for(ii in burns){
-                fn <- fn <- pos_val[ii,"file"] ## work out filename
-                x <- raster:raster(fn)
+                fn <- pos_val[ii] ## work out filename
+                x <- raster::raster(fn)
                 idx <- Which(is.finite(x))
                 cp[idx] <- x[idx]
             }
@@ -1038,7 +1047,10 @@ dynatopGIS <- R6::R6Class(
             if(verbose){
                 print_step <- round(n_to_eval/20)
                 next_print <- print_step
+            }else{
+                next_print <- Inf
             }
+            
             for(ii in idx){
                 ##print(ii)
                 if(!(la[ii]>0)){ next }
@@ -1106,7 +1118,7 @@ dynatopGIS <- R6::R6Class(
                     }
                     flow_dir[[rw]]$frc[ekk] <-
                         flow_dir[[rw]]$frc[ekk] + gcl
-               }
+                }
                 
                 ## verbose output here
                 if(it >= next_print){

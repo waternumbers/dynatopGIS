@@ -11,22 +11,29 @@ This package contains the code for setting up a dynamic TOPMODEL implimentation
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{dynatopGIS$new()}}
+\item \href{#method-get_meta}{\code{dynatopGIS$get_meta()}}
+\item \href{#method-get_working_directory}{\code{dynatopGIS$get_working_directory()}}
+\item \href{#method-set_working_directory}{\code{dynatopGIS$set_working_directory()}}
+\item \href{#method-add_dem}{\code{dynatopGIS$add_dem()}}
+\item \href{#method-add_channel}{\code{dynatopGIS$add_channel()}}
 \item \href{#method-add_layer}{\code{dynatopGIS$add_layer()}}
 \item \href{#method-get_layer}{\code{dynatopGIS$get_layer()}}
 \item \href{#method-plot_layer}{\code{dynatopGIS$plot_layer()}}
-\item \href{#method-add_channel}{\code{dynatopGIS$add_channel()}}
-\item \href{#method-get_channel}{\code{dynatopGIS$get_channel()}}
 \item \href{#method-sink_fill}{\code{dynatopGIS$sink_fill()}}
+\item \href{#method-compute_areas}{\code{dynatopGIS$compute_areas()}}
 \item \href{#method-compute_properties}{\code{dynatopGIS$compute_properties()}}
+\item \href{#method-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
 \item \href{#method-classify}{\code{dynatopGIS$classify()}}
-\item \href{#method-get_class}{\code{dynatopGIS$get_class()}}
-\item \href{#method-plot_class}{\code{dynatopGIS$plot_class()}}
 \item \href{#method-create_model}{\code{dynatopGIS$create_model()}}
+\item \href{#method-input_frac}{\code{dynatopGIS$input_frac()}}
+\item \href{#method-get_version}{\code{dynatopGIS$get_version()}}
+\item \href{#method-get_class_method}{\code{dynatopGIS$get_class_method()}}
 \item \href{#method-get_model}{\code{dynatopGIS$get_model()}}
 \item \href{#method-plot_model}{\code{dynatopGIS$plot_model()}}
 \item \href{#method-neighbour}{\code{dynatopGIS$neighbour()}}
-\item \href{#method-get_class_method}{\code{dynatopGIS$get_class_method()}}
-\item \href{#method-get_version}{\code{dynatopGIS$get_version()}}
+\item \href{#method-get_class}{\code{dynatopGIS$get_class()}}
+\item \href{#method-plot_class}{\code{dynatopGIS$plot_class()}}
+\item \href{#method-get_channel}{\code{dynatopGIS$get_channel()}}
 \item \href{#method-clone}{\code{dynatopGIS$clone()}}
 }
 }
@@ -34,26 +41,137 @@ This package contains the code for setting up a dynamic TOPMODEL implimentation
 \if{html}{\out{<a id="method-new"></a>}}
 \if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
-Reads the DEM file, sets up the raster catchment description
+Initialise a project, or reopen an existing project
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$new(dem, fill_na = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$new(meta_file, check = TRUE, verbose = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{dem}}{a RasterLayer containing the dem}
+\item{\code{meta_file}}{filename and path of the meta data file}
 
-\item{\code{fill_na}}{should NA values in dem be filled. See details}
+\item{\code{check}}{logical, should checks be performed [TRUE]}
+
+\item{\code{verbose}}{printing of checking output [TRUE]}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.
+This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked witht he level of returned information being controlled by \code{verbose}.
 }
 
 \subsection{Returns}{
 A new `dynatopGIS` object
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_meta"></a>}}
+\if{latex}{\out{\hypertarget{method-get_meta}{}}}
+\subsection{Method \code{get_meta()}}{
+Get project emta data
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_meta()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_working_directory"></a>}}
+\if{latex}{\out{\hypertarget{method-get_working_directory}{}}}
+\subsection{Method \code{get_working_directory()}}{
+Get current working directory
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_working_directory()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-set_working_directory"></a>}}
+\if{latex}{\out{\hypertarget{method-set_working_directory}{}}}
+\subsection{Method \code{set_working_directory()}}{
+Set current working directory
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$set_working_directory(file_path, create = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{file_path}}{the path to the new directory to create}
+
+\item{\code{create}}{should the driectory be created if it doesn't exist}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-add_dem"></a>}}
+\if{latex}{\out{\hypertarget{method-add_dem}{}}}
+\subsection{Method \code{add_dem()}}{
+Import a dem to the `dynatopGIS` object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_dem(dem, fill_na = TRUE, verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{dem}}{a \code{RasterLayer} object or the path to file containing one which is the DEM}
+
+\item{\code{fill_na}}{should NA values in dem be filled. See details}
+
+\item{\code{verbose}}{Should additional progress information be printed}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+If not a \code{rasterLayer} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
+}
+
+\subsection{Returns}{
+suitable for chaining
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-add_channel"></a>}}
+\if{latex}{\out{\hypertarget{method-add_channel}{}}}
+\subsection{Method \code{add_channel()}}{
+Import channel data from an OGR file to the `dynatopGIS` object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(
+  channel,
+  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
+    width = "width"),
+  default_width = 2
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{channel}}{a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information}
+
+\item{\code{property_names}}{named vector of columns of the spatial data frame to use for channel properties}
+
+\item{\code{default_width}}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
+The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+}
+
+\subsection{Returns}{
+suitable for chaining
 }
 }
 \if{html}{\out{<hr>}}
@@ -62,22 +180,20 @@ A new `dynatopGIS` object
 \subsection{Method \code{add_layer()}}{
 Add a layer of geographical information
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_layer(raster_layer, layer_name, check_name = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_layer(layer_name, file_path)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{raster_layer}}{a RasterLayer object to add}
-
 \item{\code{layer_name}}{name to give to the layer}
 
-\item{\code{check_name}}{logical indicating if name should be checked against reserved names}
+\item{\code{file_path}}{the location of the file containing the new layer}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
+The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
 }
 
 \subsection{Returns}{
@@ -127,53 +243,6 @@ a plot
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_channel"></a>}}
-\if{latex}{\out{\hypertarget{method-add_channel}{}}}
-\subsection{Method \code{add_channel()}}{
-Import channel data from an OGR file to the `dynatopGIS` object
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(
-  sp_object,
-  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
-    width = "width"),
-  default_width = 2
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{sp_object}}{a spatialLinesDataFrame containing the channel information}
-
-\item{\code{property_names}}{named vector of columns of the spatial data frame to use for channel properties}
-
-\item{\code{default_width}}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
-The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
-}
-
-\subsection{Returns}{
-suitable for chaining
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_channel"></a>}}
-\if{latex}{\out{\hypertarget{method-get_channel}{}}}
-\subsection{Method \code{get_channel()}}{
-Get the channel description
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_channel()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-an SpatialPolygonDataFrame containing the channels
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-sink_fill"></a>}}
 \if{latex}{\out{\hypertarget{method-sink_fill}{}}}
 \subsection{Method \code{sink_fill()}}{
@@ -206,25 +275,60 @@ The algorithm implimented in Planchona and Darboux, "A fast, simple and versatil
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-compute_areas"></a>}}
+\if{latex}{\out{\hypertarget{method-compute_areas}{}}}
+\subsection{Method \code{compute_areas()}}{
+Computes area maps and presence of channel in dem pixels
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_areas()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+The algorithm calculates the land and channel area for each DEM pixel assigning a channel_id to each pixel with a channel area.
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-compute_properties"></a>}}
 \if{latex}{\out{\hypertarget{method-compute_properties}{}}}
 \subsection{Method \code{compute_properties()}}{
-Computes statistics e.g. log(a/tanb) for raster cells
+Computes statistics e.g. gradient, log(a/tanb) for raster cells
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_properties(missing_grad = 1e-04, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_properties(min_grad = 1e-04, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{missing_grad}}{gradient that can be assigned to a pixel if it can't be computed}
+\item{\code{min_grad}}{gradient that can be assigned to a pixel if it can't be computed}
 
 \item{\code{verbose}}{print out additional diagnostic information}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The algorithm works in two passes. The first computes the number of upstream pixels and values that do not depend on ordering. The second sequences downslope to compute values. Missing gradient is only used for pixels which are partially channel but have no upslope neighbours.
+The algorithm passed through the cells in decreasing height. Min grad is applied to all cells. It is also used for missing gradients in pixels which are partially channel but have no upslope neighbours.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-compute_flow_lengths"></a>}}
+\if{latex}{\out{\hypertarget{method-compute_flow_lengths}{}}}
+\subsection{Method \code{compute_flow_lengths()}}{
+Computes flow length for each pixel to the channel
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_flow_lengths(verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{print out additional diagnostic information}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The algorithm passed through the cells in increaing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow diection with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
 }
 
 }
@@ -232,32 +336,191 @@ The algorithm works in two passes. The first computes the number of upstream pix
 \if{html}{\out{<a id="method-classify"></a>}}
 \if{latex}{\out{\hypertarget{method-classify}{}}}
 \subsection{Method \code{classify()}}{
-Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layer cuts or burns
+Create a catchment classification based on any number of landscape layer cuts or burns
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$classify(cuts, burns = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$classify(layer_name, cuts, burns = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{layer_name}}{name of the new layer to create}
+
 \item{\code{cuts}}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)}
 
-\item{\code{burns}}{a vector of layer names which are to be used as burns}
+\item{\code{burns}}{a vector of layer names which are to be burnt on}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Changing teh classification removes the current model ensuring the two are always syncronised.
+This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Not that cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-create_model"></a>}}
+\if{latex}{\out{\hypertarget{method-create_model}{}}}
+\subsection{Method \code{create_model()}}{
+Compute a Dynamic TOPMODEL
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(
+  layer_name,
+  class_layer,
+  dist_layer,
+  brk,
+  delta_min = sqrt(sum(private$meta$resolution^2)),
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{layer_name}}{name for the new model and layers}
+
+\item{\code{class_layer}}{the layer defining the topographic classes}
+
+\item{\code{dist_layer}}{the layer dfining the disatance to the channel}
+
+\item{\code{brk}}{breaks for cutting up the distance layer - see classify}
+
+\item{\code{delta_min}}{see details}
+
+\item{\code{verbose}}{print more details of progress}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-input_frac"></a>}}
+\if{latex}{\out{\hypertarget{method-input_frac}{}}}
+\subsection{Method \code{input_frac()}}{
+Compute HSU fractional inputs
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$input_frac(
+  hsu_layer,
+  input_layer,
+  hsu_label = "hsu_",
+  input_label = ""
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{hsu_layer}}{layer of the model}
+
+\item{\code{input_layer}}{raster of values containing the input class}
+
+\item{\code{hsu_label}}{string containing the label to add the values of hsu_layer}
+
+\item{\code{input_label}}{string containing the label to add the values of input_layer}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+Fractions are computed for all HSUs (including the channel) using raster::crosstab. It does not accout for unequal cells areas or HSUs which only cover a fraction of a cell
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_version"></a>}}
+\if{latex}{\out{\hypertarget{method-get_version}{}}}
+\subsection{Method \code{get_version()}}{
+get the version number
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_version()}\if{html}{\out{</div>}}
+}
+
+\subsection{Details}{
+teh version number indicates the version of the algorithms within the object
+}
+
+\subsection{Returns}{
+a numeric version number
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_class_method"></a>}}
+\if{latex}{\out{\hypertarget{method-get_class_method}{}}}
+\subsection{Method \code{get_class_method()}}{
+get the cuts and burns used to classify
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class_method(layer_name)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{layer_name}}{the name of layer whose classification method is returned}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+a list with two elements, cuts and burns
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_model"></a>}}
+\if{latex}{\out{\hypertarget{method-get_model}{}}}
+\subsection{Method \code{get_model()}}{
+DEPRECIATED Get the model is a form suitable for dynatop
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_model()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+a Dynamic TOPMODE description suitable for the \code{dyantop} package
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-plot_model"></a>}}
+\if{latex}{\out{\hypertarget{method-plot_model}{}}}
+\subsection{Method \code{plot_model()}}{
+DEPRECIATED Plot the spatial properties of a model
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot_model(add_channel = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{add_channel}}{should the channel be added to the plot}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-neighbour"></a>}}
+\if{latex}{\out{\hypertarget{method-neighbour}{}}}
+\subsection{Method \code{neighbour()}}{
+DEPRECIATED Return the index of neighbouring cells
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$neighbour(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{index of cells for which to find neighbours}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+a list of indexes of neighbours
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_class"></a>}}
 \if{latex}{\out{\hypertarget{method-get_class}{}}}
 \subsection{Method \code{get_class()}}{
-Get a classification layer of geographical information or a list of layer names
+DEPECIATED Get a classification layer of geographical information or a list of layer names
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class(layer_name = character(0))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class(layer_name)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -275,7 +538,7 @@ a RasterLayer of the requested information if layer_name is given else a vector 
 \if{html}{\out{<a id="method-plot_class"></a>}}
 \if{latex}{\out{\hypertarget{method-plot_class}{}}}
 \subsection{Method \code{plot_class()}}{
-Plot a classification layer
+DEPECIATED Plot a classification layer
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot_class(layer_name = "final", add_channel = TRUE)}\if{html}{\out{</div>}}
 }
@@ -294,102 +557,16 @@ a plot
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-create_model"></a>}}
-\if{latex}{\out{\hypertarget{method-create_model}{}}}
-\subsection{Method \code{create_model()}}{
-Compute a Dynamic TOPMODEL
+\if{html}{\out{<a id="method-get_channel"></a>}}
+\if{latex}{\out{\hypertarget{method-get_channel}{}}}
+\subsection{Method \code{get_channel()}}{
+DEPRECIATED Get the channel description
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(band = 5, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{band}}{How to cut the bands into the model, interpreted as for a cut in the classify method}
-
-\item{\code{verbose}}{print out additional diagnostic information}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_model"></a>}}
-\if{latex}{\out{\hypertarget{method-get_model}{}}}
-\subsection{Method \code{get_model()}}{
-Get the model is a form suitable for dynatop
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_model()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_channel()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-a Dynamic TOPMODE description suitable for the \code{dyantop} package
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plot_model"></a>}}
-\if{latex}{\out{\hypertarget{method-plot_model}{}}}
-\subsection{Method \code{plot_model()}}{
-Plot the spatial properties of a model
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$plot_model(add_channel = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{add_channel}}{should the channel be added to the plot}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-neighbour"></a>}}
-\if{latex}{\out{\hypertarget{method-neighbour}{}}}
-\subsection{Method \code{neighbour()}}{
-Return the index of neighbouring cells
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$neighbour(x)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{x}}{index of cells for which to find neighbours}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-a list of indexes of neighbours
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_class_method"></a>}}
-\if{latex}{\out{\hypertarget{method-get_class_method}{}}}
-\subsection{Method \code{get_class_method()}}{
-get the cuts and burns used to classify
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class_method()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-a list with two elements, cuts and burns
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_version"></a>}}
-\if{latex}{\out{\hypertarget{method-get_version}{}}}
-\subsection{Method \code{get_version()}}{
-get the version number
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_version()}\if{html}{\out{</div>}}
-}
-
-\subsection{Details}{
-teh version number indicates the version of the algorithms within the object
-}
-
-\subsection{Returns}{
-a numeric version number
+an SpatialPolygonDataFrame containing the channels
 }
 }
 \if{html}{\out{<hr>}}
