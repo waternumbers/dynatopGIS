@@ -3,20 +3,374 @@
 dynatopGIS <- R6::R6Class(
     "dynatopGIS",
     public = list(
-        #' @description Reads the DEM file, sets up the raster catchment description
+        #' @description Initialise a project, or reopen an existing project
         #'
-        #' @param dem a RasterLayer containing the dem
-        #' @param fill_na should NA values in dem be filled. See details
+        #' @param meta_file filename and path of the meta data file
+        #' @param check logical, should checks be performed [TRUE]
+        #' @param verbose printing of checking output [TRUE]
         #'
-        #' @details Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.
+        #' @details This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked witht he level of returned information being controlled by \code{verbose}.
+        #'
         #' @return A new `dynatopGIS` object
-        initialize = function(dem, fill_na=TRUE){
+        initialize = function(meta_file, check=TRUE,verbose=TRUE){
+            ## create directory if it doesn't exist
+            
+            private$meta_path <- meta_file
+            private$wdir <- normalizePath(dirname(meta_file))
 
-            ## check the file is a raster layer
-            if(!("RasterLayer" %in% class(dem))){
-                stop("dem should be a RasterLayer")
+            ## if new it is an empty folder so write in meta data
+            is_new <- !file.exists(meta_file)
+            if(is_new){
+                warning("Creating meta file at",meta_file)
+                private$write_meta()
+            }                
+            
+            ## load meta data
+            if(check){ private$check_meta(verbose) }
+            
+            invisible(self)
+        },
+        #' @description Get project emta data
+        get_meta = function(){ private$meta },
+        #' @description Get current working directory
+        #' @details Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+        get_working_directory = function(){private$wdir},
+        #' @description Set current working directory
+        #'
+        #' @param file_path the path to the new directory to create
+        #' @param create should the driectory be created if it doesn't exist
+        #'
+        #' @details Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+        set_working_directory = function(file_path,create=TRUE){
+            if(!dir.exists(file_path) & create){ dir.create(file_path,recursive=TRUE) }
+            if(!dir.exists(file_path)){ stop("Directory does not exist") }
+            private$wdir <- file_path
+            invisible(self)
+        },
+        #' @description Import channel data from an OGR file to the `dynatopGIS` object
+        #'
+        #' @param sp_object a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information
+        #' @param property_names named vector of columns of the spatial data frame to use for channel properties
+        #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
+        #'
+        #' @details Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
+        #' The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+        #'
+        #' @return suitable for chaining              
+        add_dem = function(dem,fill_na=TRUE,verbose=FALSE){
+            private$apply_add_dem(dem,fill_na,verbose)
+            invisible(self)
+        },
+        #' @description Import channel data from an OGR file to the `dynatopGIS` object
+        #'
+        #' @param sp_object a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information
+        #' @param property_names named vector of columns of the spatial data frame to use for channel properties
+        #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
+        #'
+        #' @details Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
+        #' The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+        #'
+        #' @return suitable for chaining
+        add_channel = function(channel,property_names=c(length="length",
+                                                        startNode="startNode",
+                                                        endNode="endNode",
+                                                        width="width"),
+                               default_width=2){
+            
+            if("channel" %in% names(private$find_layer(TRUE))){
+                stop("The channel exists, start a new project")
+            }
+            private$apply_add_channel(channel,property_names,default_width)
+            invisible(self)
+        },
+        #' @description Add a layer of geographical information
+        #' @param raster_layer a RasterLayer object to add
+        #' @param layer_name name to give to the layer
+        #' @param check_name logical indicating if name should be checked against reserved names
+        #' @details The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
+        #' @return suitable for chaining
+        add_layer = function(file_path,layer_name){
+            layer_name <- as.character(layer_name)
+            file_path <- normalizePath(file_path)
+            
+            pos_val <- private$find_layer(TRUE)
+            ## check layer names is acceptable
+            if( layer_name %in% private$find_layer() ){ stop("Layer name is already in use") }
+            if( file_path %in% pos_val ){
+                stop("File already in use as layer", names(pos_val[pos_val==file_path]))
+            }
+
+            private$check_rst(file_path,layer_name)
+            private$meta$layers[[layer_name]] <- list(file=file_path,type="user")
+            private$write_meta()
+            invisible(self)
+        },
+        #' @description Get a layer of geographical information or a list of layer names
+        #' @param layer_name name of the layer give to the layer
+        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
+        get_layer = function(layer_name=character(0)){
+            pos_val <- private$find_layer(TRUE)
+            
+            ## handle case where a list of layers is requested
+            if( length(layer_name) == 0 ){
+                return( names(pos_val) )
+            }
+            ## check layer name exists
+            layer_name <- match.arg(layer_name,names(pos_val))
+            
+            ## make raster and return
+            fn <- pos_val[layer_name]
+            if(layer_name=="channel"){
+                return( raster::shapefile(fn) )
+            }else{
+                return( raster::raster(fn) )
             }
             
+        },
+        #' @description Plot a layer
+        #' @param layer_name the name of layer to plot
+        #' @param add_channel shouel the channel be added to the plot
+        #' @return a plot
+        plot_layer = function(layer_name,add_channel=TRUE){
+            lyr <- self$get_layer(layer_name)
+            raster::plot( lyr, main = layer_name)
+            if( add_channel ){
+                chn <- self$get_layer("channel")
+                raster::plot( chn, add=TRUE )
+            }
+        },
+
+        #' @description The sink filling algorithm of Planchona and Darboux 2001
+        #'
+        #' @param min_grad Minimum gradient between cell centres
+        #' @param max_it maximum number of replacement cycles
+        #' @param verbose print out additional diagnostic information
+        #' @param hot_start start from filled_dem if it exists
+        #' @details The algorithm implimented in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.
+        #'
+        sink_fill = function(min_grad = 1e-4,max_it=1e6,verbose=FALSE, hot_start=FALSE){
+            private$apply_sink_fill(min_grad,max_it,verbose,hot_start)
+            invisible(self)
+        },
+        #' @description Computes area maps and presence of channel in dem pixels
+        #'
+        #' @details The algorithm calculates the land and channel area for each DEM pixel assigning a channel_id to each pixel with a channel area.
+        compute_areas=function(){
+            private$apply_compute_areas()
+            invisible(self)
+        },
+        #' @description Computes statistics e.g. gradient, log(a/tanb) for raster cells
+        #'
+        #' @param min_grad gradient that can be assigned to a pixel if it can't be computed
+        #' @param verbose print out additional diagnostic information
+        #'
+        #' @details The algorithm passed through the cells in decreasing height. Min grad is applied to all cells. It is also used for missing gradients in pixels which are partially channel but have no upslope neighbours.
+        compute_properties = function(min_grad = 1e-4,verbose=FALSE){
+            private$apply_compute_properties(min_grad,verbose)
+            invisible(self)
+        },
+        #' @description Computes flow length for each pixel to the channel
+        #'
+        #' @details The algorithm passed through the cells in increaing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow diection with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+        compute_flow_lengths = function(verbose=FALSE){
+            private$apply_flow_lengths(verbose)
+            invisible(self)
+        }, 
+        #' @description Create a catchment classification based on any number of landscape layer cuts or burns
+        #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
+        #' @param burns a vector of layer names which are to be burnt on
+        #'
+        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Not that cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        classify = function(layer_name,cuts,burns=NULL){
+            private$apply_classify(cuts,burns,layer_name)
+            invisible(self)
+        },
+
+        #' @description Compute a Dynamic TOPMODEL
+        #'
+        #' @param class_layer the layer defining the topographic classes
+        #' @param dist_layer the layer dfining the disatance to the channel
+        #' @param brk breaks for cutting up the distance layer - see classify
+        #' @param layer_name name for the new model and layers
+        #' @param delta_min see details
+        #' @param verbose print more details of progress
+        #'
+        #' @details The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min. 
+        #' @param verbose print out additional diagnostic information        
+        create_model = function(class_layer,dist_layer,brk,layer_name,
+                                delta_min=sqrt(sum(private$meta$resolution^2)),
+                                verbose=FALSE){
+            private$apply_create_model(class_layer,dist_layer,brk,layer_name,delta_min,verbose)            
+            invisible(self)
+        },
+        #' @description Compute HSU fractional inputs
+        #'
+        #' @param hsu_layer layer of the model
+        #' @param input_raster raster of values containing the input class
+        #' @param hsu_label string containing the label to add the values of hsu_layer
+        #' @param input_label string containing the label to add the values of input_layer
+        #'
+        #' @details Fractions are computed for all HSUs (including the channel) using raster::crosstab. It does not accout for unequal cells areas or HSUs which only cover a fraction of a cell
+        input_frac = function(hsu_layer,input_layer,hsu_label="hsu_",input_label=""){
+            private$apply_input_frac(hsu_layer,input_layer,hsu_label,input_label)
+        },            
+        #' @description get the version number
+        #' @return a numeric version number
+        #' @details teh version number indicates the version of the algorithms within the object
+        get_version = function(){
+            private$version
+        },
+        #' @description get the cuts and burns used to classify
+        #' @return a list with two elements, cuts and burns
+        get_class_method = function(layer_name){
+            layer_name <- match.arg(layer_name,private$find_layer())
+            if( private$meta$layers[[layer_name]]$type == "classification" ){
+                private$meta$layers[[layer_name]]$method
+            }else{
+                stop(layer_name," is not a classification")
+            }
+        },
+        
+        #' @description DEPRECIATED Get the model is a form suitable for dynatop
+        #' @return a Dynamic TOPMODE description suitable for the \code{dyantop} package
+        get_model = function(){
+            stop("This function is depreciated - model is written out on generation")
+        },
+        #' @description DEPRECIATED Plot the spatial properties of a model
+        #' @param add_channel should the channel be added to the plot
+        plot_model = function(add_channel=TRUE){
+            stop("This function is depreciated\n",
+                 " - use $plot_layer(<layer_name>) where layer_name is name of the model"
+                 )
+        },
+        #' @description DEPRECIATED Return the index of neighbouring cells
+        #' @param x index of cells for which to find neighbours
+        #' @return a list of indexes of neighbours
+        neighbour = function(x){
+            stop("Function is depreciated")
+        },
+        #' @description DEPECIATED Get a classification layer of geographical information or a list of layer names
+        #' @param layer_name name of the layer give to the layer
+        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
+        get_class = function(layer_name){
+            stop("This function is no longer valid: \n",
+                 " - use $get_layer(<layer_name>) to see output \n",
+                 " - use $geta_class_method(<layer_name>) to see the splits and cuts")
+        },
+        
+        #' @description DEPECIATED Plot a classification layer
+        #' @param layer_name the name of layer to plot
+        #' @param add_channel shouel the channel be added to the plot
+        #' @return a plot
+        plot_class = function(layer_name="final",add_channel=TRUE){
+            warning("This function is no longer valid",
+                    "- use $plot_layer(<layer_name>) to see output")
+            self$plot_layer(layer_name,add_channel)
+        },
+        #' @description DEPRECIATED Get the channel description
+        #' @return an SpatialPolygonDataFrame containing the channels 
+        get_channel = function(){
+            warning("$get_channel() Depreciated use $get_layer('channel')")
+            self$get_layer("channel")
+        }
+               
+    ),
+    private = list(
+        version = "0.2.0.9010",
+        wdir=character(0),
+        meta_path = character(0),
+        meta=list(
+            crs=character(0),
+            extent=numeric(0),
+            resolution=numeric(0),
+            layers= list(
+                dem = list(type="reserved",file=character(0)),
+                channel = list(type="reserved",file=character(0)),
+                filled_dem = list(type="reserved",file=character(0)),
+                land_area = list(type="reserved",file=character(0)),
+                channel_area = list(type="reserved",file=character(0)),
+                channel_id = list(type="reserved",file=character(0)),
+                gradient = list(type="reserved",file=character(0)),
+                upslope_area = list(type="reserved",file=character(0)),
+                contour_length = list(type="reserved",file=character(0)),
+                atb = list(type="reserved",file=character(0)),
+                band = list(type="reserved",file=character(0)),
+                shortest_flow_length = list(type="reserved",file=character(0)),
+                dominant_flow_length = list(type="reserved",file=character(0)),
+                expected_flow_length = list(type="reserved",file=character(0))
+            )
+        ),
+        make_filename = function(fn,is_shp=FALSE){
+            if(!is_shp){
+                return( file.path(private$wdir,paste0(fn,'.tif')) )
+            }else{
+                return( file.path(private$wdir,paste0(fn,'.shp')) )
+            }
+        },
+        read_meta = function(){
+            #browser()
+            if(!file.exists(private$meta_path)){ stop("Missing metadata file") }
+            meta <- jsonlite::fromJSON(private$meta_path)            
+            if(length(meta$crs)>0){meta$crs <- crs(meta$crs)}
+            if(length(meta$extent)>0){meta$extent <- extent(meta$extent)}
+            private$meta <- meta
+        },
+        write_meta = function(){
+            meta <- private$meta
+            meta$crs <- crs(meta$crs,asText=TRUE)
+            if("Extent" %in% class(meta$extent)){
+                meta$extent <- c(meta$extent@xmin,meta$extent@xmax,meta$extent@ymin,meta$extent@ymax)
+            }
+            writeLines(jsonlite::toJSON(meta,null="null",pretty=TRUE),
+                       file.path(private$meta_path))
+        },
+        find_layer = function(file_name=FALSE){
+            if(file_name){
+                unlist(sapply(private$meta$layers,function(x){as.character(x$file)}))
+            }else{
+                names(private$meta$layers)
+            }
+        },
+        
+                
+        ## check raster layer
+        check_rst = function(fn,nm){
+            rst <- fn
+            if(!("RasterLayer" %in% class(fn))){ rst <- raster::raster(fn) }
+            if(!("RasterLayer" %in% class(rst))){ stop(nm," is not a RasterLayer") }
+            
+            if(!compareCRS(rst,private$meta$crs)){ stop(nm," projection does not match meta data") }
+            if(!(extent(rst)==private$meta$extent)){ stop(nm," extent does not match meta data") }
+            if(!all(res(rst)==private$meta$resolution)){ stop(nm," resolution does not match meta data") }
+            NULL
+        },
+        ## function to check meta data
+        check_meta = function(verbose){
+            ## browser()
+            private$read_meta()
+            ## TODO
+            warning("No checks on the meta are currently performed")
+        },
+
+        ## adding dem
+        apply_add_dem = function(dem,fill_na,verbose){
+            
+            if("dem" %in% names(private$find_layer(TRUE))){
+                stop("The DEM exists, start a new project")
+            }
+
+            if(!("RasterLayer" %in% class(dem))){
+                ## then dem should be a character string points to the file
+                dem <- as.character(dem)
+                if(file.exists(as.character(dem))){
+                    dem <- raster::raster(dem)
+                }else{
+                    stop("dem should be either a RasterLayer or the path to a file which can be read as a RasterLayer")   
+                }
+            }
+            
+            ## add to ensure NA on each edge
+            dem <- extend(dem,c(1,1),NA)
             ## check the projection is OK
             if( !all.equal(diff(raster::res(dem)),0) | raster::isLonLat(dem) ){
                 stop("Processing currently only works on projected dem's with a square grid")
@@ -34,763 +388,782 @@ dynatopGIS <- R6::R6Class(
                 na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
                 dem[!is.na(na_clumps)] <- -Inf # set to low value to indicate missing
             }
-            
-            ## populate the data storage
-            private$scope <- list(crs = raster::crs(dem),
-                                  ext = raster::extent(dem),
-                                  res = raster::res(dem),
-                                  dim = dim(dem)[1:2])
-            
-            private$layers=list() # this will clear other data
-            private$layers$dem <- raster::getValues(dem)
-            private$layers$land_area <- rep(prod(private$scope$res),length(private$layers$dem))*(private$layers$dem>-Inf)
-            
-            ## return so can be chained
-            invisible(self)
-        },
-        #' @description Add a layer of geographical information
-        #' @param raster_layer a RasterLayer object to add
-        #' @param layer_name name to give to the layer
-        #' @param check_name logical indicating if name should be checked against reserved names
-        #' @details The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.
-        #' @return suitable for chaining
-        add_layer = function(raster_layer,layer_name,check_name=TRUE){
-            ## check it is a RasterLayer
-            if(!("RasterLayer" %in% class(raster_layer))){
-                stop("raster_layer should be a RasterLayer")
-            }
-            ## check crs etc
-            if( !compareCRS(crs(raster_layer),private$scope$crs) ){stop("Projection of Rasterlayer does not match")}
-            if( raster::extent(raster_layer) != private$scope$ext ){stop("Extent of Rasterlayer does not match")}
-            if( !all(raster::res(raster_layer) == private$scope$res) ){stop("Resolution of Rasterlayer does not match")}
 
-            ## check name
-            if(check_name){
-                layer_name <- as.character(layer_name)
-                if( layer_name %in% private$reserved_layer_names ){stop("Layer name is reserved")}
-                if( layer_name %in% names(private$layers) ){stop("Layer name is already in use")}
-            }
-                
-            ## add layer
-            private$layers[[layer_name]] <- raster::getValues(raster_layer)
             
-            invisible(self)
-        }, 
-        #' @description Get a layer of geographical information or a list of layer names
-        #' @param layer_name name of the layer give to the layer
-        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
-        get_layer = function(layer_name=character(0)){
-            poss_val <- names(private$layers)
-            ## handle case where a list of layers is requested
-            if( length(layer_name) == 0 ){
-                return( poss_val )
-            }
-            ## check layer name exists
-            layer_name <- match.arg(layer_name,poss_val)
-            ## if( !(layer_name %in% names(private$layers)) ){
-            ##     stop("Requested layer name does not exist")
-            ## }
-            ## make raster and return
-            raster(crs = private$scope$crs,
-                   ext = private$scope$ext,
-                   resolution = private$scope$res,
-                   vals = private$layers[[layer_name]])
-        },
-        #' @description Plot a layer
-        #' @param layer_name the name of layer to plot
-        #' @param add_channel shouel the channel be added to the plot
-        #' @return a plot
-        plot_layer = function(layer_name,add_channel=TRUE){
-            layer_name <- match.arg(layer_name,self$get_layer())
-            raster::plot( self$get_layer(layer_name),
-                         main = layer_name)
-            if( add_channel ){ raster::plot( self$get_channel(), add=TRUE ) }
-        },
-        #' @description Import channel data from an OGR file to the `dynatopGIS` object
-        #'
-        #' @param sp_object a spatialLinesDataFrame containing the channel information
-        #' @param property_names named vector of columns of the spatial data frame to use for channel properties
-        #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
-        #'
-        #' @details Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
-        #' The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
-        #'
-        #' @return suitable for chaining
-        add_channel = function(sp_object,property_names=c(length="length",
-                                                           startNode="startNode",
-                                                           endNode="endNode",
-                                                           width="width"),default_width=2){
-            
-            ## check sp_object is a SpatialLinesDataFrame
-            if(!is(sp_object,"SpatialLinesDataFrame") && !is(sp_object,"SpatialPolygonsDataFrame")){
-                stop("sp_object is not a spatial lines or polygon data frame object (even when read in)")
-            }
-            
-            ## check project of the sp_object
-            if( !compareCRS(crs(sp_object),private$scope$crs) ){
-                stop("Projection of channel object does not match")
-            }
-            
-            ## check property_names is of correct type
-            if(!is.vector(property_names) ||
-               length(names(property_names))!=length(property_names) ){
-                stop("property_names of wrong type")
-            }
+            if(length(private$meta$crs)==0){ private$meta$crs = crs(dem) }
+            if(length(private$meta$extent)==0){ private$meta$extent <- extent(dem) }
+            if(length(private$meta$resolution)==0){ private$meta$resolution <- res(dem) }
+            private$check_rst(dem,"DEM")
 
-            ## check we have correct names
+            fn <- private$make_filename("dem")
+            writeRaster(dem,fn); private$meta$layers[["dem"]]$file <- fn
+            private$write_meta()
+        },
+
+        ## add the channel
+        apply_add_channel = function(sp_object,property_names,default_width){
+            ##browser()
+            ## check property_names
             if( !all( c("length","startNode","endNode") %in% names(property_names)) ){
                 stop("A required property name is not specified")
             }
+
+            if(!is(sp_object,"SpatialLinesDataFrame") && !is(sp_object,"SpatialPolygonsDataFrame")){
+                ## then sp_object should be a character string points to the file
+                sp_object <- as.character(sp_object)
+                if(file.exists(as.character(sp_object))){
+                    sp_object <- raster::shapefile(sp_object)
+                }else{
+                    stop("sp_object is not a spatial lines or polygon data frame object (even when read in)")
+                }
+            }
+
+            ## populate meta data from channel if missing
+            if(length(private$meta$crs)==0){ private$meta$crs = crs(sp_object) }
             
+            ## check project of the sp_object
+            if( !compareCRS(crs(sp_object),private$meta$crs) ){
+                stop("Projection of channel object does not match")
+            }
+                        
             ## check if there is an id feild which will be overwritten
-            if( ("id" %in% names(property_names)) ){
-                warning("The name id is reserved and will be overwritten")
-                property_names <- property_names[-"id"]
+            if( ("id" %in% names(sp_object)) ){
+                warning("The name id is reserved and will be overwritten",
+                        "Original id values moved to original_id")
+                sp_object[["original_id"]] <- sp_object[["id"]]
             }
-            
-            ## see if all names exist
-            if(!all( property_names %in% names(sp_object))){
-                stop("Not all feilds names in property_names are in sp_object")
+
+            ## ensure correct columns are in the sp_object
+            sp_object[["id"]] <- 1:length(sp_object)
+            for(ii in names(property_names)){
+                sp_object[[ii]] <- sp_object[[property_names[ii]]]
             }
-            
-            ## create channel object
-            chn <- sp_object
-            chn <- chn[,property_names]
-            names(chn) <- names(property_names)
-            chn[['id']] <- 1:length(chn)
-            
+
             ## convert factors to strings
-            idx <- sapply(chn@data, is.factor)
-            chn@data[idx] <- lapply(chn@data[idx], as.character)
-            
-            if(!is(chn,"SpatialPolygonsDataFrame")){
-                if(!("width" %in% names(chn))){
+            idx <- sapply(sp_object@data, is.factor)
+            sp_object@data[idx] <- lapply(sp_object@data[idx], as.character)
+
+            ## add width if required
+            if(!is(sp_object,"SpatialPolygonsDataFrame")){
+                if(!("width" %in% names(sp_object))){
                     warning("Modifying to spatial polygons using default width")
-                    chn[['width']] <- default_width
+                    sp_object[['width']] <- default_width
                 }else{
                     warning("Modifying to spatial polygons using provided width")
                 }
                 
                 ## buffer to convert to spatial polygons object
-                chn <- rgeos::gBuffer(chn, byid=TRUE, width=chn[['width']])
+                sp_object <- rgeos::gBuffer(sp_object, byid=TRUE, width=sp_object[['width']])
             }
 
-            ## store channel
-            private$channel <- chn
+            file_name <- private$make_filename("channel",TRUE)
+            raster::shapefile(sp_object,file_name)
+            private$meta$layers[["channel"]]$file <- file_name
+            private$write_meta()
+        },
 
-            private$apply_add_channel()
-            ## return so can be chained
-            invisible(self)
-        },
-        #' @description Get the channel description
-        #' @return an SpatialPolygonDataFrame containing the channels 
-        get_channel = function(){
-            private$channel
-        },
-        #' @description The sink filling algorithm of Planchona and Darboux 2001
-        #'
-        #' @param min_grad Minimum gradient between cell centres
-        #' @param max_it maximum number of replacement cycles
-        #' @param verbose print out additional diagnostic information
-        #' @param hot_start start from filled_dem if it exists
-        #' @details The algorithm implimented in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.
-        #'
-        sink_fill = function(min_grad = 1e-4,max_it=1e6,verbose=FALSE, hot_start=FALSE){
-            ## check for a required layers
-            rq <- c("dem","channel_id","land_area")
-            if(hot_start){rq <- c(rq,"filled_dem")}
-            if(!all(rq %in% names(private$layers))){
-                stop(paste(c("Algorithm requires the following layers",rq),
-                           collapse=" "))
+        ## calculate area maps
+        apply_compute_areas = function(){
+            
+            rq <- c("dem","channel")
+            pos_val <- private$find_layer(TRUE)
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop("Missing files:\n",paste(rq[!has_rq],sep="\n"))
             }
-                
-            private$apply_sink_fill(min_grad,max_it,verbose,hot_start)
-            invisible(self)
-        },
-        #' @description Computes statistics e.g. log(a/tanb) for raster cells
-        #'
-        #' @param missing_grad gradient that can be assigned to a pixel if it can't be computed
-        #' @param verbose print out additional diagnostic information
-        #' @details The algorithm works in two passes. The first computes the number of upstream pixels and values that do not depend on ordering. The second sequences downslope to compute values. Missing gradient is only used for pixels which are partially channel but have no upslope neighbours.
-        compute_properties = function(missing_grad = 1e-4,verbose=FALSE){
-            rq <- c("filled_dem","channel_id",
-                    "land_area","channel_area")
-            if(!all(rq %in% names(private$layers))){
-                stop(paste(c("Algorithm requires the following layers",rq),
-                           collapse=" "))
-            }
-            private$apply_compute_properties(missing_grad,verbose)
-            invisible(self)
-        },
-        #' @description Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layer cuts or burns
-        #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
-        #' @param burns a vector of layer names which are to be used as burns
-        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Changing teh classification removes the current model ensuring the two are always syncronised.
-        classify = function(cuts,burns=NULL){
+            
+            dem <- raster::raster(pos_val["dem"])
+            chn <- raster::shapefile(pos_val["channel"])
 
-            ## check cuts
-            cuts <- as.list(cuts)
-            cuts <- lapply(cuts,FUN=function(x){as.numeric(x)})
-            cut_names<- names(cuts)
-            if( length(cut_names) != length(cuts) ){
-                stop("Unnamed layers in the cuts")
-            }
-            all_names <- c(burns,cut_names)
-            if( length(all_names)!=length(unique(all_names)) ){
-                stop("Layer names can not be repeated")
-            }
-            if( "band" %in% all_names ){
-                stop("The band can only be used in classification when generating the model")
-            }
-            
-            if( !all(all_names %in% names(private$layers)) ){
-                stop(paste( "Missing layers:",
-                           paste(setdiff(cut_names,names(private$layers)),collapse=" ")))
-            }
-            
-            private$apply_classify(cuts,burns)
-            invisible(self)
-        },
-        #' @description Get a classification layer of geographical information or a list of layer names
-        #' @param layer_name name of the layer give to the layer
-        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
-        get_class = function(layer_name=character(0)){
-            poss_val <- c("final",names(private$class$partial))
-            if( length(layer_name) == 0){
-                return(poss_val)
-            }
-            layer_name <- match.arg(layer_name,poss_val)
-            if(layer_name == "final"){
-                x <- private$class$total
-            }else{
-                x <- private$class$partial[[layer_name]]
-            }
-            ## make raster and return
-            raster(crs = private$scope$crs,
-                   ext = private$scope$ext,
-                   resolution = private$scope$res,
-                   vals = x)
-        },
-        #' @description Plot a classification layer
-        #' @param layer_name the name of layer to plot
-        #' @param add_channel shouel the channel be added to the plot
-        #' @return a plot
-        plot_class = function(layer_name="final",add_channel=TRUE){
-            layer_name <- match.arg(layer_name,self$get_class())
-            raster::plot( self$get_class(layer_name) ,
-                         main=layer_name)
-            if( add_channel ){ raster::plot( self$get_channel(), add=TRUE ) }
-        },
-        
-        #' @description Compute a Dynamic TOPMODEL
-        #' @param band How to cut the bands into the model, interpreted as for a cut in the classify method
-        #' @param verbose print out additional diagnostic information        
-        create_model = function(band=5,verbose=FALSE){
-            if( length(private$class$total) != length(private$layers$dem) ){
-                stop("There is no valid classification")
-            }            
-            private$apply_create_model(as.numeric(band),verbose)
-            
-            invisible(self)
-        },
-        #' @description Get the model is a form suitable for dynatop
-        #' @return a Dynamic TOPMODE description suitable for the \code{dyantop} package
-        get_model = function(){
-            private$model
-        },
-        #' @description Plot the spatial properties of a model
-        #' @param add_channel should the channel be added to the plot
-        plot_model = function(add_channel=TRUE){
-            raster::plot( raster(crs = private$model$map$scope$crs,
-                                 ext = private$model$map$scope$ext,
-                                 resolution = private$model$map$scope$res,
-                                 vals = private$model$map$hillslope) )
-            if( add_channel ){
-                raster::plot( raster(crs = private$model$map$scope$crs,
-                                     ext = private$model$map$scope$ext,
-                                     resolution = private$model$map$scope$res,
-                                     vals = private$model$map$channel) ,add=TRUE)
-            }
-            
-        },
-        #' @description Return the index of neighbouring cells
-        #' @param x index of cells for which to find neighbours
-        #' @return a list of indexes of neighbours
-        neighbour = function(x){
-            ## check if data loaded
-            lapply(x,function(i){private$fN(i)$idx})
-        },
-        #' @description get the cuts and burns used to classify
-        #' @return a list with two elements, cuts and burns
-        get_class_method = function(){
-            private$class$method
-        },
-        
-            
-        #' @description get the version number
-        #' @return a numeric version number
-        #' @details teh version number indicates the version of the algorithms within the object
-        get_version = function(){
-            private$version
-        }
-               
-    ),
-    private = list(
-        version = "0.2.0.9001",
-        reserved_layer_names=c("dem","filled_dem","land_area",
-                               "channel_area","channel_id",
-                               "atanb","gradient","upslope_area","band","final",
-                               "contour_length"),
-        scope=list(),
-        layers=list(),
-        class=list(total=NULL,
-                   method=list(),
-                   partial=list()),
-        channel=NULL,
-        model=NULL,
-        
-        apply_add_channel = function(){
-            ## create a land area raster
-            land_area <- self$get_layer("land_area")
+            ## compute land area ignoring channels
+            land_area <- raster::area(dem, na.rm=TRUE)
+            ## compute the areas taken up by the channels
+            ch_area <- raster::area(chn) # areas of river channels
             
             ## extract cells index, and fraction of river area in cell
-            ch_cell<- raster::extract(land_area,private$channel,weights=TRUE,cellnumbers=TRUE,na.rm=TRUE)
+            ch_cell<- raster::extract(land_area,chn,weights=TRUE,
+                                      cellnumbers=TRUE,na.rm=TRUE)
+
+            
+            ## initialise the final rasters
+            channel_area <- dem; channel_area[!is.na(dem)] <- 0
+            channel_id <- dem*NA
 
             ## Loop and add the chanel id and channel area
-            ch_area <- raster::area(private$channel) # areas of river channels
-            
             for(ii in 1:length(ch_cell)){
-                ch_cell[[ii]] <- data.frame( id = private$channel[['id']][ii],
-                                            land_area = ch_cell[[ii]][,'value'],
-                                            channel_area = ch_area[ii]*ch_cell[[ii]][,'weight'],
-                                            cell = ch_cell[[ii]][,'cell'],
-                                            stringsAsFactors=FALSE)
+                idx <- ch_cell[[ii]][,'cell']
+                la <- ch_cell[[ii]][,'value']
+                ca <- ch_area[ii]*ch_cell[[ii]][,'weight']
+                ca <- pmin(ca,la)
+                jdx <- !is.na(channel_area[idx]) & (ca > channel_area[idx])
+                channel_area[ idx[jdx] ] <- ca[jdx]
+                channel_id[ idx[jdx] ] <- chn[["id"]][ii]
             }
-            
-            ## merge the list
-            ch_cell <- do.call(rbind,ch_cell)
 
-            ## remove all without land area - this allows us to keep channels going outside the dem
-            ch_cell <- ch_cell[is.finite(ch_cell$land_area),]
+            ## correct land area
+            land_area <- land_area - channel_area
             
-            
-            ## assign the cells with multiple chanel id to the
-            ## one with the largest area in the cell (equals returns first in list)
-            ch_cell <- do.call(rbind,
-                               lapply(split(ch_cell,ch_cell$cell),
-                                      function(chunk) chunk[which.max(chunk$channel_area),]))
-
-            ## make land an channel area in ch_cell consistent
-            ch_cell[,'channel_area'] <- pmin( ch_cell[,'channel_area'], ch_cell[,'land_area'] )
-            ch_cell[,'land_area'] <- ch_cell[,'land_area'] - ch_cell[,'channel_area']
-            
-            ## add to the catchment
-            private$layers$channel_area <- rep(0,prod(private$scope$dim))
-            private$layers$channel_id <- rep(NA,prod(private$scope$dim))
-            private$layers$land_area[ch_cell$cell] <- ch_cell$land_area
-            private$layers$channel_area[ch_cell$cell] <- ch_cell$channel_area
-            private$layers$channel_id[ch_cell$cell]  <- ch_cell$id
+            ## write out rasters
+            fn <- private$make_filename("land_area")
+            writeRaster(land_area,fn); private$meta$layers[['land_area']]$file <- fn
+            fn <- private$make_filename("channel_area")
+            writeRaster(channel_area,fn); private$meta$layers[['channel_area']]$file <- fn
+            fn <- private$make_filename("channel_id")
+            writeRaster(channel_id,fn); private$meta$layers[['channel_id']]$file <- fn
+            private$write_meta()
         },
+
+        ## Sink fill
+        ## TODO: this is not handling is_valid as for original looping algorithm
+        ## this would make it much more efficent
         apply_sink_fill = function(min_grad,max_it,verbose,hot_start){
-            is_channel <- is.finite(private$layers$channel_id)
-            ## extract dem and channel_id values
-            if(hot_start){
-                w <- private$layer$filled_dem
-            }else{
-                w <- private$layers$dem # initialise as DEM
-                w[!is.na(w)] <- Inf # set all values that should be finite to Inf
-                ## set all finite heights in channel pixels to initialise
-                idx <- is_channel & is.finite( private$layers$dem )
-                w[idx] <- private$layers$dem[idx] 
-            }
             
-            is_valid <- is.finite(w) # TRUE if a finite value
-            to_be_valid <- !is.na(w) # all values not NA should have a valid height
-
-            ## work out cells that could be evaluated
-            to_eval <- to_be_valid & !is_valid ## initalise as all cells that need to be valid and aren't
-            for(ii in which(to_eval)){
-                ## set to false all those that are not neighbours to valid cells
-                jj <- private$fN(ii)$idx
-                to_eval[ii] <- any(is_valid[jj])
+            rq <- ifelse(hot_start,
+                         c("filled_dem","channel_id"),
+                         c("dem","channel_id"))
+            pos_val <- private$find_layer(TRUE)
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop("Not all required input files have been generated \n",
+                     "Try running compute_areas first")
             }
 
+            d <- raster::raster(pos_val[rq[1]])
+            ch <- raster::raster(pos_val["channel_id"])
+
+            rfd <- d ## initialise the output
+
+            ## convert to matrices - much quicker but will fail for large dem's
+            d <- as.matrix(d)
+            ch <- as.matrix(ch)
+
+            ## values that should be valid
+            to_be_valid <- !is.na(d) & is.na(ch)  # all values not NA should have a valid height
+            is_valid <- is.finite(ch) & !is.na(d) # TRUE if a channel cell for initialisation
+            changed <- is_valid # cells changed at last iteration
+            fd <- to_be_valid*Inf; fd[is_valid] <- d[is_valid]
+            to_eval <- d; to_eval[] <- FALSE
+
+            ## distance between cell centres
+            dxy <- matrix(sqrt(sum(private$meta$resolution^2)),3,3)
+            dxy[1,2] <- dxy[3,2] <- private$meta$resolution[2]
+            dxy[2,1] <- dxy[2,3] <- private$meta$resolution[1]
+            dxy[2,2] <- 0
+            dxy <- min_grad*dxy
             
-                
-            something_done <- TRUE
             it <- 1
-            eflag <- FALSE
-            while(something_done){
-                something_done <- FALSE
-                idx <- which(to_eval)
-                if( verbose ){
-                    cat("Iteration",it,"\n")
-                    cat("\t","Cells to evaluate:",length(idx),"\n")
-                    cat("\t","Percentage Complete:",
-                        round(100*sum(is_valid)/sum(to_be_valid),1),"\n")
-                }
-                                
-                for(ii in idx){
-                    fn <- private$fN(ii)
-                    ## find minimum height that cell should be
-                    w_min <- min(w[fn$idx]+fn$dx*min_grad,na.rm=TRUE)
-                    if(!is.finite( private$layers$dem[ii] - w_min )){
-                        browser()
-                    }
-                    if( private$layers$dem[ii] > w_min ){
-                        ## set to private$layers$dem and leave
-                        w[ii] <- private$layers$dem[ii]
-                        something_done <- TRUE
-                        is_valid[ii] <- TRUE
-                    }else{
-                        if( w[ii] > w_min ){
-                            w[ii] <- w_min
-                            something_done <- TRUE
-                        }
-                    }
-                    to_eval[fn$idx] <- TRUE
-                }
-                to_eval[is_valid] <- FALSE
-                to_eval[!to_be_valid] <- FALSE
-                
-                if( it > max_it ){
-                    eflag <- TRUE
-                    something_done <- FALSE # cause end of while loop
-                }
-                it <- it+1 
-            }
-            
-            ## copy back into storage
-            private$layers$filled_dem <- w
-            
-            if(eflag){ stop("Maximum number of iterations reached, sink filling not complete") }
+            ## start of iteration loop
+            while(any(changed[]) & it<=max_it){
 
+                ## work out all the the cells to evaluate
+                ## should be next to those that are changed
+                to_eval[] <- FALSE
+                idx <- which(changed,arr.ind=TRUE) # index of changed cells
+                jdx <- idx
+                for(ii in c(-1,0,1)){
+                    for(jj in c(-1,0,1)){
+                        if(ii==0 & jj==0){next}
+                        ## adjust jdx
+                        jdx[,1] <- idx[,1]+ii
+                        jdx[,2] <- idx[,2]+jj
+                        to_eval[jdx] <- !is_valid[jdx] #TRUE
+                    }
+                }
+                to_eval <- to_eval & to_be_valid #& !is_valid
+                cat("Iteration",it,"\n")
+                cat("\t","Cells to evaluate:",sum(to_eval),"\n")
+                cat("\t","Percentage Complete:",
+                    round(100*sum(is_valid)/sum(!is.na(d)),1),"\n") #to_be_valid),1),"\n")
+                
+                ## alter min value for the evaluation cells
+                idx <- which(to_eval,arr.ind=TRUE) # index of changed cells
+                jdx <- idx
+                mind <- rep(Inf,nrow(idx))
+                for(ii in c(-1,0,1)){
+                    for(jj in c(-1,0,1)){
+                        if(ii==0 & jj==0){next}
+                        ## adjust jdx
+                        jdx[,1] <- idx[,1]+ii
+                        jdx[,2] <- idx[,2]+jj
+                        mind <- pmin(mind,fd[jdx] + dxy[ii+2,jj+2],na.rm=TRUE)
+                    }
+                }
+                changed[] <- FALSE
+                is_valid[idx] <- d[idx]>mind ## cells where the dem value is valid
+                mind <- pmax(d[idx],mind) ## mind is now the replacemnt value
+                changed[idx] <- mind < fd[idx]
+                fd[idx] <- mind
+                
+                ## mind <- pmax(d[idx],mind)
+                ## cdx <- mind < fd[idx]
+                ## fd[idx] <- mind
+                ## changed[] <- FALSE
+                ## changed[idx[cdx,,drop=FALSE]] <- TRUE
+                ## is_valid[idx] <- TRUE
+                ## end of loop
+                it <- it+1
+            }
+
+            rfd[] <- fd
+            ## write out filled dem
+            fn <- private$make_filename("filled_dem")
+            writeRaster(rfd,fn); private$meta$layers[['filled_dem']]$file <- fn
+            private$write_meta()
+            
+            if(it>max_it){ stop("Maximum number of iterations reached, sink filling not complete") }
+            
         },
 
         ## Function to compute the properties
-        apply_compute_properties = function(missing_grad,verbose){
+        apply_compute_properties = function(min_grad,verbose){
 
-            ## create a list to store items used in verbose printing
-            ## stop them getting used elsewhere
-            verbose <- list(flag=verbose,
-                            cnt=0,
-                            print_at=0)
-
-            ## initialise the new layers to be generated
-            new_layers <- list()
-            new_layers$gradient <- new_layers$atanb <- rep(NA,prod(private$scope$dim))
-            new_layers$upslope_area <- private$layers$land_area
+            rq <- c("filled_dem","channel_id","land_area")
+            pos_val <- private$find_layer(TRUE)
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop("Not all required input files have been generated \n",
+                     "Try running compute_areas first and sink_fill first")
+            }
             
-            new_layers$band <- as.integer(is.finite(private$layers$land_area)) # 1 or 0
-            new_layers$band[new_layers$band==0] <- NA
-            
-            ## in principle the filled_Dem is ordered so that all water flows from high to low
-            ## by passing down the cells from high to low we should be able to compute all values
-            ## index all cells with land_area in decreasing order of altitude
-            idx <- order(private$layers$filled_dem,decreasing=TRUE,na.last=NA)
-            idx <- idx[ private$layers$land_area[idx]>0 ]
+            ## load rasters
+            d <- raster::raster(pos_val["filled_dem"])
+            ch <- raster::raster(pos_val["channel_id"])
+            la <- raster::raster(pos_val["land_area"])
 
-            if(verbose$flag){
-                verbose$print_at = floor(quantile(seq(1,length(idx)),seq(0.1,1,0.1)))
+            n_to_eval <- cellStats(is.finite(d),sum)
+            out <- d ## template for output
+            
+            ## it is quickest to compute using blocks of dem as a raster
+            ## however for small rasters we will just treat as a single block
+            ## assumes the raster is padded with NA
+            d <- as.matrix(d)
+            ch <- as.matrix(ch)
+            la <- as.matrix(la)
+
+            idx <- order(d,decreasing=TRUE,na.last=NA)
+            idx <- idx[ la[idx]>0 ]
+            
+            n_to_eval <- length(idx)
+            
+            ## distances and contour lengths
+            ## distance between cell centres
+            dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
+            dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
+            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+            nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+            
+            ## initialise output
+            gr <- cl <- atb <- d*NA
+            upa <- la
+
+            it <- 1
+            if(verbose){
+                print_step <- round(n_to_eval/20)
+                next_print <- print_step
             }
             
             for(ii in idx){
-                ## compute neighbouring cells - index, distance and contour length
-                ngh <- private$fN(ii)
-                ## work out if a channel
-                is_channel <- is.finite(private$layers$channel_id[ii]) ## work out if a channel
+                is_channel <- is.finite(ch[ii]) ## if a channel
+                ngh <- ii + delta ## neighbouring cells
                 
                 ## compute gradient
-                grd <- (private$layers$filled_dem[ii] - private$layers$filled_dem[ngh$idx])/ngh$dx
-
+                grd <- (d[ii]-d[ngh])/dxy
+                
                 ## process depending upon whether it is a channel cell...
                 if( is_channel ){
+                    ## TODO these cells should have ath and cl as well!!!
                     ## only need to evaluate gradient and atanb
                     ## cells that drain *into* the one being evaluated
                     to_use <- is.finite(grd) & (grd < 0) &
-                        !is.finite(private$layers$channel_id[ngh$idx])
+                        !is.finite(ch[ngh])
                     if(any(to_use)){
                         ## if upstream cells draining in
-                        new_layers$gradient[ii] <- -sum(grd[to_use]*ngh$cl[to_use]) / sum(ngh$cl[to_use])
+                        gr[ii] <- max(min_grad,-sum(grd[to_use]*dcl[to_use]) / sum(dcl[to_use]))
                     }else{
                         ## if no upstream cells set default gradient
-                        new_layers$gradient[ii] <- missing_grad
+                        gr[ii] <- min_grad
                     }
+                    cl[ii] <- dxy[1] # diagonal distance
+                    atb[ii] <- log( upa[ii] / gr[ii] )
                 }else{
                     ## is not a channel - need gradient and to pass area along
                     to_use <- is.finite(grd) & (grd > 0)
                     if(any(to_use)){
+                        gcl <- grd[to_use]*dcl[to_use]
                         ## gradient
-                        new_layers$gradient[ii] <- sum(grd[to_use]*ngh$cl[to_use]) /
-                            sum(ngh$cl[to_use])
+                        gr[ii] <- max(sum(gcl) / sum(dcl[to_use]),min_grad)
+                        ## contour length
+                        cl[ii] <- sum(dcl[to_use])
                         ## topographic index
-                        new_layers$atanb[ii] <- log( new_layers$upslope_area[ii] /
-                                                     sum(grd[to_use]*ngh$cl[to_use]) )
+                        atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
                         ## fraction of flow in each direction
-                        frc <- grd[to_use]*ngh$cl[to_use]
-                        frc <- frc/sum(frc)
+                        frc <- gcl/sum(gcl)
                         ## propogate area downslope
-                        new_layers$upslope_area[ ngh$idx[to_use] ]  <-
-                            new_layers$upslope_area[ ngh$idx[to_use] ] +
-                            frc*new_layers$upslope_area[ii]
-                        ## propogate band downslope
-                        new_layers$band[ ngh$idx[to_use] ] <- pmax(
-                            new_layers$band[ ngh$idx[to_use] ],
-                            new_layers$band[ii] + 1)
+                        
+                        upa[ ngh[to_use] ]  <- upa[ ngh[to_use] ] + frc*upa[ii]
                     }else{
                         ## a hillslope cell that drains nowhere - this is an error
                         stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
                     }    
                 }
-
+                
                 ## verbose output here
-                if(verbose$flag){
-                    verbose$cnt <- verbose$cnt+1
-                    if(  verbose$cnt %in% verbose$print_at ){
-                        cat(names(verbose$print_at)[verbose$print_at %in% verbose$cnt],
-                            " complete","\n")
-                    }
+                if(it >= next_print){
+                    cat(round(100*it / n_to_eval,1),
+                        "% complete","\n")
+                    next_print <- next_print+print_step
                 }
-
+                
+                it <- it+1
             }
             
-                
-                
-
-            ## ## initialise the local storage vectors
-            ## n_higher <- rep(NA,prod(private$scope$dim)) ## number of higher cells
-            ## grad_cl <- rep(NA,prod(private$scope$dim)) ## sum of gradient * contour length of flow paths
             
-            ## ## First pass to compute the number of higher cells
-            ## ## and variables that are not order specific
-            ## idx <- which(!is.na(private$layers$filled_dem))
 
-            ## if(verbose$flag){
-            ##     cat("Pass 1: Compute properties that are not order specific","\n")
-            ##     verbose$cnt <- 0
-            ##     verbose$print_at <- floor(quantile(seq(1,length(idx)),seq(0.1,1,0.1)))
-            ## }
- 
-            ## for(ii in idx){
-                
-            ##     tmp <- private$fstatic(ii,missing_grad,private$scope$res[1])
-                
-            ##     new_layers$gradient[ii] <- tmp$g
-            ##     n_higher[ii] <- tmp$nh
-            ##     grad_cl[ii] <- tmp$gcl
-            ##     new_layers$contour_length[ii] <- tmp$cl
-                
-            ##     if(verbose$flag){
-            ##         verbose$cnt <- verbose$cnt+1
-            ##         if(  verbose$cnt %in% verbose$print_at ){
-            ##             cat(names(verbose$print_at)[verbose$print_at %in% verbose$cnt],
-            ##                 " complete","\n")
-            ##         }
-            ##     }
-            ## }
+            ## write out raster maps
+            fn <- fn <- private$make_filename("gradient")
+            out[] <- gr; writeRaster(out,fn); private$meta$layers[['gradient']]$file <- fn
+            
+            fn <- private$make_filename("upslope_area")
+            out[] <- upa; writeRaster(out,fn); private$meta$layers[['upslope_area']]$file <- fn
+            
+            fn <- private$make_filename("contour_length")
+            out[] <- cl; writeRaster(out,fn); private$meta$layers[['contour_length']]$file <- fn
 
             
-            
-            
-            ## ## Second pass to compute ordered variables
-            ## if(verbose$flag){
-            ##     cat("Pass 2: Compute properties that are order specific","\n")
-            ##     verbose$cnt <- 0
-                
-            ##     ## print at the same as first pass
-            ## }
+            fn <- private$make_filename("atb")
+            out[] <- atb; writeRaster(out,fn); private$meta$layers[['atb']]$file <- fn
 
-            ## ## work down list of higher cells
-            ## idx <- which(n_higher==0)
-            ## cnt <- 0
-            ## while( length(idx)>0 ){
-            ##     cnt <- cnt + 1
-
-            ##     new_layers$band[idx] <- cnt
-            ##     n_higher[idx] <- -1
-            ##     idx_list <- list()
-            ##     icnt <- 0
-            ##     for(ii in idx){
-                    
-            ##         ## downstream cells and fractions
-            ##         fd <- private$fFD(ii)
-
-            ##         ## trim to those with areas
-            ##         to_use <- private$layers$land_area[fd$idx]>0
-
-                    
-            ##         kk <- fd$idx[to_use] # private$layers$flowDir[[ii]]$idx
-            ##         ff <- fd$frc[to_use] # private$layers$flowDir[[ii]]$frc
-                                        
-            ##         new_layers$upslope_area[kk] <- new_layers$upslope_area[kk] +
-            ##             new_layers$upslope_area[ii]*ff
-            ##         n_higher[kk] <- n_higher[kk] - 1
-
-            ##         ## since these have no known n_higher
-            ##         ## nk <- kk[private$layers$land_area[kk]>0]
-            ##         ## nk <- nk[n_higher[nk]==0]
-            ##         nk <- kk[n_higher[kk]==0]
-                    
-            ##         if(length(nk)>0){
-            ##             icnt <- icnt+1                        
-            ##             idx_list[[icnt]] <- nk
-            ##         }
-
-            ##         ## verbose printing
-            ##         if(verbose$flag){
-            ##             verbose$cnt <- verbose$cnt+1
-            ##             if(  verbose$cnt %in% verbose$print_at ){
-            ##                 cat(names(verbose$print_at)[verbose$print_at %in% verbose$cnt],
-            ##                     " complete","\n")
-            ##             }
-            ##         }
-                    
-            ##     }
-
-            ##     ## find next set of cells to evaluate
-            ##     idx <- unique(do.call(c,idx_list))
-
-            ## }
-            
-            ## compute topographic index from summaries
-            
-            ## new_layers$atanb <- log( new_layers$upslope_area / grad_cl )
-            if( any(new_layers$atanb==Inf,na.rm=TRUE) ){       
-                warning("None finite topographic index values produced - this requires investigation")
-            }
-
-            ## copy back into private store
-            for(ii in names(new_layers)){
-                private$layers[[ii]] <- new_layers[[ii]]
-            }
-
-            ## final bit of verbose printing
-            if(verbose$flag){
-                cat("Number of bands identified: ",max(new_layers$band,na.rm=TRUE),"\n")
-            }
+            private$write_meta()
         },
 
-        ## split_to_class
-        apply_classify = function(cuts,burns){
+        ## work out flow lengths
+        apply_flow_lengths = function(verbose){
+
+            rq <- c("filled_dem","channel_id","land_area")
+            pos_val <- private$find_layer(TRUE)
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop("Not all required input files have been generated \n",
+                     "Try running compute_areas first and sink_fill first")
+            }
+
+            ## load rasters
+            d <- raster::raster(pos_val["filled_dem"])
+            ch <- raster::raster(pos_val["channel_id"])
+            la <- raster::raster(pos_val["land_area"])
+
+            out <- d
+
+            ## convert to matrix for speed
+            d <- as.matrix(d)
+            ch <- as.matrix(ch)
+            la <- as.matrix(la)
             
-            ## work out new cuts by cantor_pairing
-            nms <- names(cuts)
-            for(ii in nms){
-                brk <- as.numeric(cuts[[ii]])
-                if( length(brk)==1 & is.na(brk[1]) ){
-                    x <- private$layers[[ii]]
+            ## create some distance matrices
+            sfl <- d; sfl[] <- NA
+            dfl <- d; dfl[] <- NA
+            efl <- d; efl[] <- NA
+            bnd <- d; bnd[] <- NA
+
+            ## distances and contour lengths
+            ## distance between cell centres
+            dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
+            dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
+            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+            nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+            
+            ## if we go up in height order then we must have looked at all lower
+            ## cells first
+            idx <- order(d,na.last=NA)
+            
+            n_to_eval <- length(idx)
+            it <- 1
+            if(verbose){
+                print_step <- round(n_to_eval/20)
+                next_print <- print_step
+            }
+            for(ii in idx){
+                if(is.finite(ch[ii])){
+                    ## it is a channel
+                    if(la[ii]>0){
+                        ## mixed cell
+                        bnd[ii] <- 1
+                        sfl[ii]  <- dfl[ii] <- efl[ii] <- sqrt(sum(private$meta$resolution^2))/2
+                    }else{
+                        ## just channel
+                        bnd[ii] <- 0
+                        sfl[ii]  <- dfl[ii] <- efl[ii] <- 0
+                    }
                 }else{
-                    x <- cut(private$layers[[ii]],breaks=brk,
-                             labels = FALSE)
+                    ## it is not a channel
+                    jdx <- ii+delta
+                    gcl <- (d[jdx]-d[ii])*dcl/dxy
+                    is_lower <- is.finite(gcl) & gcl<0
+                    kdx <- jdx[is_lower]
+                    bnd[ii] <- max(bnd[kdx])+1
+                    sfl[ii] <- min(sfl[kdx]+dxy[is_lower])
+                    efl[ii] <- sum((efl[kdx]+dxy[is_lower])*gcl[is_lower])/sum(gcl[is_lower])
+                    kdx <- which.min(gcl)
+                    dfl[ii] <- dfl[jdx[kdx]]+dxy[kdx]
                 }
-                private$class$partial[[ii]] <- x
-                if(ii == nms[1]){
+
+                ## verbose output here
+                if(it >= next_print){
+                    cat(round(100*it / n_to_eval,1),
+                        "% complete","\n")
+                    next_print <- next_print+print_step
+                }
+                
+                it <- it+1
+            }
+
+            ## set channel cells to NA
+            idx <- is.finite(ch) & !(la>0)
+            bnd[idx] <- sfl[idx] <- dfl[idx] <- efl[idx] <- NA
+            
+                        
+            ## write out raster files
+            fn <- private$make_filename("band")
+            out[] <- bnd; writeRaster(out,fn); private$meta$layers[['band']]$file <- fn
+            fn <- private$make_filename("shortest_flow_length")
+            out[] <- sfl; writeRaster(out,fn);
+            private$meta$layers[["shortest_flow_length"]]$file <- fn
+
+            fn <- private$make_filename("dominant_flow_length")
+            out[] <- dfl; writeRaster(out,fn);
+            private$meta$layers[['dominant_flow_length']]$file <- fn
+            
+            fn <- private$make_filename("expected_flow_length")
+            out[] <- efl; writeRaster(out,fn);
+            private$meta$layers[['expected_flow_length']]$file <- fn
+
+            private$write_meta()
+        },
+        
+        ## split_to_class
+        apply_classify = function(cuts,burns,layer_name){
+
+            ## check all cuts and burns are in possible layers
+            rq <- c(names(cuts),burns)
+            layer_name <- as.character(layer_name)
+            pos_val <- private$find_layer(TRUE)
+
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
+            }
+
+            ## check layer_name isn;t already used
+            if(layer_name %in% names(pos_val)){
+                stop("layer_name is already used")
+            }
+                
+            ## work out new cuts by cantor_pairing
+            init <- TRUE
+            for(ii in names(cuts)){
+                brk <- as.numeric(cuts[[ii]])
+                fn <- pos_val[ii] ## work out filename
+                x <- raster::raster(fn)
+                if( !(length(brk)==1 & is.na(brk[1])) ){
+                    
+                    if(length(brk)==1){
+                        ## this defines brks in the same way as cut would otherwise
+                        rng <- cellStats(x,range)
+                        brk <- seq(rng[1],rng[2],length=brk+1)
+                        ## the following does quantile based cuts
+                        #brk <- brk+1
+                        #brk <- quantile(x,probs=(0:brk)/brk)
+                        cuts[[ii]] <- brk
+                    }
+                    ## else{
+                    ##     brk <- unqiue(brk,rng)
+                    ##     brk <- brk[brk<=rng[2] & brk>=rng[1]]
+                    ## }
+                    x <- cut(x,breaks=brk,include.lowest=TRUE)
+                }
+                if(init){
                     cp <- x
+                    init <- FALSE
                 }else{
                     cp <- 0.5*(cp+x)*(cp+x+1)+x
+                    uq <- sort(unique(cp))
+                    cp <- cut(cp, c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf))
                 }
             }
 
             ## add in burns
             for(ii in burns){
-                idx <- is.finite(private$layers[[ii]])
-                cp[idx] <- private$layers[[ii]][idx]
+                fn <- fn <- pos_val[ii,"file"] ## work out filename
+                x <- raster:raster(fn)
+                idx <- Which(is.finite(x))
+                cp[idx] <- x[idx]
             }
             
-            ## renumber from cantour paring to get sequential values
-            ucp <- unique(cp,na.rm=TRUE)
-            ucp <- ucp[!is.na(ucp)]
-            ucp <- setNames( (1:length(ucp)) + max(private$layers$channel_id,na.rm=TRUE),
-                            paste(ucp) ) # only works since cp is an integer
-            cp <- ucp[paste(cp)]
-            
-            ## add back into layer
-            private$class$total <- unname( cp )
-            
-            ## record in splits
-            private$class$method <- list(cuts = cuts,burns=burns)
-            
-            ## clear the model
-            private$model <- NULL
+            fn <- private$make_filename(layer_name)
+            writeRaster(cp,fn)
+            private$meta$layers[[layer_name]] <- list(file=fn,type="classification",
+                                                    method=list(cuts=cuts,burns=burns))
+            private$write_meta()
         },
-    
-        apply_create_model = function(brk,verbose){
+        
+        ## create a model  
+        apply_create_model = function(class_lyr,dist_lyr,brk,layer_name,delta_min,verbose){
 
-            ## create a list to store items used in verbose printing
-            ## stop them getting used elsewhere
-            verbose <- list(flag=verbose)
-            
-            ## Initialise the model
-            model <- list()
-            model$map$scope <- private$scope
-            model$map$channel <- private$layers$channel_id
+            rq <- c("atb","gradient","land_area","filled_dem",
+                    "channel","channel_area","channel_id",
+                    class_lyr,dist_lyr)
+            pos_val <- private$find_layer(TRUE)
 
-            if(verbose$flag){ cat("Adding bands to create HSUs hillslope classes","\n") }
-            
-            ## Add banding split to the classification
-            if( length(brk)==1 & is.na(brk[1]) ){
-                x <- private$layers$band
-            }else{
-                x <- cut(private$layers$band,breaks=brk,
-                         labels = FALSE)
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
-            cp <- 0.5*(private$class$total+x)*(private$class$total+x+1)+x
-            ## renumber from cantour paring to get sequential values
-            ucp <- unique(cp,na.rm=TRUE)
-            ucp <- ucp[!is.na(ucp)]
-            ucp <- setNames( (1:length(ucp)) + max(private$layers$channel_id,na.rm=TRUE),
-                            paste(ucp) ) # only works since cp is an integer
-            model$map$hillslope <- unname( ucp[paste(cp)] )
-            rm(ucp,cp)
+            if(!private$meta$layers[[class_lyr]]$type == "classification"){
+                stop(class_lyr, " is not a classification")
+            }
 
-            if(verbose$flag){ cat("Creating Channel tables","\n") }
             
-            ## Create the channel table with properties
-            uid <- private$channel$id
-            model$channel <- data.frame(
-                id = uid,
-                area = unname(tapply(private$layers$channel_area,
-                                     private$layers$channel_id,
-                                     sum)
-                              [ paste(uid) ]),
-                length = as.numeric(private$channel$length),
-                precip="unknown",
-                pet="unknown",
-                v_ch="v_ch_default",
-                stringsAsFactors=FALSE
-            )
-            ## Sometiems small channel can have no area. In that case the above code fills with NA - when it should be 0
-            model$channel$area[is.na(model$channel$area)] <- 0.0
+            ## create the new layer of HSU
+            if(verbose){ cat("Creating new HSU layer","\n") }
+            if(tolower(dist_lyr)=="band"){
+                warning("Cell order being used for distance - brk being ingnored")
+                brk <- NA
+            }
+            private$apply_classify(setNames(list(NA,brk),c(class_lyr,dist_lyr)),NULL,layer_name)
+            pos_val <- private$find_layer(TRUE)
+            brk <- self$get_class_method(layer_name)$cuts[[dist_lyr]]
+
+            ## initialise the model
+            model <- list(map = list(hillslope = pos_val[layer_name],
+                                     channel = pos_val["channel"],
+                                     channel_id = pos_val["channel_id"]))
+
+            ## Create the channel table
+            if(verbose){ cat("Creating Channel table","\n") }
             
-            ## work out the channel flow directions
+            channel_id <- raster::raster(pos_val["channel_id"])
+            channel_area <- raster::raster(pos_val["channel_id"])
+            chn <- raster::shapefile(pos_val["channel"])
+            
+            model$channel <- chn@data
+            model$channel[["precip"]] <- "unknown"
+            model$channel[["pet"]] <- "unknown"
+            model$channel[["v_ch"]] <- "v_ch_default"            
+            tmp <- zonal(channel_area,channel_id,sum)
+            model$channel[["area"]] <- 0
+            for(ii in 1:nrow(tmp)){
+                model$channel[["area"]][model$channel[["id"]]==tmp[ii,"zone"]] <- tmp[ii,"value"]
+            }
+
+            rm(channel_area,chn) # remove to clear memory since not used again
+
+            ## Creaate channel flow directions
             model$channel$flow_dir = rep(list(NULL),length(model$channel$id))
-            for(id in model$channel$id){
-                rw <- which( model$channel$id ==id )
-                
-                jj <- which( private$channel$id == id )
-                
-                jdx <- which(private$channel[['startNode']]==
-                             private$channel[['endNode']][jj])
+            for(rw in 1:nrow(model$channel)){
+                jdx <- which( model$channel[['startNode']]==
+                              model$channel[['endNode']][rw])
                 if( length(jdx) > 0 ){
-                    model$channel$flow_dir[[rw]] <- list(idx=jdx,
+                    model$channel$flow_dir[[rw]] <- list(idx= model$channel$id[jdx],
                                                          frc= rep(1/length(jdx),length(jdx)))
                 }
             }
 
-            if(verbose$flag){ cat("Initialising Hillslope table","\n") }
+            ## adapt the hillslope map to have the id as its number
+            if(verbose){ cat("Adapting hillslope map to match id","\n") }
+            hsu <- raster::raster(pos_val[layer_name])
+            hsu <- hsu + max(model$channel$id)
+            raster::writeRaster(hsu,pos_val[layer_name],overwrite=TRUE)
             
-            ## create the model hillslope table and populate computations
-            uid <- unique(model$map$hillslope)
-            uid <- uid[!is.na(uid)]
+            ## Create the hillslope table
+            if(verbose){ cat("Loading data to create hillslope table","\n") }
+            
+            ## load the hsu map and work out index of each hsu in it
+            hsu <- as.matrix(hsu)
+            la <- as.matrix(raster::raster(pos_val["land_area"]))
+            gr <- as.matrix(raster::raster(pos_val["gradient"]))
+            atb <- as.matrix(raster::raster(pos_val["atb"]))
+            cls <- as.matrix(raster::raster(pos_val[class_lyr]))
+            dst <- raster::raster(pos_val[dist_lyr])
+            if(all(is.na(brk))){
+                cdst <- as.matrix(dst)
+            }else{
+                cdst <- as.matrix(cut(dst,brk,include.lowest=TRUE))
+            }
+            dst <- as.matrix(dst)
+            dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
+            channel_id <- as.matrix(channel_id)
+            
+            ## set all channel cells with no land area to band 0            
+            cdst[is.na(cdst) & is.finite(channel_id) & !(la>0)] <- 0
+            
+            ## distance betweek breaks
+            if(tolower(dist_lyr)=="band"){
+                dbrk <- rep(mean(private$meta$resolution),max(cdst,na.rm=TRUE))
+            }else{
+                dbrk <- diff(brk)
+            }
+
+            
+            if(verbose){ cat("Computing properties of Hillslope HSUs","\n") }
+            
+            ## unique hsu numbers - go 1,2,3,...
+            uhsu <- sort(unique(as.numeric(hsu))) # sort drop sNA lesft by unique
+
+            ## writing into data frames directly is really slow so create the variables outside first
+            area <- rep(0,length(uhsu))
+            atb_bar <- rep(0,length(uhsu))
+            s_bar <- rep(0,length(uhsu))
+            class <- rep(NA,length(uhsu))
+            delta_x <- rep(NA,length(uhsu))
+            band <- rep(NA,length(uhsu))
+            width <- rep(0,length(uhsu))
+            flow_dir = rep(list(list(idx=integer(0),frc=integer(0))),length(uhsu))
+
+            ## distances and contour lengths
+            ## distance between cell centres
+            dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
+            dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
+            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+            nr <- nrow(dem); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+            
+            ## flags to use in loop
+            goes_to_lower_band <- rep(FALSE,length(uhsu))
+            min_dst <- tapply(dst,hsu,min)
+            min_dst <- min_dst[paste(uhsu)]+delta_min # add wiggle on distance
+            set_cnst <- rep(FALSE,length(uhsu))
+
+            idx <- order(dem,na.last=NA)
+            n_to_eval <- length(idx)
+            it <- 1
+            if(verbose){
+                print_step <- round(n_to_eval/20)
+                next_print <- print_step
+            }
+            for(ii in idx){
+                ##print(ii)
+                if(!(la[ii]>0)){ next }
+                
+                rw <- match(hsu[ii], uhsu) 
+
+                ## These only need to be set once!
+                if(!set_cnst[rw]){
+                    ## band and class
+                    band[rw]  <-  cdst[ii]
+                    ## min_dst[rw] <- brk[ cdst[ii] ]
+                    class[rw] <- cls[ii]
+                    ## length of hillslope - rubbish method...
+                    delta_x[rw] <- dbrk[ band[rw] ]
+                    set_cnst[rw] <- TRUE
+                }
+
+                
+                ## area
+                area[rw] <- area[rw] + la[ii]
+                ## average atanb
+                atb_bar[rw] <- atb_bar[rw] + atb[ii]*la[ii]
+                ## average gradient
+                s_bar[rw] <- s_bar[rw] + gr[ii]*la[ii]
+
+                ## flow direction
+                if(is.finite(channel_id[ii])){
+                    ## partial channel cell so all flow goes to that channel reach
+                    kk <- channel_id[ii]; gcl <- gr[ii]*dxy[1]
+                    to_lower_band <- TRUE
+                    sw <- dxy[1]
+                }else{
+                    ## a land cell
+                    jj <- ii+delta ## neighbouring cell numbers
+                    gcl <- (dem[ii]-dem[jj])*dcl/dxy
+                
+                    to_lower <- is.finite(gcl) & gcl>0
+                    to_use <- to_lower & is.finite(cdst[jj]) & cdst[jj] < cdst[ii]
+                    to_lower_band <- TRUE
+                    if(!any(to_use) & !goes_to_lower_band[rw]){
+                        to_use <- to_lower & is.finite(dst[jj]) & dst[jj] < min_dst[rw]
+                        to_lower_band <- FALSE
+                    }
+                    kk <- hsu[ jj[to_use] ]
+                    gcl <- gcl[to_use]
+                    sw <- sum(dcl[to_use])
+                }
+                if(length(kk)>0){
+                    if(to_lower_band & !goes_to_lower_band[rw]){
+                        ## reset the flow direction
+                        flow_dir[[rw]] <- list(idx=integer(0),frc=integer(0))
+                        goes_to_lower_band[rw] <- TRUE
+                        width[[rw]] <- 0
+                    }
+                    width[[rw]] <- width[[rw]] + sw
+
+                    ekk <- match(kk,flow_dir[[rw]]$idx)
+                    if(any(is.na(ekk))){
+                        ## add these to the list
+                        flow_dir[[rw]]$idx <-
+                            c(flow_dir[[rw]]$idx,kk[is.na(ekk)])
+                        flow_dir[[rw]]$frc <-
+                            c(flow_dir[[rw]]$frc,rep(0,sum(is.na(ekk))))
+                        ekk <- match(kk,flow_dir[[rw]]$idx)
+                    }
+                    flow_dir[[rw]]$frc[ekk] <-
+                        flow_dir[[rw]]$frc[ekk] + gcl
+               }
+                
+                ## verbose output here
+                if(it >= next_print){
+                    cat(round(100*it / n_to_eval,1),
+                        "% complete","\n")
+                    next_print <- next_print+print_step
+                }
+                
+                it <- it+1
+            }
+            ## check every HSU has its constants
+            if(!all(set_cnst)){
+                stop("HSU with the following map_id cannot be generated: \n",
+                     paste(uhsu[!set_cnst],collapse=", "))
+            }
+
+            ## rescale by area
+            atb_bar <-  atb_bar/ area
+            s_bar <-  s_bar/ area
+
+            ## warn if any HSU does not go to lower band
+            if(!all(goes_to_lower_band)){
+                warning("The following HSUs with the following map_id do not drain to a lower distance class: \n",
+                     paste(uhsu[!goes_to_lower_band],collapse=", "))
+            }
+            
+            ## tidy up flow
+            for(rw in 1:length(flow_dir)){
+                if( length(flow_dir[[rw]]$frc) != length(flow_dir[[rw]]$idx) ){
+                    stop("Flow length and fractions are different lengths for hsu: ",uhsu[rw])
+                }
+                if( length(flow_dir[[rw]]$frc) == 0 ){
+                    stop("Flow length and fractions are 0 for hsu: ",uhsu[rw])
+                }
+                flow_dir[[rw]]$frc <-
+                    flow_dir[[rw]]$frc / sum(flow_dir[[rw]]$frc)
+            }
+
+            ## some checks
+            if(!all(set_cnst)){
+                stop("HSU with the following map_id cannot be generated: \n",
+                     paste(uhsu[!set_cnst],collapse=", "))
+            }
+            if(!all(set_cnst)){
+                stop("HSU with the following map_id cannot be generated: \n",
+                     paste(uhsu[!set_cnst],collapse=", "))
+            }
+            ## initiailise the hillslope table
             model$hillslope <- data.frame(
-                id = as.integer(uid),
-                area = rep(NA,length(uid)),
-                atb_bar = rep(NA,length(uid)),
-                s_bar = rep(NA,length(uid)),
-                delta_x = rep(NA,length(uid)),
-                width = rep(NA,length(uid)),
-                class = rep(NA,length(uid)),
-                band = rep(NA,length(uid)),
+                id = as.integer(uhsu),
+                area = area,
+                atb_bar = atb_bar,
+                s_bar = s_bar,
+                band = band,
+                class = class,
+                delta_x = delta_x,
+                width = width,
                 precip="unknown",
                 pet="unknown",
                 r_sfmax="r_sfmax_default",
@@ -802,202 +1175,23 @@ dynatopGIS <- R6::R6Class(
                 c_sf="c_sf_default",
                 stringsAsFactors=FALSE
             )
-            for(jj in names(private$class$partial)){
-                model$hillslope[[ paste0(jj,"_class") ]] <- NA
-            }
-
-            ## what is the HSU id of the part of each raster cell which recieves inflow
-            receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
-                                 na.rm=TRUE)
+            model$hillslope$flow_dir = flow_dir
             
-            ## populate classes, band and data inc flow directions
-            nrw <- length(model$hillslope$id)
-            for(rw in 1:nrw){
-                
-                id <- model$hillslope$id[rw]
-                if(verbose$flag){
-                    cat("Processing id: ",id," of ",nrw,"\n")
-                }
-                ## index of hillslope points
-                idx <- which(model$map$hillslope==id)
-                ## determine band
-                model$hillslope$band[rw]  <-  max( private$layers$band[idx] )
-                ## determine classes
-                model$hillslope$class[rw] <- unique( private$class$total[idx] )
-                for(jj in names(private$class$partial)){
-                    model$hillslope[[ paste0(jj,"_class") ]][rw] <- unique(
-                        private$class$partial[[jj]][idx])
-                }
-                ## area
-                area <- sum( private$layers$land_area[idx] )
-                model$hillslope$area[rw] <- area
-                ## average atanb
-                model$hillslope$atb_bar[rw] <- sum(
-                    private$layers$atanb[idx]*private$layers$land_area[idx] )/area
-                ## average gradient
-                model$hillslope$s_bar[rw] <- sum(
-                    private$layers$gradient[idx]*private$layers$land_area[idx] )/area
-                ## length of hillslope - rubbish method...
-                model$hillslope$delta_x[rw] <- (diff(range(
-                                           private$layers$band[idx]))+1) * private$scope$res[1]
-                ## determine downslope flow directions
-                rfrc <- rep(0,max(model$channel$id,model$hillslope$id))
-                model$hillslope$width[rw] <- 0
-                ## Look at all cells which are at the boundary
-                for(jj in idx[ is.finite(private$layers$channel_id[idx]) |
-                               private$layers$band[idx] == model$hillslope$band[rw] ] ){
-                    ngh <- private$fN(jj)
-                    grd <- (private$layers$filled_dem[jj] - private$layers$filled_dem[ngh$idx])/ngh$dx
-                    if(is.finite(private$layers$channel_id[jj])){
-                        to_use <- is.finite(grd) & grd<0 &
-                            !is.finite(private$layers$channel_id[ngh$idx])
-                        if(any(to_use)){
-                            gcl <- mean(-grd[to_use])*cl
-                            cl <- mean(private$scope$res)
-                            rdx <- private$layers$channel_id[jj]
-                            rfrc[ rdx ]  <-
-                                rfrc[ rdx ] + private$layers$upslope_area[jj]*gcl
-                            model$hillslope$width[rw] <-
-                                model$hillslope$width[rw] + cl
-                        }
-                    }else{
-                        to_use <- is.finite(grd) & (grd > 0)
-                        if(any(to_use)){
-                            gcl <- grd[to_use]*ngh$cl[to_use]
-                            cl <- sum(ngh$cl[to_use])
-                            rdx <- receiving_id[ngh$idx[to_use]]
-                            for(rr in 1:length(rdx)){
-                                rfrc[rdx[rr]] <- rfrc[rdx[rr]] +
-                                    private$layers$upslope_area[jj]*gcl[rr]
-                            }
-                            model$hillslope$width[rw] <-
-                                model$hillslope$width[rw] + cl
-                        }
-                    }
-                }
-                rfrc <- rfrc/sum(rfrc)
-                jdx <- which(rfrc>0.0)
-                model$hillslope$flow_dir[[rw]] <- list(
-                                     idx=jdx,
-                                     frc=rfrc[jdx])
-            }
-
-            ## ## determine flow directions for hillslope
-            ## if(verbose$flag){ cat("Determining Hillslope flow directions","\n") }
-            
-            ## ## what is the HSU id of the part of each raster cell which recieves inflow
-            ## receiving_id <- pmax(model$map$hillslope,private$layers$channel_id,
-            ##                      na.rm=TRUE)
-            
-            ## ## storage of flow directions
-            ## model$hillslope$flow_dir = rep(list(NULL),length(model$hillslope$id))
-
-            ## ## computational band for each HSU id
-            ## bnd <- rep(NA,max(model$hillslope$id)) 
-            ## bnd[model$hillslope$id] <- model$hillslope$band
-            ## bnd[model$channel$id] <- Inf #model$channel$sz_band
-            
-            ## ## store if the hsu is valid
-            ## is_valid <- rep(FALSE,max(model$hillslope$id))
-            ## is_valid[model$channel$id] <- TRUE
-
-            ## it <- 0
-            ## delta <- 1e-3
-            ## while(!all(is_valid) & it < 100){
-            ##     it <- it+1
-                
-            ##     ## process all hillslope HSUs that aren't valid
-            ##     for(id in model$hillslope$id[ !is_valid[model$hillslope$id] ]){
-            ##         rw <- which(model$hillslope$id == id)
-            ##         ## index of hillslope points
-            ##         idx <- which(model$map$hillslope==id)
-                
-            ##         ## work out flow directions - store as area times fraction
-            ##         rfrc <- rep(0,max(model$hillslope$id))
-            ##         ## stor contour lengths as well
-            ##         rcl <- rep(0,max(model$hillslope$id))
-            ##         for(ii in idx){
-                        
-            ##             ## if cell has a channel_id then goes to channel
-            ##             if( is.finite(private$layers$channel_id[ii]) ){
-            ##                 jj <- list(cls=private$layers$channel_id[ii],frc=1,
-            ##                            cl=mean(private$scope$res))
-            ##             }else{
-            ##                 ## work out flow directions
-            ##                 jj <- private$fFD(ii)
-            ##                 jj$cls <- receiving_id[jj$idx]
-            ##             }
-            ##             ## add area to HSU flow directions
-            ##             rfrc[jj$cls] <- rfrc[jj$cls] + private$layers$land_area[ii]*jj$frc
-            ##             ## add contour length to flow directions
-            ##             rcl[jj$cls] <- rcl[jj$cls] + jj$cl
-            ##         }
-                
-            ##         ## work out which are moves to higher bands (more downslope)
-            ##         hdx <- which( (bnd > bnd[id]) & rfrc>0) # id of downslope
-            ##         edx <- which( (bnd == bnd[id]) & rfrc>0) # id of equal band
-            ##         if(length(hdx)>0){
-            ##             ## if there is send the flow to those cells
-            ##             ## compute flow directions
-            ##             model$hillslope$flow_dir[[rw]] <- list(
-            ##                 band = bnd[id],
-            ##                 idx = hdx,
-            ##                 frc = rfrc[hdx]/sum(rfrc[hdx])
-            ##             )
-            ##             model$hillslope$width[rw] <- sum(rcl[hdx])
-            ##             is_valid[id] <- TRUE
-            ##         }else{
-            ##             if(length(edx)>0){
-            ##                 bnd[id] <- bnd[id]-delta
-            ##             }else{
-            ##                 stop("Should never get here!!")
-            ##             }
-            ##         } 
-            ##     }
-            ##     if(verbose$flag){
-            ##         cat("    Iteration ",it,": ",sum(is_valid)," of ",length(is_valid)," HSUs valid","\n")
-            ##     }
-            ## }
-            
-            ## if(verbose$flag){ cat("Computing remaining Hillslope properties","\n") }
-
-            ## ## compute reminaing properties
-            ## for(rw in 1:length(model$hillslope$id)){
-            ##     id <- model$hillslope$id[rw]
-                
-            ##     ## index of hillslope points
-            ##     idx <- which(model$map$hillslope==id)
-                
-            ##     area <- sum( private$layers$land_area[idx] )
-            ##     model$hillslope$area[rw] <- area
-                
-            ##     model$hillslope$atb_bar[rw] <- sum(
-            ##         private$layers$atanb[idx]*private$layers$land_area[idx] )/area
-                
-            ##     model$hillslope$s_bar[rw] <- sum(
-            ##         private$layers$gradient[idx]*private$layers$land_area[idx] )/area
-                
-            ##     model$hillslope$delta_x[rw] <- (diff(range(
-            ##         private$layers$band[idx]))+1) * private$scope$res[1]
-                
-            ## }
-            
-
             ## parameter values
-            if(verbose$flag){ cat("Setting default parameter values","\n") }
+            if(verbose){ cat("Setting default parameter values","\n") }
             model$param <- c(r_sfmax_default=Inf,
                              s_rzmax_default=0.05,
-                             s_rz0_default=0.99,
-                             ln_t0_default=19,
-                             m_default=0.004,
-                             t_d_default=20,
-                             c_sf_default=0.01,
-                             v_ch_default=100)
+                             s_rz0_default=0.75,
+                             ln_t0_default=-2,
+                             m_default=0.04,
+                             t_d_default=2*60*60,
+                             c_sf_default=0.1,
+                             v_ch_default=1)
             
             ## ############################################
             ## Add gauges at all outlets from river network
             ## ############################################
-            if(verbose$flag){ cat("Adding gauges at the outlets","\n") }
+            if(verbose){ cat("Adding gauges at the outlets","\n") }
             idx <- which(sapply(model$channel$flow_dir,length)==0)
             model$gauge <- data.frame(
                 name = paste("channel",model$channel$id[idx],sep="_"),
@@ -1010,7 +1204,7 @@ dynatopGIS <- R6::R6Class(
             ## Add point inflow table
             ## ##################################
             ## blank point inflow table
-            if(verbose$flag){ cat("Adding a blank point_inflow table","\n") }
+            if(verbose){ cat("Adding a blank point_inflow table","\n") }
             model$point_inflow <- data.frame(
                 name = character(0),
                 id = integer(0),
@@ -1020,7 +1214,7 @@ dynatopGIS <- R6::R6Class(
             
             ## ##################################
             ## Add diffuse inflow table
-            if(verbose$flag){ cat("Adding a blank diffuse_inflow table","\n") }
+            if(verbose){ cat("Adding a blank diffuse_inflow table","\n") }
             model$diffuse_inflow <- data.frame(
                 name = character(0),
                 id = integer(0),
@@ -1028,128 +1222,49 @@ dynatopGIS <- R6::R6Class(
             )
 
             ## add model to record
-            private$model <- model
+            
+            fn <- file.path(private$wdir,paste0(layer_name,".rds"))
+            saveRDS(model,fn)
+            private$meta$layers[[layer_name]]$model_file <- fn
+            private$meta$layers[[layer_name]]$type <- "model"
+            private$write_meta()
             
         },
-        
-        ## function to locate neighbours
-        fN = function(k){
-            nr <- private$scope$dim[1]
-            nc <- private$scope$dim[2]
-            if( k > nc*nr | k < 1){ return(rep(NA,8)) }
+        apply_input_frac = function(hsu_layer,input_layer,hsu_label,input_label){
             
-            ## find i,j location
-            j <- ((k-1)%/%nc) +1 # row
-            i <- k - (j-1)*nc #column
+            rq <- c(hsu_layer,input_layer,"channel_id")
+            pos_val <- private$find_layer(TRUE)
 
-            
-            ## distance
-            ## dx <- private$scope$res[1]
-            ## dxd <- dx*sqrt(2)
-            ## dst <- c(dxd,dx,dxd,dx,dx,dxd,dx,dxd)
-            dst <- private$scope$res[1]*c(sqrt(2),1,sqrt(2),1,1,sqrt(2),1,sqrt(2))
-            ## contour length
-            cl <- private$scope$res[1]*c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)
-
-            ## alt form for timing testing
-            ii <- i + c(-1,0,1,-1,1,-1,0,1)
-            jj <- j + c(-1,-1,-1,0,0,1,1,1)
-            idx <- ii>0 & ii<=nc & jj>0 & jj<=nr
-            out <- list(idx = ((jj-1)*nc + ii)[idx],
-                        dx = dst[idx],
-                        cl=cl[idx])
-
-            ## ## make a matrix
-            ## m <- matrix(c(i-1,i,i+1,i-1,i+1,i-1,i,i+1,
-            ##               j-1,j-1,j-1,j,j,j+1,j+1,j+1,
-            ##               dst,
-            ##               cl),8,4)
-            
-            ## ## trim to within bounds
-            ## m <- m[ (m[,1]>0 & m[,1]<=nc & m[,2]>0 & m[,2]<=nr) ,]
-            
-            ## out <- list(idx = (m[,2]-1)*nc + m[,1],
-            ##             dx = m[,3],
-            ##             cl = m[,4])
+            has_rq <- rq %in% names(pos_val)
+            if(!all(has_rq)){
+                stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
+            }
+            if(!(private$meta$layers[[hsu_layer]]$type %in% "model")){
+                stop(hsu_layer, " is not a model layer")
+            }
+            if(!(private$meta$layers[[input_layer]]$type %in% c("user","classification"))){
+                stop(input_layer, " is not a user defined or classification layer")
+            }
+            ## load data
+            hsu_grid <- raster::raster(pos_val[hsu_layer])
+            chn_grid <- raster::raster(pos_val["channel_id"])
+            input_grid <- raster::raster(pos_val[input_layer])
+            ## make the matrix
+            out <- rbind(raster::crosstab(chn_grid,input_grid),
+                         raster::crosstab(hsu_grid,input_grid))
+            ## relabel rows and columns
+            ##browser()
+            rownames(out) <- paste0(hsu_label,rownames(out))
+            colnames(out) <- paste0(input_label,colnames(out))
+            ## check for NA
+            if(!all(is.finite(out))){
+                stop("Non finite values in the cross tabulation \n",
+                     "Check the input is defined for all hsu cells")
+            }
+            ## sweep out the rowSums to get scaled to 1
+            out <- sweep(out,1,rowSums(out),"/")
             return(out)
         }
-        ## ##,
-        ## ## returns properties of a hillslope pixel not dependent upon the hillslope order
-        ## fstatic = function(k,missing_grad,missing_length){
-
-        ##     ## don't compute for 0 land areas
-        ##     if( private$layers$land_area[k] <=0 ){
-        ##         return( list(nh=NA,
-        ##                      g=NA,
-        ##                      gcl=NA,
-        ##                      cl=NA) )
-        ##     }
-            
-        ##     ## work out if a channel
-        ##     is_channel <- is.finite(private$layers$channel_id[k])
-            
-        ##     ## index of neighbours, distances and contour lengths
-        ##     ngh <- private$fN(k)
-            
-        ##     ## compute gradient
-        ##     grd <- (private$layers$filled_dem[k] - private$layers$filled_dem[ngh$idx])/ngh$dx
-        ##     is_higher <-  is.finite(grd) & (grd < 0) &
-        ##         !is.finite(private$layers$channel_id[ngh$idx])
-
-        ##     if( is_channel ){
-        ##         to_use <- is_higher
-        ##     }else{
-        ##         to_use <- is.finite(grd) & (grd > 0)
-        ##     }
-
-        ##     if(any(to_use)){
-        ##         ## then compute gradient
-        ##         gcl <- sum(grd[to_use]*ngh$cl[to_use])
-        ##         if(is_channel){gcl <- -gcl}
-        ##         cl <- sum(ngh$cl[to_use])
-        ##         g <- gcl / cl #sum(ngh$cl[to_use])
-        ##     }else{
-        ##         ## then default if channel otherwise error
-        ##         if(is_channel){
-        ##             g <- missing_grad
-        ##             gcl <- missing_grad * missing_length
-        ##             cl <- missing_length
-        ##         }else{
-        ##             stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
-        ##         }
-        ##     }
-        ##     out <- list(nh = sum(is_higher),
-        ##                 g = g,
-        ##                 gcl = gcl,
-        ##                 cl=cl)
-        ##     return(out)
-        ## },
-        ## ## returns the downslope flow directions with a fractional split
-        ## fFD =function(k){
-        ##     ## work out if a channel
-        ##     is_channel <- is.finite(private$layers$channel_id[k])
-
-        ##     if(is_channel){
-        ##         return( list(idx=numeric(0),frc=numeric(0),cl=numeric(0)) )
-        ##     }
-            
-        ##     ## index of neighbours, distances and contour lengths
-        ##     ngh <- private$fN(k)
-            
-        ##     ## compute gradient
-        ##     grd <- (private$layers$filled_dem[k] - private$layers$filled_dem[ngh$idx])/ngh$dx
-
-        ##     to_use <- is.finite(grd) & (grd > 0)
-
-        ##     gcl <- grd[to_use]*ngh$cl[to_use]
-        ##     cl <- ngh$cl[to_use]
-
-        ##     return( list(idx = ngh$idx[to_use],
-        ##                  frc = gcl / sum(gcl),
-        ##                  cl = cl) )
-            
-        ## }
-
         
     )
-)
+    )
