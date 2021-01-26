@@ -72,8 +72,7 @@ dynatopGIS <- R6::R6Class(
         #' @return suitable for chaining
         add_channel = function(channel,property_names=c(length="length",
                                                         startNode="startNode",
-                                                        endNode="endNode",
-                                                        width="width"),
+                                                        endNode="endNode"),
                                default_width=2){
             
             if("channel" %in% names(private$find_layer(TRUE))){
@@ -389,7 +388,7 @@ dynatopGIS <- R6::R6Class(
                                                  na_clumps[,ncol(na_clumps)])),
                                        NA) #those clumps on the edge to be ignored
                 na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
-                dem[!is.na(na_clumps)] <- -Inf # set to low value to indicate missing
+                dem[!is.na(na_clumps)] <- -1e6+1 # set to low value to indicate missing
             }
 
             
@@ -398,6 +397,7 @@ dynatopGIS <- R6::R6Class(
             if(length(private$meta$resolution)==0){ private$meta$resolution <- res(dem) }
             private$check_rst(dem,"DEM")
 
+            
             fn <- private$make_filename("dem")
             writeRaster(dem,fn); private$meta$layers[["dem"]]$file <- fn
             private$write_meta()
@@ -408,7 +408,12 @@ dynatopGIS <- R6::R6Class(
             ##browser()
             ## check property_names
             if( !all( c("length","startNode","endNode") %in% names(property_names)) ){
-                stop("A required property name is not specified")
+                stop("A required property name is not specified in property_names")
+            }
+
+            
+            if( !all(property_names %in% names(sp_object)) ){
+                stop("A field specified in property_names is not present")
             }
 
             if(!is(sp_object,"SpatialLinesDataFrame") && !is(sp_object,"SpatialPolygonsDataFrame")){

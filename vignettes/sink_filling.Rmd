@@ -79,37 +79,44 @@ Example dates is generated randomly
 
 ```{r, data}
 M <- matrix(1:100,10,10)
-fake <- raster::raster(M,
-                       crs="+init=epsg:27700") # UK OS projection
+dem <- raster::raster(M,
+                      crs="+init=epsg:27700") # UK OS projection
+chn <- rasterToPolygons(dem,function(x){x==1})
+chn$length <- 10
+chn$startNode <- chn$endNode <- NA
 ```
 
 ## handling of a larger area of missing
 
 ```{r, example1}
-ex1_dem <- fake
+ex1_dem <- dem
 ex1_dem[c(23:26,33:36,44:45)] <- NA
-ex1_chn <- fake; ex1_chn[] <- NA
-ex1_chn[1,1] <- 1
 
-
-ex1 <- dynatopGIS$new(ex1_dem)
-ex1$add_layer(ex1_chn,"channel_id",FALSE)
+ex1_dir <- tempfile("ex1")
+dir.create(ex1_dir)
+ex1 <- dynatopGIS$new(file.path(ex1_dir,"meta.json"))
+ex1$add_dem(ex1_dem)
+ex1$add_channel(chn)
+ex1$compute_areas()
 ex1$sink_fill()
 ex1$plot_layer("dem",FALSE)
 ex1$plot_layer("filled_dem",FALSE)
+unlink(ex1_dir, recursive=TRUE)
 ```
 
-## handling of a single isleland
+## handling of a single island
 
 ```{r, example2}
-ex2_dem <- fake
+ex2_dem <- dem
 ex2_dem[c(23:26,33:36,44:45)] <- NA
-ex2_chn <- fake; ex2_chn[] <- NA
-ex2_chn[1,1] <- 1
-
-ex2 <-  dynatopGIS$new(ex1_dem)
-ex2$add_layer(ex2_chn,"channel_id",FALSE)
+ex2_dir <- tempfile("ex2")
+dir.create(ex2_dir)
+ex2 <- dynatopGIS$new(file.path(ex2_dir,"meta.json"))
+ex2$add_dem(ex2_dem)
+ex2$add_channel(chn)
+ex2$compute_areas()
 ex2$sink_fill()
-ex2$plot_layer("dem",add=FALSE)
-ex2$plot_layer("filled_dem",add=FALSE)
+ex2$plot_layer("dem",FALSE)
+ex2$plot_layer("filled_dem",FALSE)
+unlink(ex2_dir, recursive=TRUE)
 ```

@@ -148,8 +148,7 @@ Import channel data from an OGR file to the `dynatopGIS` object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(
   channel,
-  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
-    width = "width"),
+  property_names = c(length = "length", startNode = "startNode", endNode = "endNode"),
   default_width = 2
 )}\if{html}{\out{</div>}}
 }
