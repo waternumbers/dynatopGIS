@@ -62,17 +62,17 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Import channel data from an OGR file to the `dynatopGIS` object
         #'
-        #' @param channel a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information
-        #' @param property_names named vector of columns of the spatial data frame to use for channel properties
+        #' @param channel a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information
+        #' @param property_names named vector of columns of the spatial data frame to use for channel properties - asee details
         #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
         #'
-        #' @details Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
-        #' The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+        #' @details Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.
         #'
         #' @return suitable for chaining
         add_channel = function(channel,property_names=c(length="length",
                                                         startNode="startNode",
-                                                        endNode="endNode"),
+                                                        endNode="endNode",
+                                                        width="width"),
                                default_width=2){
             
             if("channel" %in% names(private$find_layer(TRUE))){
@@ -199,7 +199,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @details The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min. 
         create_model = function(layer_name,class_layer,dist_layer,brk,
-                                delta_min=sqrt(sum(private$meta$resolution^2)),
+                                delta_min=2*sqrt(sum(private$meta$resolution^2)),
                                 verbose=FALSE){
             private$apply_create_model(class_layer,dist_layer,brk,layer_name,delta_min,verbose)            
             invisible(self)
@@ -406,30 +406,40 @@ dynatopGIS <- R6::R6Class(
         ## add the channel
         apply_add_channel = function(sp_object,property_names,default_width){
             ##browser()
-            ## check property_names
+            ## read in sp object is a character sting
+            if(is.character(sp_object)){
+                if(file.exists(as.character(sp_object))){
+                    sp_object <- raster::shapefile(sp_object)
+                }else{
+                    stop("sp_object is a character string but the file specified does not exist")
+                }
+            }
+
+            ## find out about the sp_object
+            if(!is(sp_object,"SpatialLinesDataFrame") && !is(sp_object,"SpatialPolygonsDataFrame")){
+                stop("The channel network is not a spatial lines or polygon data frame object (even when read in)")
+            }
+            is_polygon <- is(sp_object,"SpatialPolygonsDataFrame")
+            
+            ## check the names of property_names are valid
             if( !all( c("length","startNode","endNode") %in% names(property_names)) ){
                 stop("A required property name is not specified in property_names")
             }
+            if(!("width" %in% names(property_names)) & !is_polygon){
+                warning("Modifying to spatial polygons using default width")
+                sp_object[['width']] <- default_width
+            }
 
-            
+            ## see if variables refered to in property_names exist
             if( !all(property_names %in% names(sp_object)) ){
                 stop("A field specified in property_names is not present")
             }
 
-            if(!is(sp_object,"SpatialLinesDataFrame") && !is(sp_object,"SpatialPolygonsDataFrame")){
-                ## then sp_object should be a character string points to the file
-                sp_object <- as.character(sp_object)
-                if(file.exists(as.character(sp_object))){
-                    sp_object <- raster::shapefile(sp_object)
-                }else{
-                    stop("sp_object is not a spatial lines or polygon data frame object (even when read in)")
-                }
-            }
-
+            
             ## populate meta data from channel if missing
             if(length(private$meta$crs)==0){ private$meta$crs = crs(sp_object) }
             
-            ## check project of the sp_object
+            ## check projection of the sp_object
             if( !compareCRS(crs(sp_object),private$meta$crs) ){
                 stop("Projection of channel object does not match")
             }
@@ -452,14 +462,7 @@ dynatopGIS <- R6::R6Class(
             sp_object@data[idx] <- lapply(sp_object@data[idx], as.character)
 
             ## add width if required
-            if(!is(sp_object,"SpatialPolygonsDataFrame")){
-                if(!("width" %in% names(sp_object))){
-                    warning("Modifying to spatial polygons using default width")
-                    sp_object[['width']] <- default_width
-                }else{
-                    warning("Modifying to spatial polygons using provided width")
-                }
-                
+            if(!is_polygon){
                 ## buffer to convert to spatial polygons object
                 sp_object <- rgeos::gBuffer(sp_object, byid=TRUE, width=sp_object[['width']])
             }
@@ -989,14 +992,9 @@ dynatopGIS <- R6::R6Class(
             raster::writeRaster(hsu,pos_val[layer_name],overwrite=TRUE)
             
             ## Create the hillslope table
-            if(verbose){ cat("Loading data to create hillslope table","\n") }
-            
-            ## load the hsu map and work out index of each hsu in it
+            if(verbose){ cat("Loading initial data for hsu computation","\n") }
+            ## load the hsu required for all stages of table creation
             hsu <- as.matrix(hsu)
-            la <- as.matrix(raster::raster(pos_val["land_area"]))
-            gr <- as.matrix(raster::raster(pos_val["gradient"]))
-            atb <- as.matrix(raster::raster(pos_val["atb"]))
-            cls <- as.matrix(raster::raster(pos_val[class_lyr]))
             dst <- raster::raster(pos_val[dist_lyr])
             if(all(is.na(brk))){
                 cdst <- as.matrix(dst)
@@ -1004,47 +1002,56 @@ dynatopGIS <- R6::R6Class(
                 cdst <- as.matrix(cut(dst,brk,include.lowest=TRUE))
             }
             dst <- as.matrix(dst)
+            
+            if(verbose){ cat("Computing fixed hsu properties","\n") }           
+            ## class
+            class <- tapply(as.matrix(raster::raster(pos_val[class_lyr])),
+                            hsu,unique)
+            band <- tapply(cdst,hsu,unique)
+            if(tolower(dist_lyr)=="band"){
+                delta_x <- setNames( rep(mean(private$meta$resolution),length(band)),
+                                    names(band) )
+            }else{
+                delta_x <- setNames( diff(brk)[band], names(band) )
+            }
+
+            ## spatially averaged properties
+            if(verbose){ cat("Computing spatial averaged hsu properties","\n") }
+            la <- as.matrix(raster::raster(pos_val["land_area"]))
+            gr <- as.matrix(raster::raster(pos_val["gradient"]))
+            area <- tapply(la,hsu,sum) ## area of each HSU
+            atb_bar <- tapply(as.matrix(raster::raster(pos_val["atb"]))*la,
+                              hsu,sum)
+            s_bar <- tapply(gr*la,hsu,sum)
+
+            ## Calculate routing
+            if(verbose){ cat("Computing hillslope routing","\n") }
+            ## load the additional data files
             dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
             channel_id <- as.matrix(channel_id)
             
-            ## set all channel cells with no land area to band 0            
-            cdst[is.na(cdst) & is.finite(channel_id) & !(la>0)] <- 0
-            
-            ## distance betweek breaks
-            if(tolower(dist_lyr)=="band"){
-                dbrk <- rep(mean(private$meta$resolution),max(cdst,na.rm=TRUE))
-            }else{
-                dbrk <- diff(brk)
-            }
-
-            
-            if(verbose){ cat("Computing properties of Hillslope HSUs","\n") }
-            
-            ## unique hsu numbers - go 1,2,3,...
-            uhsu <- sort(unique(as.numeric(hsu))) # sort drop sNA lesft by unique
-
-            ## writing into data frames directly is really slow so create the variables outside first
-            area <- rep(0,length(uhsu))
-            atb_bar <- rep(0,length(uhsu))
-            s_bar <- rep(0,length(uhsu))
-            class <- rep(NA,length(uhsu))
-            delta_x <- rep(NA,length(uhsu))
-            band <- rep(NA,length(uhsu))
-            width <- rep(0,length(uhsu))
-            flow_dir = rep(list(list(idx=integer(0),frc=integer(0))),length(uhsu))
+            ## initialise output - these will be very large if many channel lengths!
+            width <- setNames(rep(0,length(band)),names(band))
+            flow_dir = setNames( rep(list(numeric(0)),length(band)),
+                                names(band) )
 
             ## distances and contour lengths
             ## distance between cell centres
             dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
             dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
+            ## contour lengths
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+            ## neighbouring cells
             nr <- nrow(dem); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
-            
-            ## flags to use in loop
-            goes_to_lower_band <- rep(FALSE,length(uhsu))
+
+            ## work out minimum distance
             min_dst <- tapply(dst,hsu,min)
-            min_dst <- min_dst[paste(uhsu)]+delta_min # add wiggle on distance
-            set_cnst <- rep(FALSE,length(uhsu))
+            
+            if(!(tolower(dist_lyr)=="band")){ min_dst <- min_dst + delta_min }
+
+            ## set flags
+            goes_to_lower_cdst <-  setNames(rep(FALSE,length(band)),names(band))
+
 
             idx <- order(dem,na.last=NA)
             n_to_eval <- length(idx)
@@ -1055,74 +1062,60 @@ dynatopGIS <- R6::R6Class(
             }else{
                 next_print <- Inf
             }
+
+            ## work out the hsu id that received flow
+            receiving_hsu <- pmax(hsu,channel_id,na.rm=TRUE)
             
             for(ii in idx){
-                ##print(ii)
+                #print(ii)
                 if(!(la[ii]>0)){ next }
                 
-                rw <- match(hsu[ii], uhsu) 
-
-                ## These only need to be set once!
-                if(!set_cnst[rw]){
-                    ## band and class
-                    band[rw]  <-  cdst[ii]
-                    ## min_dst[rw] <- brk[ cdst[ii] ]
-                    class[rw] <- cls[ii]
-                    ## length of hillslope - rubbish method...
-                    delta_x[rw] <- dbrk[ band[rw] ]
-                    set_cnst[rw] <- TRUE
-                }
-
+                hstr <- paste(hsu[ii])
                 
-                ## area
-                area[rw] <- area[rw] + la[ii]
-                ## average atanb
-                atb_bar[rw] <- atb_bar[rw] + atb[ii]*la[ii]
-                ## average gradient
-                s_bar[rw] <- s_bar[rw] + gr[ii]*la[ii]
-
                 ## flow direction
                 if(is.finite(channel_id[ii])){
                     ## partial channel cell so all flow goes to that channel reach
-                    kk <- channel_id[ii]; gcl <- gr[ii]*dxy[1]
-                    to_lower_band <- TRUE
+                    flw <- setNames( gr[ii]*dxy[1], channel_id[ii])                    
+                    reset_flw <- !goes_to_lower_cdst[hstr]
                     sw <- dxy[1]
                 }else{
                     ## a land cell
                     jj <- ii+delta ## neighbouring cell numbers
                     gcl <- (dem[ii]-dem[jj])*dcl/dxy
-                
-                    to_lower <- is.finite(gcl) & gcl>0
-                    to_use <- to_lower & is.finite(cdst[jj]) & cdst[jj] < cdst[ii]
-                    to_lower_band <- TRUE
-                    if(!any(to_use) & !goes_to_lower_band[rw]){
-                        to_use <- to_lower & is.finite(dst[jj]) & dst[jj] < min_dst[rw]
-                        to_lower_band <- FALSE
+                    hjj <- receiving_hsu[jj]
+
+                    to_lower <- is.finite(gcl) & gcl>0 & is.finite(hjj)
+                    to_use <- to_lower & cdst[jj] < cdst[ii]
+                    reset_flw <- FALSE
+                    
+                    ## does so far it odesn;t go to a lower cdst class
+                    if(!goes_to_lower_cdst[hstr]){
+                        if(any(to_use)){
+                            reset_flw <- TRUE
+                        }else{
+                            to_use <- to_lower & dst[ii] < min_dst[hstr] 
+                        }
                     }
-                    kk <- hsu[ jj[to_use] ]
-                    gcl <- gcl[to_use]
+
+                    flw <- tapply(gcl[to_use],hjj[to_use],sum)
                     sw <- sum(dcl[to_use])
                 }
-                if(length(kk)>0){
-                    if(to_lower_band & !goes_to_lower_band[rw]){
+                
+                if(length(flw)>0){
+                    if(reset_flw){
                         ## reset the flow direction
-                        flow_dir[[rw]] <- list(idx=integer(0),frc=integer(0))
-                        goes_to_lower_band[rw] <- TRUE
-                        width[[rw]] <- 0
+                        flow_dir[[hstr]] <- numeric(0)
+                        goes_to_lower_cdst[hstr] <- TRUE
+                        width[hstr] <- 0
                     }
-                    width[[rw]] <- width[[rw]] + sw
+                    width[hstr] <- width[hstr] + sw
 
-                    ekk <- match(kk,flow_dir[[rw]]$idx)
-                    if(any(is.na(ekk))){
-                        ## add these to the list
-                        flow_dir[[rw]]$idx <-
-                            c(flow_dir[[rw]]$idx,kk[is.na(ekk)])
-                        flow_dir[[rw]]$frc <-
-                            c(flow_dir[[rw]]$frc,rep(0,sum(is.na(ekk))))
-                        ekk <- match(kk,flow_dir[[rw]]$idx)
+                    nw <- setdiff(names(flw),names( flow_dir[[hstr]]))
+                    if(length(nw)>0){
+                        flow_dir[[hstr]] <- c(flow_dir[[hstr]], setNames(rep(0,length(nw)),nw))
                     }
-                    flow_dir[[rw]]$frc[ekk] <-
-                        flow_dir[[rw]]$frc[ekk] + gcl
+                    flow_dir[[hstr]][names(flw)] <- flow_dir[[hstr]][names(flw)] + flw
+                
                 }
                 
                 ## verbose output here
@@ -1134,53 +1127,36 @@ dynatopGIS <- R6::R6Class(
                 
                 it <- it+1
             }
-            ## check every HSU has its constants
-            if(!all(set_cnst)){
-                stop("HSU with the following map_id cannot be generated: \n",
-                     paste(uhsu[!set_cnst],collapse=", "))
-            }
-
-            ## rescale by area
-            atb_bar <-  atb_bar/ area
-            s_bar <-  s_bar/ area
 
             ## warn if any HSU does not go to lower band
-            if(!all(goes_to_lower_band)){
-                warning("The following HSUs with the following map_id do not drain to a lower distance class: \n",
-                     paste(uhsu[!goes_to_lower_band],collapse=", "))
-            }
-            
-            ## tidy up flow
-            for(rw in 1:length(flow_dir)){
-                if( length(flow_dir[[rw]]$frc) != length(flow_dir[[rw]]$idx) ){
-                    stop("Flow length and fractions are different lengths for hsu: ",uhsu[rw])
-                }
-                if( length(flow_dir[[rw]]$frc) == 0 ){
-                    stop("Flow length and fractions are 0 for hsu: ",uhsu[rw])
-                }
-                flow_dir[[rw]]$frc <-
-                    flow_dir[[rw]]$frc / sum(flow_dir[[rw]]$frc)
+            if(!all(goes_to_lower_cdst)){
+                warning("The following HSUs do not drain to a lower distance class: \n",
+                        paste(names(goes_to_lower_cdst[!goes_to_lower_cdst]),collapse=", "))
             }
 
-            ## some checks
-            if(!all(set_cnst)){
-                stop("HSU with the following map_id cannot be generated: \n",
-                     paste(uhsu[!set_cnst],collapse=", "))
+            ## tidy up flow
+            for(ii in names(flow_dir)){
+                if( length(flow_dir[[ii]]) == 0 ){
+                    stop("There are no low directions for hsu: ",ii)
+                }
+                if( any(flow_dir[[ii]] <= 0) ){
+                    stop("There are negative or zero flow fractions forhsu: ",ii)
+                }
+                flow_dir[[ii]] <- flow_dir[[ii]]/sum(flow_dir[[ii]])
             }
-            if(!all(set_cnst)){
-                stop("HSU with the following map_id cannot be generated: \n",
-                     paste(uhsu[!set_cnst],collapse=", "))
-            }
-            ## initiailise the hillslope table
+
+            ## create table
+            uhsu <- sort(unique(as.integer(hsu)))
+            str_uhsu <- paste(uhsu)
             model$hillslope <- data.frame(
                 id = as.integer(uhsu),
-                area = area,
-                atb_bar = atb_bar,
-                s_bar = s_bar,
-                band = band,
-                class = class,
-                delta_x = delta_x,
-                width = width,
+                area = area[str_uhsu],
+                atb_bar = atb_bar[str_uhsu],
+                s_bar = s_bar[str_uhsu],
+                band = band[str_uhsu],
+                class = class[str_uhsu],
+                delta_x = delta_x[str_uhsu],
+                width = width[str_uhsu],
                 precip="unknown",
                 pet="unknown",
                 r_sfmax="r_sfmax_default",
@@ -1192,7 +1168,303 @@ dynatopGIS <- R6::R6Class(
                 c_sf="c_sf_default",
                 stringsAsFactors=FALSE
             )
-            model$hillslope$flow_dir = flow_dir
+            model$hillslope$flow_dir = lapply(unname(flow_dir[str_uhsu]),
+                                              function(x){list(idx=as.integer(names(x)),
+                                                               frc=unname(x))})
+            
+            model$hillslope$atb_bar <- model$hillslope$atb_bar/model$hillslope$area
+            model$hillslope$s_bar <- model$hillslope$s_bar/model$hillslope$area
+            
+            ## quicj and dirty check
+            nna <- rowSums(is.na(model$hillslope))
+            if( any(nna>0) ){
+                stop("failed to correctly build hillslope table. Problems with HSUs:","\n",
+                     paste(str_uhsu[nna>0],collape=", "),"\n")
+            }
+
+
+##             ## check every HSU has its constants
+##             if(!all(set_cnst)){
+##                 stop("HSU with the following map_id cannot be generated: \n",
+##                      paste(uhsu[!set_cnst],collapse=", "))
+##             }
+
+##             ## rescale by area
+##             atb_bar <-  atb_bar/ area
+##             s_bar <-  s_bar/ area
+
+##             ## warn if any HSU does not go to lower band
+##             if(!all(goes_to_lower_band)){
+##                 warning("The following HSUs with the following map_id do not drain to a lower distance class: \n",
+##                      paste(uhsu[!goes_to_lower_band],collapse=", "))
+##             }
+            
+##             ## tidy up flow
+##             for(rw in 1:length(flow_dir)){
+##                 if( length(flow_dir[[rw]]$frc) != length(flow_dir[[rw]]$idx) ){
+##                     stop("Flow length and fractions are different lengths for hsu: ",uhsu[rw])
+##                 }
+##                 if( length(flow_dir[[rw]]$frc) == 0 ){
+##                     stop("Flow length and fractions are 0 for hsu: ",uhsu[rw])
+##                 }
+##                 flow_dir[[rw]]$frc <-
+##                     flow_dir[[rw]]$frc / sum(flow_dir[[rw]]$frc)
+##             }
+
+##             ## some checks
+##             if(!all(set_cnst)){
+##                 stop("HSU with the following map_id cannot be generated: \n",
+##                      paste(uhsu[!set_cnst],collapse=", "))
+##             }
+##             if(!all(set_cnst)){
+##                 stop("HSU with the following map_id cannot be generated: \n",
+##                      paste(uhsu[!set_cnst],collapse=", "))
+##             }
+##             ## initiailise the hillslope table
+##             model$hillslope <- data.frame(
+##                 id = as.integer(uhsu),
+##                 area = area,
+##                 atb_bar = atb_bar,
+##                 s_bar = s_bar,
+##                 band = band,
+##                 class = class,
+##                 delta_x = delta_x,
+##                 width = width,
+##                 precip="unknown",
+##                 pet="unknown",
+##                 r_sfmax="r_sfmax_default",
+##                 s_rzmax="s_rzmax_default",
+##                 s_rz0="s_rz0_default",
+##                 ln_t0="ln_t0_default",
+##                 m="m_default",
+##                 t_d="t_d_default",
+##                 c_sf="c_sf_default",
+##                 stringsAsFactors=FALSE
+##             )
+##             model$hillslope$flow_dir = flow_dir
+
+
+
+
+
+            
+##             atb_bar <- rep(0,length(uhsu))
+##             s_bar <- rep(0,length(uhsu))
+##             class <- rep(NA,length(uhsu))
+##             delta_x <- rep(NA,length(uhsu))
+##             band <- rep(NA,length(uhsu))
+##             width <- rep(0,length(uhsu))
+##             flow_dir = rep(list(list(idx=integer(0),frc=integer(0))),length(uhsu))
+            
+## Loading data to create hillslope table","\n") }
+            
+##             ## load the hsu map and work out index of each hsu in it
+##             hsu <- as.matrix(hsu)
+##             la <- as.matrix(raster::raster(pos_val["land_area"]))
+##             gr <- as.matrix(raster::raster(pos_val["gradient"]))
+##             atb <- as.matrix(raster::raster(pos_val["atb"]))
+##             cls <- as.matrix(raster::raster(pos_val[class_lyr]))
+##             dst <- raster::raster(pos_val[dist_lyr])
+##             if(all(is.na(brk))){
+##                 cdst <- as.matrix(dst)
+##             }else{
+##                 cdst <- as.matrix(cut(dst,brk,include.lowest=TRUE))
+##             }
+##             dst <- as.matrix(dst)
+##             dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
+##             channel_id <- as.matrix(channel_id)
+            
+##             ## set all channel cells with no land area to band 0            
+##             cdst[is.na(cdst) & is.finite(channel_id) & !(la>0)] <- 0
+            
+##             ## distance betweek breaks
+##             if(tolower(dist_lyr)=="band"){
+##                 dbrk <- rep(mean(private$meta$resolution),max(cdst,na.rm=TRUE))
+##             }else{
+##                 dbrk <- diff(brk)
+##             }
+
+            
+##             if(verbose){ cat("Computing properties of Hillslope HSUs","\n") }
+##             browser()
+##             ## unique hsu numbers - go 1,2,3,...
+##             uhsu <- sort(unique(as.numeric(hsu))) # sort drop sNA lesft by unique
+
+##             ## writing into data frames directly is really slow so create the variables outside first
+##             area <- rep(0,length(uhsu))
+##             atb_bar <- rep(0,length(uhsu))
+##             s_bar <- rep(0,length(uhsu))
+##             class <- rep(NA,length(uhsu))
+##             delta_x <- rep(NA,length(uhsu))
+##             band <- rep(NA,length(uhsu))
+##             width <- rep(0,length(uhsu))
+##             flow_dir = rep(list(list(idx=integer(0),frc=integer(0))),length(uhsu))
+
+##             ## distances and contour lengths
+##             ## distance between cell centres
+##             dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
+##             dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
+##             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+##             nr <- nrow(dem); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+            
+##             ## flags to use in loop
+##             goes_to_lower_band <- rep(FALSE,length(uhsu))
+##             min_dst <- tapply(dst,hsu,min)
+##             min_dst <- min_dst[paste(uhsu)]+delta_min # add wiggle on distance
+##             set_cnst <- rep(FALSE,length(uhsu))
+
+##             idx <- order(dem,na.last=NA)
+##             n_to_eval <- length(idx)
+##             it <- 1
+##             if(verbose){
+##                 print_step <- round(n_to_eval/20)
+##                 next_print <- print_step
+##             }else{
+##                 next_print <- Inf
+##             }
+            
+##             for(ii in idx){
+##                 ##print(ii)
+##                 if(!(la[ii]>0)){ next }
+                
+##                 rw <- match(hsu[ii], uhsu) 
+
+##                 ## These only need to be set once!
+##                 if(!set_cnst[rw]){
+##                     ## band and class
+##                     band[rw]  <-  cdst[ii]
+##                     ## min_dst[rw] <- brk[ cdst[ii] ]
+##                     class[rw] <- cls[ii]
+##                     ## length of hillslope - rubbish method...
+##                     delta_x[rw] <- dbrk[ band[rw] ]
+##                     set_cnst[rw] <- TRUE
+##                 }
+
+                
+##                 ## area
+##                 area[rw] <- area[rw] + la[ii]
+##                 ## average atanb
+##                 atb_bar[rw] <- atb_bar[rw] + atb[ii]*la[ii]
+##                 ## average gradient
+##                 s_bar[rw] <- s_bar[rw] + gr[ii]*la[ii]
+
+##                 ## flow direction
+##                 if(is.finite(channel_id[ii])){
+##                     ## partial channel cell so all flow goes to that channel reach
+##                     kk <- channel_id[ii]; gcl <- gr[ii]*dxy[1]
+##                     to_lower_band <- TRUE
+##                     sw <- dxy[1]
+##                 }else{
+##                     ## a land cell
+##                     jj <- ii+delta ## neighbouring cell numbers
+##                     gcl <- (dem[ii]-dem[jj])*dcl/dxy
+                
+##                     to_lower <- is.finite(gcl) & gcl>0
+##                     to_use <- to_lower & is.finite(cdst[jj]) & cdst[jj] < cdst[ii]
+##                     to_lower_band <- TRUE
+##                     if(!any(to_use) & !goes_to_lower_band[rw]){
+##                         to_use <- to_lower & is.finite(dst[jj]) & dst[jj] < min_dst[rw]
+##                         to_lower_band <- FALSE
+##                     }
+##                     kk <- hsu[ jj[to_use] ]
+##                     gcl <- gcl[to_use]
+##                     sw <- sum(dcl[to_use])
+##                 }
+##                 if(length(kk)>0){
+##                     if(to_lower_band & !goes_to_lower_band[rw]){
+##                         ## reset the flow direction
+##                         flow_dir[[rw]] <- list(idx=integer(0),frc=integer(0))
+##                         goes_to_lower_band[rw] <- TRUE
+##                         width[[rw]] <- 0
+##                     }
+##                     width[[rw]] <- width[[rw]] + sw
+
+##                     ## group by HSU
+##                     gcl <- tapply(gcl,kk,sum)
+##                     kk <- as.integer(names(gcl))
+                    
+##                     ekk <- match(kk,flow_dir[[rw]]$idx)
+##                     if(any(is.na(ekk))){
+##                         kknew <- unique(kk[is.na(ekk)])
+##                         ## add these to the list
+##                         flow_dir[[rw]]$idx <-
+##                             c(flow_dir[[rw]]$idx,kknew)
+##                         flow_dir[[rw]]$frc <-
+##                             c(flow_dir[[rw]]$frc,rep(0,length(kknew)))
+##                         ekk <- match(kk,flow_dir[[rw]]$idx)
+##                     }
+##                     flow_dir[[rw]]$frc[ekk] <-
+##                         flow_dir[[rw]]$frc[ekk] + gcl
+##                 }
+                
+##                 ## verbose output here
+##                 if(it >= next_print){
+##                     cat(round(100*it / n_to_eval,1),
+##                         "% complete","\n")
+##                     next_print <- next_print+print_step
+##                 }
+                
+##                 it <- it+1
+##             }
+##             ## check every HSU has its constants
+##             if(!all(set_cnst)){
+##                 stop("HSU with the following map_id cannot be generated: \n",
+##                      paste(uhsu[!set_cnst],collapse=", "))
+##             }
+
+##             ## rescale by area
+##             atb_bar <-  atb_bar/ area
+##             s_bar <-  s_bar/ area
+
+##             ## warn if any HSU does not go to lower band
+##             if(!all(goes_to_lower_band)){
+##                 warning("The following HSUs with the following map_id do not drain to a lower distance class: \n",
+##                      paste(uhsu[!goes_to_lower_band],collapse=", "))
+##             }
+            
+##             ## tidy up flow
+##             for(rw in 1:length(flow_dir)){
+##                 if( length(flow_dir[[rw]]$frc) != length(flow_dir[[rw]]$idx) ){
+##                     stop("Flow length and fractions are different lengths for hsu: ",uhsu[rw])
+##                 }
+##                 if( length(flow_dir[[rw]]$frc) == 0 ){
+##                     stop("Flow length and fractions are 0 for hsu: ",uhsu[rw])
+##                 }
+##                 flow_dir[[rw]]$frc <-
+##                     flow_dir[[rw]]$frc / sum(flow_dir[[rw]]$frc)
+##             }
+
+##             ## some checks
+##             if(!all(set_cnst)){
+##                 stop("HSU with the following map_id cannot be generated: \n",
+##                      paste(uhsu[!set_cnst],collapse=", "))
+##             }
+##             if(!all(set_cnst)){
+##                 stop("HSU with the following map_id cannot be generated: \n",
+##                      paste(uhsu[!set_cnst],collapse=", "))
+##             }
+##             ## initiailise the hillslope table
+##             model$hillslope <- data.frame(
+##                 id = as.integer(uhsu),
+##                 area = area,
+##                 atb_bar = atb_bar,
+##                 s_bar = s_bar,
+##                 band = band,
+##                 class = class,
+##                 delta_x = delta_x,
+##                 width = width,
+##                 precip="unknown",
+##                 pet="unknown",
+##                 r_sfmax="r_sfmax_default",
+##                 s_rzmax="s_rzmax_default",
+##                 s_rz0="s_rz0_default",
+##                 ln_t0="ln_t0_default",
+##                 m="m_default",
+##                 t_d="t_d_default",
+##                 c_sf="c_sf_default",
+##                 stringsAsFactors=FALSE
+##             )
+##             model$hillslope$flow_dir = flow_dir
             
             ## parameter values
             if(verbose){ cat("Setting default parameter values","\n") }
