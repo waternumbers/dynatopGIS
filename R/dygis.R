@@ -485,6 +485,13 @@ dynatopGIS <- R6::R6Class(
             idx <- sapply(sp_object@data, is.factor)
             sp_object@data[idx] <- lapply(sp_object@data[idx], as.character)
 
+            ## ensure width and length are numeric
+            sp_object$length <- as.numeric(sp_object$length)
+            sp_object$width <- as.numeric(sp_object$width)
+            if(!all(is.finite(sp_object$width) & is.finite(sp_object$length)) ){
+                stop("Some non-finite values of channel length and width found!")
+            }
+            
             ## add width if required
             if(!is_polygon){
                 ## buffer to convert to spatial polygons object

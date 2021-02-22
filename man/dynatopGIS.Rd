@@ -148,7 +148,8 @@ Import channel data from an OGR file to the `dynatopGIS` object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(
   channel,
-  property_names = c(length = "length", startNode = "startNode", endNode = "endNode"),
+  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
+    width = "width"),
   default_width = 2
 )}\if{html}{\out{</div>}}
 }
@@ -156,17 +157,16 @@ Import channel data from an OGR file to the `dynatopGIS` object
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{channel}}{a spatialLinesDataFrame or SpatialPoltgonsDataFrame containing the channel information}
+\item{\code{channel}}{a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information}
 
-\item{\code{property_names}}{named vector of columns of the spatial data frame to use for channel properties}
+\item{\code{property_names}}{named vector of columns of the spatial data frame to use for channel properties - asee details}
 
 \item{\code{default_width}}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector.
-The function opulates the channel_id & channel_area layers and alters the land_area layer to correspond.
+Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.
 }
 
 \subsection{Returns}{
@@ -365,9 +365,8 @@ Compute a Dynamic TOPMODEL
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(
   layer_name,
   class_layer,
+  dist_class_layer,
   dist_layer,
-  brk,
-  delta_min = sqrt(sum(private$meta$resolution^2)),
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -379,11 +378,9 @@ Compute a Dynamic TOPMODEL
 
 \item{\code{class_layer}}{the layer defining the topographic classes}
 
-\item{\code{dist_layer}}{the layer dfining the disatance to the channel}
+\item{\code{dist_class_layer}}{the layer defining the distance classes}
 
-\item{\code{brk}}{breaks for cutting up the distance layer - see classify}
-
-\item{\code{delta_min}}{see details}
+\item{\code{dist_layer}}{the layer dfining the disatances to the channel}
 
 \item{\code{verbose}}{print more details of progress}
 }

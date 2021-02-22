@@ -83,7 +83,9 @@ dem <- raster::raster(M,
                       crs="+init=epsg:27700") # UK OS projection
 chn <- rasterToPolygons(dem,function(x){x==1})
 chn$length <- 10
-chn$startNode <- chn$endNode <- NA
+chn$startNode <- "node1"
+chn$endNode <- "node2"
+chn$width <- 0.001
 ```
 
 ## handling of a larger area of missing

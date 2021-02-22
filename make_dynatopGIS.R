@@ -47,25 +47,31 @@ devtools::load_all(pacPath)
 #library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData"))
 shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData"))
+agg_dem <- raster::aggregate(dem,10)
+
 property_names <- c(channel_id="identifier",
                      endNode="endNode",
                      startNode="startNode",
                      length="length")
 
 profvis::profvis({
-    c2 <- dynatopGIS$new(dem)
+    demo_dir <- tempfile("Swindale")
+    dir.create(demo_dir)
+    c2 <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
+    c2$add_dem(agg_dem)
     c2$add_channel(shp,property_names)
+    c2$compute_areas()
     c2$sink_fill(verbose=TRUE)
     c2$compute_properties(verbose=TRUE)
-    c2$classify(list(atanb=20))
-    c2$create_model(verbose=TRUE)
-    mdl <- c2$get_model()
-    c3 <- borg(c2)
+    c2$compute_flow_lengths(verbose=TRUE)
+    c2$classify("atb_split",list(atb=20))
+    c2$create_model("Swindale","atb_split","band","band",verbose=TRUE)
 })
-
-saveRDS(mdl,"./dynatop/inst/extdata/Swindale.rds")
-
-
+file.copy(file.path(demo_dir,"Swindale.rds"),"./dynatop/inst/extdata/",TRUE)
+file.copy(file.path(demo_dir,"Swindale.tif"),"./dynatop/inst/extdata/",TRUE)
+file.copy(file.path(demo_dir,"channel_id.tif"),"./dynatop/inst/extdata/",TRUE)
+file.copy(list.files(demo_dir, "^channel[.]", full.names = TRUE),
+          "./dynatop/inst/extdata/",TRUE)
 
 
 
