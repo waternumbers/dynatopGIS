@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0.9001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0.9020</span>
       </span>
     </div>
 
@@ -147,57 +147,135 @@
 
 <ul>
 <li><p><a href='#method-new'><code>dynatopGIS$new()</code></a></p></li>
+<li><p><a href='#method-get_meta'><code>dynatopGIS$get_meta()</code></a></p></li>
+<li><p><a href='#method-get_working_directory'><code>dynatopGIS$get_working_directory()</code></a></p></li>
+<li><p><a href='#method-set_working_directory'><code>dynatopGIS$set_working_directory()</code></a></p></li>
+<li><p><a href='#method-add_dem'><code>dynatopGIS$add_dem()</code></a></p></li>
+<li><p><a href='#method-add_channel'><code>dynatopGIS$add_channel()</code></a></p></li>
 <li><p><a href='#method-add_layer'><code>dynatopGIS$add_layer()</code></a></p></li>
 <li><p><a href='#method-get_layer'><code>dynatopGIS$get_layer()</code></a></p></li>
 <li><p><a href='#method-plot_layer'><code>dynatopGIS$plot_layer()</code></a></p></li>
-<li><p><a href='#method-add_channel'><code>dynatopGIS$add_channel()</code></a></p></li>
-<li><p><a href='#method-get_channel'><code>dynatopGIS$get_channel()</code></a></p></li>
 <li><p><a href='#method-sink_fill'><code>dynatopGIS$sink_fill()</code></a></p></li>
+<li><p><a href='#method-compute_areas'><code>dynatopGIS$compute_areas()</code></a></p></li>
 <li><p><a href='#method-compute_properties'><code>dynatopGIS$compute_properties()</code></a></p></li>
+<li><p><a href='#method-compute_flow_lengths'><code>dynatopGIS$compute_flow_lengths()</code></a></p></li>
 <li><p><a href='#method-classify'><code>dynatopGIS$classify()</code></a></p></li>
-<li><p><a href='#method-get_class'><code>dynatopGIS$get_class()</code></a></p></li>
-<li><p><a href='#method-plot_class'><code>dynatopGIS$plot_class()</code></a></p></li>
 <li><p><a href='#method-create_model'><code>dynatopGIS$create_model()</code></a></p></li>
+<li><p><a href='#method-input_frac'><code>dynatopGIS$input_frac()</code></a></p></li>
+<li><p><a href='#method-get_version'><code>dynatopGIS$get_version()</code></a></p></li>
+<li><p><a href='#method-get_class_method'><code>dynatopGIS$get_class_method()</code></a></p></li>
 <li><p><a href='#method-get_model'><code>dynatopGIS$get_model()</code></a></p></li>
 <li><p><a href='#method-plot_model'><code>dynatopGIS$plot_model()</code></a></p></li>
 <li><p><a href='#method-neighbour'><code>dynatopGIS$neighbour()</code></a></p></li>
-<li><p><a href='#method-get_class_method'><code>dynatopGIS$get_class_method()</code></a></p></li>
-<li><p><a href='#method-get_version'><code>dynatopGIS$get_version()</code></a></p></li>
+<li><p><a href='#method-get_class'><code>dynatopGIS$get_class()</code></a></p></li>
+<li><p><a href='#method-plot_class'><code>dynatopGIS$plot_class()</code></a></p></li>
+<li><p><a href='#method-get_channel'><code>dynatopGIS$get_channel()</code></a></p></li>
 <li><p><a href='#method-clone'><code>dynatopGIS$clone()</code></a></p></li>
 </ul>
 <p><hr>
 <a id="method-new"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>new()</code></h3>
-<p>Reads the DEM file, sets up the raster catchment description</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span><span class='va'>dem</span>, fill_na <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
+<p>Initialise a project, or reopen an existing project</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span><span class='va'>meta_file</span>, check <span class='op'>=</span> <span class='cn'>TRUE</span>, verbose <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>dem</code></dt><dd><p>a RasterLayer containing the dem</p></dd>
+<dt><code>meta_file</code></dt><dd><p>filename and path of the meta data file</p></dd>
 
-<dt><code>fill_na</code></dt><dd><p>should NA values in dem be filled. See details</p></dd>
+<dt><code>check</code></dt><dd><p>logical, should checks be performed [TRUE]</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>printing of checking output [TRUE]</p></dd>
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>Reads in the dem using the raster package. If fill_na all NA values other then those that link to the edge of the dem are filled with Inf, so they can be identified as sinks.</p>
+<p>This loads the meta data file found at <code>meta_path</code>, or creates it with a warning if no file is present. It <code>check</code> is <code>TRUE</code> then the meta data file contents are checked witht he level of returned information being controlled by <code>verbose</code>.</p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>A new `dynatopGIS` object</p>
 <p><hr>
-<a id="method-add_layer"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>add_layer()</code></h3>
-<p>Add a layer of geographical information</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>add_layer</span><span class='op'>(</span><span class='va'>raster_layer</span>, <span class='va'>layer_name</span>, check_name <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
+<a id="method-get_meta"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_meta()</code></h3>
+<p>Get project emta data</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_meta</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<p><hr>
+<a id="method-get_working_directory"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_working_directory()</code></h3>
+<p>Get current working directory</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_working_directory</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.</p>
+
+<p><hr>
+<a id="method-set_working_directory"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>set_working_directory()</code></h3>
+<p>Set current working directory</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>set_working_directory</span><span class='op'>(</span><span class='va'>file_path</span>, create <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>raster_layer</code></dt><dd><p>a RasterLayer object to add</p></dd>
+<dt><code>file_path</code></dt><dd><p>the path to the new directory to create</p></dd>
 
-<dt><code>layer_name</code></dt><dd><p>name to give to the layer</p></dd>
-
-<dt><code>check_name</code></dt><dd><p>logical indicating if name should be checked against reserved names</p></dd>
+<dt><code>create</code></dt><dd><p>should the driectory be created if it doesn't exist</p></dd>
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>The default is to check the name so that names reserved for computed varaibles are not overwritten. Disabling to overwrite computed layer may have unintended consequences.</p>
+<p>Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.</p>
+
+<p><hr>
+<a id="method-add_dem"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>add_dem()</code></h3>
+<p>Import a dem to the `dynatopGIS` object</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>add_dem</span><span class='op'>(</span><span class='va'>dem</span>, fill_na <span class='op'>=</span> <span class='cn'>TRUE</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>dem</code></dt><dd><p>a <code>RasterLayer</code> object or the path to file containing one which is the DEM</p></dd>
+
+<dt><code>fill_na</code></dt><dd><p>should NA values in dem be filled. See details</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>Should additional progress information be printed</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>If not a <code>rasterLayer</code> the DEM is read in using the raster package. If <code>fill_na</code> is <code>TRUE</code> all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.</p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>suitable for chaining</p>
+<p><hr>
+<a id="method-add_channel"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>add_channel()</code></h3>
+<p>Import channel data from an OGR file to the `dynatopGIS` object</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>add_channel</span><span class='op'>(</span>
+  <span class='va'>channel</span>,
+  property_names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>length <span class='op'>=</span> <span class='st'>"length"</span>, startNode <span class='op'>=</span> <span class='st'>"startNode"</span>, endNode <span class='op'>=</span> <span class='st'>"endNode"</span>,
+    width <span class='op'>=</span> <span class='st'>"width"</span><span class='op'>)</span>,
+  default_width <span class='op'>=</span> <span class='fl'>2</span>
+<span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>channel</code></dt><dd><p>a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information</p></dd>
+
+<dt><code>property_names</code></dt><dd><p>named vector of columns of the spatial data frame to use for channel properties - asee details</p></dd>
+
+<dt><code>default_width</code></dt><dd><p>default width of a channel if not specified in property_names. Defaults to 2 metres.</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the <code>property_names</code> vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.</p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>suitable for chaining</p>
+<p><hr>
+<a id="method-add_layer"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>add_layer()</code></h3>
+<p>Add a layer of geographical information</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>add_layer</span><span class='op'>(</span><span class='va'>layer_name</span>, <span class='va'>file_path</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>layer_name</code></dt><dd><p>name to give to the layer</p></dd>
+
+<dt><code>file_path</code></dt><dd><p>the location of the file containing the new layer</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>The file given is read by the <code>raster</code> package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.</p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>suitable for chaining</p>
@@ -228,38 +306,6 @@
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>a plot</p>
 <p><hr>
-<a id="method-add_channel"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>add_channel()</code></h3>
-<p>Import channel data from an OGR file to the `dynatopGIS` object</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>add_channel</span><span class='op'>(</span>
-  <span class='va'>sp_object</span>,
-  property_names <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span>length <span class='op'>=</span> <span class='st'>"length"</span>, startNode <span class='op'>=</span> <span class='st'>"startNode"</span>, endNode <span class='op'>=</span> <span class='st'>"endNode"</span>,
-    width <span class='op'>=</span> <span class='st'>"width"</span><span class='op'>)</span>,
-  default_width <span class='op'>=</span> <span class='fl'>2</span>
-<span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
-<p><div class="arguments"></p><dl>
-<dt><code>sp_object</code></dt><dd><p>a spatialLinesDataFrame containing the channel information</p></dd>
-
-<dt><code>property_names</code></dt><dd><p>named vector of columns of the spatial data frame to use for channel properties</p></dd>
-
-<dt><code>default_width</code></dt><dd><p>default width of a channel if not specified in property_names. Defaults to 2 metres.</p></dd>
-
-</dl><p></div></p>
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>Takes the input file and covnerts it to polygons with properties length,width,startNode,endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the <code>property_names</code> vector.
-The function opulates the channel_id &amp; channel_area layers and alters the land_area layer to correspond.</p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>suitable for chaining</p>
-<p><hr>
-<a id="method-get_channel"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_channel()</code></h3>
-<p>Get the channel description</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_channel</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>an SpatialPolygonDataFrame containing the channels</p>
-<p><hr>
 <a id="method-sink_fill"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>sink_fill()</code></h3>
 <p>The sink filling algorithm of Planchona and Darboux 2001</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>sink_fill</span><span class='op'>(</span>
@@ -284,39 +330,164 @@ The function opulates the channel_id &amp; channel_area layers and alters the la
 <p>The algorithm implimented in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.</p>
 
 <p><hr>
+<a id="method-compute_areas"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>compute_areas()</code></h3>
+<p>Computes area maps and presence of channel in dem pixels</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>compute_areas</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>The algorithm calculates the land and channel area for each DEM pixel assigning a channel_id to each pixel with a channel area.</p>
+
+<p><hr>
 <a id="method-compute_properties"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>compute_properties()</code></h3>
-<p>Computes statistics e.g. log(a/tanb) for raster cells</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>compute_properties</span><span class='op'>(</span>missing_grad <span class='op'>=</span> <span class='fl'>1e-04</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
+<p>Computes statistics e.g. gradient, log(a/tanb) for raster cells</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>compute_properties</span><span class='op'>(</span>min_grad <span class='op'>=</span> <span class='fl'>1e-04</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>missing_grad</code></dt><dd><p>gradient that can be assigned to a pixel if it can't be computed</p></dd>
+<dt><code>min_grad</code></dt><dd><p>gradient that can be assigned to a pixel if it can't be computed</p></dd>
 
 <dt><code>verbose</code></dt><dd><p>print out additional diagnostic information</p></dd>
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>The algorithm works in two passes. The first computes the number of upstream pixels and values that do not depend on ordering. The second sequences downslope to compute values. Missing gradient is only used for pixels which are partially channel but have no upslope neighbours.</p>
+<p>The algorithm passed through the cells in decreasing height. Min grad is applied to all cells. It is also used for missing gradients in pixels which are partially channel but have no upslope neighbours.</p>
 
 <p><hr>
-<a id="method-classify"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>classify()</code></h3>
-<p>Split a catchment into a set hydrological response units (HRUs) according to any number of landscape layer cuts or burns</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>classify</span><span class='op'>(</span><span class='va'>cuts</span>, burns <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+<a id="method-compute_flow_lengths"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>compute_flow_lengths()</code></h3>
+<p>Computes flow length for each pixel to the channel</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>compute_flow_lengths</span><span class='op'>(</span>verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
-<dt><code>cuts</code></dt><dd><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)</p></dd>
-
-<dt><code>burns</code></dt><dd><p>a vector of layer names which are to be used as burns</p></dd>
+<dt><code>verbose</code></dt><dd><p>print out additional diagnostic information</p></dd>
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Changing teh classification removes the current model ensuring the two are always syncronised.</p>
+<p>The algorithm passed through the cells in increaing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow diection with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.</p>
 
 <p><hr>
+<a id="method-classify"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>classify()</code></h3>
+<p>Create a catchment classification based on any number of landscape layer cuts or burns</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>classify</span><span class='op'>(</span><span class='va'>layer_name</span>, <span class='va'>cuts</span>, burns <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>layer_name</code></dt><dd><p>name of the new layer to create</p></dd>
+
+<dt><code>cuts</code></dt><dd><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)</p></dd>
+
+<dt><code>burns</code></dt><dd><p>a vector of layer names which are to be burnt on</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Not that cuts are impliment using <code><a href='https://rdrr.io/pkg/raster/man/cut.html'>raster::cut</a></code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
+
+<p><hr>
+<a id="method-create_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>create_model()</code></h3>
+<p>Compute a Dynamic TOPMODEL</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>create_model</span><span class='op'>(</span>
+  <span class='va'>layer_name</span>,
+  <span class='va'>class_layer</span>,
+  <span class='va'>dist_class_layer</span>,
+  <span class='va'>dist_layer</span>,
+  verbose <span class='op'>=</span> <span class='cn'>FALSE</span>
+<span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>layer_name</code></dt><dd><p>name for the new model and layers</p></dd>
+
+<dt><code>class_layer</code></dt><dd><p>the layer defining the topographic classes</p></dd>
+
+<dt><code>dist_class_layer</code></dt><dd><p>the layer defining the distance classes</p></dd>
+
+<dt><code>dist_layer</code></dt><dd><p>the layer dfining the disatances to the channel</p></dd>
+
+<dt><code>verbose</code></dt><dd><p>print more details of progress</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>The distance layer is cut into classes and combined with <code>class_layer</code> using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min.</p>
+
+<p><hr>
+<a id="method-input_frac"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>input_frac()</code></h3>
+<p>Compute HSU fractional inputs</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>input_frac</span><span class='op'>(</span>
+  <span class='va'>hsu_layer</span>,
+  <span class='va'>input_layer</span>,
+  hsu_label <span class='op'>=</span> <span class='st'>"hsu_"</span>,
+  input_label <span class='op'>=</span> <span class='st'>""</span>
+<span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>hsu_layer</code></dt><dd><p>layer of the model</p></dd>
+
+<dt><code>input_layer</code></dt><dd><p>raster of values containing the input class</p></dd>
+
+<dt><code>hsu_label</code></dt><dd><p>string containing the label to add the values of hsu_layer</p></dd>
+
+<dt><code>input_label</code></dt><dd><p>string containing the label to add the values of input_layer</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>Fractions are computed for all HSUs (including the channel) using raster::crosstab. It does not accout for unequal cells areas or HSUs which only cover a fraction of a cell</p>
+
+<p><hr>
+<a id="method-get_version"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_version()</code></h3>
+<p>get the version number</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_version</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>teh version number indicates the version of the algorithms within the object</p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>a numeric version number</p>
+<p><hr>
+<a id="method-get_class_method"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_class_method()</code></h3>
+<p>get the cuts and burns used to classify</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_class_method</span><span class='op'>(</span><span class='va'>layer_name</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>layer_name</code></dt><dd><p>the name of layer whose classification method is returned</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>a list with two elements, cuts and burns</p>
+<p><hr>
+<a id="method-get_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_model()</code></h3>
+<p>DEPRECIATED Get the model is a form suitable for dynatop</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_model</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>a Dynamic TOPMODE description suitable for the <code>dyantop</code> package</p>
+<p><hr>
+<a id="method-plot_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>plot_model()</code></h3>
+<p>DEPRECIATED Plot the spatial properties of a model</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>plot_model</span><span class='op'>(</span>add_channel <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>add_channel</code></dt><dd><p>should the channel be added to the plot</p></dd>
+
+</dl><p></div></p>
+<p><hr>
+<a id="method-neighbour"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>neighbour()</code></h3>
+<p>DEPRECIATED Return the index of neighbouring cells</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>neighbour</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>x</code></dt><dd><p>index of cells for which to find neighbours</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>a list of indexes of neighbours</p>
+<p><hr>
 <a id="method-get_class"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_class()</code></h3>
-<p>Get a classification layer of geographical information or a list of layer names</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_class</span><span class='op'>(</span>layer_name <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/character.html'>character</a></span><span class='op'>(</span><span class='fl'>0</span><span class='op'>)</span><span class='op'>)</span></pre><p></div></p>
+<p>DEPECIATED Get a classification layer of geographical information or a list of layer names</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_class</span><span class='op'>(</span><span class='va'>layer_name</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
@@ -327,7 +498,7 @@ The function opulates the channel_id &amp; channel_area layers and alters the la
 <p>a RasterLayer of the requested information if layer_name is given else a vector of layer names</p>
 <p><hr>
 <a id="method-plot_class"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>plot_class()</code></h3>
-<p>Plot a classification layer</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p>DEPECIATED Plot a classification layer</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>plot_class</span><span class='op'>(</span>layer_name <span class='op'>=</span> <span class='st'>"final"</span>, add_channel <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
@@ -340,63 +511,12 @@ The function opulates the channel_id &amp; channel_area layers and alters the la
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>a plot</p>
 <p><hr>
-<a id="method-create_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>create_model()</code></h3>
-<p>Compute a Dynamic TOPMODEL</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>create_model</span><span class='op'>(</span>band <span class='op'>=</span> <span class='fl'>5</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
-<p><div class="arguments"></p><dl>
-<dt><code>band</code></dt><dd><p>How to cut the bands into the model, interpreted as for a cut in the classify method</p></dd>
-
-<dt><code>verbose</code></dt><dd><p>print out additional diagnostic information</p></dd>
-
-</dl><p></div></p>
-<p><hr>
-<a id="method-get_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_model()</code></h3>
-<p>Get the model is a form suitable for dynatop</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_model</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
+<a id="method-get_channel"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_channel()</code></h3>
+<p>DEPRECIATED Get the channel description</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_channel</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>a Dynamic TOPMODE description suitable for the <code>dyantop</code> package</p>
-<p><hr>
-<a id="method-plot_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>plot_model()</code></h3>
-<p>Plot the spatial properties of a model</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>plot_model</span><span class='op'>(</span>add_channel <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
-<p><div class="arguments"></p><dl>
-<dt><code>add_channel</code></dt><dd><p>should the channel be added to the plot</p></dd>
-
-</dl><p></div></p>
-<p><hr>
-<a id="method-neighbour"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>neighbour()</code></h3>
-<p>Return the index of neighbouring cells</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>neighbour</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
-<p><div class="arguments"></p><dl>
-<dt><code>x</code></dt><dd><p>index of cells for which to find neighbours</p></dd>
-
-</dl><p></div></p>
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>a list of indexes of neighbours</p>
-<p><hr>
-<a id="method-get_class_method"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_class_method()</code></h3>
-<p>get the cuts and burns used to classify</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_class_method</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>a list with two elements, cuts and burns</p>
-<p><hr>
-<a id="method-get_version"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_version()</code></h3>
-<p>get the version number</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_version</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>teh version number indicates the version of the algorithms within the object</p>
-
-<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
-<p>a numeric version number</p>
+<p>an SpatialPolygonDataFrame containing the channels</p>
 <p><hr>
 <a id="method-clone"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>clone()</code></h3>
 <p>The objects of this class are cloneable with this method.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
