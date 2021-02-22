@@ -456,13 +456,18 @@ dynatopGIS <- R6::R6Class(
                 sp_object[[ii]] <- sp_object[[property_names[ii]]]
             }
 
+            
             ## arrange in id in order of flow direction - so lower values at bottom of network
-            sp_object[["id"]] <- NA ## set id to NA
+            
             unds <- unique(c(sp_object[['startNode']],sp_object[['endNode']]))
+            if(any(is.na(unds)|is.nan(unds)|is.infinite("er"))){
+                stop("To and From nodes must have unique, non-missing codes")
+            }
             nfrom <- setNames(rep(0,length(unds)),unds)
             tmp <- table(sp_object[['startNode']])
             nfrom[names(tmp)] <- tmp
             max_id <- 0
+            sp_object[["id"]] <- NA ## set id to NA
             while( any(nfrom==0) ){
                 idx <- names(nfrom[nfrom==0])
                 ## fill if of reaches which are at bottom
@@ -978,6 +983,7 @@ dynatopGIS <- R6::R6Class(
             chn <- raster::shapefile(pos_val["channel"])
             
             model$channel <- chn@data
+            model$channel$id <- as.integer(model$channel$id)
             model$channel[["precip"]] <- "unknown"
             model$channel[["pet"]] <- "unknown"
             model$channel[["v_ch"]] <- "v_ch_default"
@@ -991,9 +997,9 @@ dynatopGIS <- R6::R6Class(
                 jdx <- which( model$channel[['startNode']]==
                               model$channel[['endNode']][rw])
                 if( length(jdx) > 0 ){
-                    cfd[[rw]] <- cbind(from = model$channel$id[rw],
-                                       to = model$channel$id[jdx],
-                                       frc= rep(1/length(jdx),length(jdx)))
+                    cfd[[rw]] <- data.frame(from = as.integer(model$channel$id[rw]),
+                                            to = as.integer(model$channel$id[jdx]),
+                                            frc= rep(1/length(jdx),length(jdx)))
                 }
             }
 
@@ -1050,7 +1056,7 @@ dynatopGIS <- R6::R6Class(
             ## sort and reapply to give ids correct ordering
             if(verbose){ cat("Altering map with new id values","\n") }
             model$hillslope <- model$hillslope[order(model$hillslope$band,decreasing=TRUE),]
-            model$hillslope$id <- (nrow(model$hillslope):1)+max(model$channel$id)
+            model$hillslope$id <- as.integer( (nrow(model$hillslope):1)+max(model$channel$id) )
             hsu <- raster::raster(pos_val[layer_name])
             #tmp <- model$hillslope[c("hsu_id","id")]
             hsu <- raster::subs(hsu, model$hillslope[c("hsu_id","id")], #tmp,#model$hillslope, by="hsu_id", which="id",
@@ -1063,7 +1069,7 @@ dynatopGIS <- R6::R6Class(
             rm(atb,tcls)
             
             ## work out hillslope flow directions
-            if(verbose){ cat("Computing hillslope flow directions") }
+            if(verbose){ cat("Computing hillslope flow directions","\n") }
             dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
             channel_id <- as.matrix(channel_id)
             
@@ -1174,282 +1180,14 @@ dynatopGIS <- R6::R6Class(
             
             ## create flow directions matrix
             for(ii in names(fd)){
-                fd[[ii]] <- cbind(from=as.integer(ii),
-                                  to=as.integer(names(fd[[ii]])),
-                                  frc = fd[[ii]]/sum(fd[[ii]])
-                                  )
+                fd[[ii]] <- data.frame(from=as.integer(ii),
+                                       to=as.integer(names(fd[[ii]])),
+                                       frc = as.numeric(fd[[ii]]/sum(fd[[ii]]))
+                                       )
             }
+            
             model$flow_direction <- rbind( do.call(rbind,fd), do.call(rbind,cfd) )
 
-            
-                
-
-
-
-
-
-
-
-            
-
-
-            
-            ## ## sort and reapply to give correct ordering
-            ## model$hillslope <- model$hillslope[order(model$hillslope$band,decreasing=TRUE),]
-            
-
-            
-            
-            
-            ## ## create the new layer of HSU
-            ## if(verbose){ cat("Creating new HSU layer","\n") }
-            ## if(tolower(dist_lyr)=="band"){
-            ##     warning("Cell order being used for distance - brk being ingnored")
-            ##     brk <- NA
-            ## }
-            ## private$apply_classify(setNames(list(NA,brk),c(class_lyr,dist_lyr)),NULL,layer_name)
-            ## pos_val <- private$find_layer(TRUE)
-            ## brk <- self$get_class_method(layer_name)$cuts[[dist_lyr]]
-
-            ## ## initialise the model
-            ## model <- list(map = list(hillslope = pos_val[layer_name],
-            ##                          channel = pos_val["channel"],
-            ##                          channel_id = pos_val["channel_id"]))
-
-            ## ## Create the channel table
-            ## if(verbose){ cat("Creating Channel table","\n") }
-            
-            ## channel_id <- raster::raster(pos_val["channel_id"])
-            ## channel_area <- raster::raster(pos_val["channel_id"])
-            ## chn <- raster::shapefile(pos_val["channel"])
-            
-            ## model$channel <- chn@data
-            ## model$channel[["precip"]] <- "unknown"
-            ## model$channel[["pet"]] <- "unknown"
-            ## model$channel[["v_ch"]] <- "v_ch_default"            
-            ## tmp <- zonal(channel_area,channel_id,sum)
-            ## model$channel[["area"]] <- 0
-            ## for(ii in 1:nrow(tmp)){
-            ##     model$channel[["area"]][model$channel[["id"]]==tmp[ii,"zone"]] <- tmp[ii,"value"]
-            ## }
-
-            ## rm(channel_area,chn) # remove to clear memory since not used again
-
-            ## ## Create channel flow directions
-            ## fd <- rep(list(NULL),length(model$channel$id))
-            ## for(rw in 1:nrow(model$channel)){
-            ##     jdx <- which( model$channel[['startNode']]==
-            ##                   model$channel[['endNode']][rw])
-            ##     if( length(jdx) > 0 ){
-            ##         fd[[rw]] <- cbind(from = model$channel$id[rw],
-            ##                           to = model$channel$id[jdx],
-            ##                           frc= rep(1/length(jdx),length(jdx)))
-            ##     }
-            ## }
-            ## model$flow_dir <- do.call(rbind,fd)
-
-            ## ## adapt the hillslope map to have the id as its number
-            ## if(verbose){ cat("Adapting hillslope map to match id","\n") }
-            ## hsu <- raster::raster(pos_val[layer_name])
-            ## hsu <- hsu + max(model$channel$id)
-            ## raster::writeRaster(hsu,pos_val[layer_name],overwrite=TRUE)
-            
-            ## ## Create the hillslope table
-            ## if(verbose){ cat("Loading initial data for hsu computation","\n") }
-            ## ## load the hsu required for all stages of table creation
-            ## hsu <- as.matrix(hsu)
-            ## dst <- raster::raster(pos_val[dist_lyr])
-            ## if(all(is.na(brk))){
-            ##     cdst <- as.matrix(dst)
-            ## }else{
-            ##     cdst <- as.matrix(cut(dst,brk,include.lowest=TRUE))
-            ## }
-            ## dst <- as.matrix(dst)
-            
-            ## if(verbose){ cat("Computing fixed hsu properties","\n") }           
-            ## ## class
-            ## class <- tapply(as.matrix(raster::raster(pos_val[class_lyr])),
-            ##                 hsu,unique)
-            ## band <- tapply(cdst,hsu,unique)
-            ## if(tolower(dist_lyr)=="band"){
-            ##     delta_x <- setNames( rep(mean(private$meta$resolution),length(band)),
-            ##                         names(band) )
-            ## }else{
-            ##     delta_x <- setNames( diff(brk)[band], names(band) )
-            ## }
-
-            ## ## spatially averaged properties
-            ## if(verbose){ cat("Computing spatial averaged hsu properties","\n") }
-            ## la <- as.matrix(raster::raster(pos_val["land_area"]))
-            ## gr <- as.matrix(raster::raster(pos_val["gradient"]))
-            ## area <- tapply(la,hsu,sum) ## area of each HSU
-            ## atb_bar <- tapply(as.matrix(raster::raster(pos_val["atb"]))*la,
-            ##                   hsu,sum)
-            ## s_bar <- tapply(gr*la,hsu,sum)
-
-            ## ## Calculate routing
-            ## if(verbose){ cat("Computing hillslope routing","\n") }
-            ## ## load the additional data files
-            ## dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
-            ## channel_id <- as.matrix(channel_id)
-            
-            ## ## initialise output - these will be very large if many channel lengths!
-            ## #width <- setNames(rep(0,length(band)),names(band))
-            ## flow_dir = setNames( rep(list(numeric(0)),length(band)),
-            ##                     names(band) )
-
-            ## ## distances and contour lengths
-            ## ## distance between cell centres
-            ## dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
-            ## dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
-            ## ## contour lengths
-            ## dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
-            ## ## neighbouring cells
-            ## nr <- nrow(dem); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
-
-            ## ## work out minimum distance
-            ## min_dst <- tapply(dst,hsu,min)
-            
-            ## if(!(tolower(dist_lyr)=="band")){ min_dst <- min_dst + delta_min }
-
-            ## ## set flags
-            ## goes_to_lower_cdst <-  setNames(rep(FALSE,length(band)),names(band))
-
-
-            ## idx <- order(dem,na.last=NA)
-            ## n_to_eval <- length(idx)
-            ## it <- 1
-            ## if(verbose){
-            ##     print_step <- round(n_to_eval/20)
-            ##     next_print <- print_step
-            ## }else{
-            ##     next_print <- Inf
-            ## }
-
-            ## ## work out the hsu id that received flow
-            ## receiving_hsu <- pmax(hsu,channel_id,na.rm=TRUE)
-            
-            ## for(ii in idx){
-            ##     #print(ii)
-            ##     if(!(la[ii]>0)){ next }
-                
-            ##     hstr <- paste(hsu[ii])
-                
-            ##     ## flow direction
-            ##     if(is.finite(channel_id[ii])){
-            ##         ## partial channel cell so all flow goes to that channel reach
-            ##         flw <- setNames( gr[ii]*dxy[1], channel_id[ii])                    
-            ##         reset_flw <- !goes_to_lower_cdst[hstr]
-            ##         sw <- dxy[1]
-            ##     }else{
-            ##         ## a land cell
-            ##         jj <- ii+delta ## neighbouring cell numbers
-            ##         gcl <- (dem[ii]-dem[jj])*dcl/dxy
-            ##         hjj <- receiving_hsu[jj]
-
-            ##         to_lower <- is.finite(gcl) & gcl>0 & is.finite(hjj)
-            ##         to_use <- to_lower & cdst[jj] < cdst[ii]
-            ##         reset_flw <- FALSE
-                    
-            ##         ## does so far it doesn't go to a lower cdst class
-            ##         if(!goes_to_lower_cdst[hstr]){
-            ##             if(any(to_use)){
-            ##                 reset_flw <- TRUE
-            ##             }else{
-            ##                 to_use <- to_lower & dst[ii] < min_dst[hstr] 
-            ##             }
-            ##         }
-
-            ##         flw <- tapply(gcl[to_use],hjj[to_use],sum)
-            ##         sw <- sum(dcl[to_use])
-            ##     }
-                
-            ##     if(length(flw)>0){
-            ##         if(reset_flw){
-            ##             ## reset the flow direction
-            ##             flow_dir[[hstr]] <- numeric(0)
-            ##             goes_to_lower_cdst[hstr] <- TRUE
-            ##             #width[hstr] <- 0
-            ##         }
-            ##         #width[hstr] <- width[hstr] + sw
-
-            ##         nw <- setdiff(names(flw),names( flow_dir[[hstr]]))
-            ##         if(length(nw)>0){
-            ##             flow_dir[[hstr]] <- c(flow_dir[[hstr]], setNames(rep(0,length(nw)),nw))
-            ##         }
-            ##         flow_dir[[hstr]][names(flw)] <- flow_dir[[hstr]][names(flw)] + flw
-                
-            ##     }
-                
-            ##     ## verbose output here
-            ##     if(it >= next_print){
-            ##         cat(round(100*it / n_to_eval,1),
-            ##             "% complete","\n")
-            ##         next_print <- next_print+print_step
-            ##     }
-                
-            ##     it <- it+1
-            ## }
-
-            ## ## warn if any HSU does not go to lower band
-            ## if(!all(goes_to_lower_cdst)){
-            ##     warning("The following HSUs do not drain to a lower distance class: \n",
-            ##             paste(names(goes_to_lower_cdst[!goes_to_lower_cdst]),collapse=", "))
-            ## }
-
-           
-
-            ## ## create table
-            ## uhsu <- sort(unique(as.integer(hsu)))
-            ## str_uhsu <- paste(uhsu)
-            ## model$hillslope <- data.frame(
-            ##     id = as.integer(uhsu),
-            ##     area = area[str_uhsu],
-            ##     atb_bar = atb_bar[str_uhsu],
-            ##     s_bar = s_bar[str_uhsu],
-            ##     band = band[str_uhsu],
-            ##     class = class[str_uhsu],
-            ##     delta_x = delta_x[str_uhsu],
-            ##     #width = width[str_uhsu],
-            ##     precip="unknown",
-            ##     pet="unknown",
-            ##     r_sfmax="r_sfmax_default",
-            ##     s_rzmax="s_rzmax_default",
-            ##     s_rz0="s_rz0_default",
-            ##     ln_t0="ln_t0_default",
-            ##     m="m_default",
-            ##     t_d="t_d_default",
-            ##     c_sf="c_sf_default",
-            ##     stringsAsFactors=FALSE
-            ## )
-                       
-            ## model$hillslope$atb_bar <- model$hillslope$atb_bar/model$hillslope$area
-            ## model$hillslope$s_bar <- model$hillslope$s_bar/model$hillslope$area
-
-            ## ## add links to flow matrix
-            ## model$hillslope$flow_dir = lapply(unname(flow_dir[str_uhsu]),
-            ##                                   function(x){list(idx=as.integer(names(x)),
-            ##                                                    frc=unname(x))})
-            ## ## tidy up flow
-            ## for(ii in names(flow_dir)){
-            ##     if( any(flow_dir[[ii]] <= 0) ){
-            ##         stop("There are negative or zero flow fractions for hsu: ",ii)
-            ##     }
-            ##     if( length(flow_dir[[ii]]) == 0 ){
-            ##          stop("There are no low directions for hsu: ",ii)
-            ##     }
-            ##     flow_dir[[ii]] <- cbind(from=as.integer(ii),
-            ##                             idx=as.integer(names(flow_dir[[ii]])),
-            ##                             frc=flow_dir[[ii]]/sum(flow_dir[[ii]]))
-            ## }
-            ## model$flow_dir <- rbind(model$flow_dir, do.call(rbind,flow_dir))
-            
-            ## ## quicj and dirty check
-            ## nna <- rowSums(is.na(model$hillslope))
-            ## if( any(nna>0) ){
-            ##     stop("failed to correctly build hillslope table. Problems with HSUs:","\n",
-            ##          paste(str_uhsu[nna>0],collape=", "),"\n")
-            ## }
             
             ## parameter values
             if(verbose){ cat("Setting default parameter values","\n") }
