@@ -5,15 +5,22 @@ r:
 repos:
   CRAN: https://cloud.r-project.org
   drat: https://waternumbers.github.io/drat
-apt_packages:
-  - libgdal-dev
-  - libharfbuzz-dev
-  - libfribidi-dev
+addons:
+  apt:
+    packages:
+    - libgdal-dev
+    - libharfbuzz-dev
+    - libfribidi-dev
+  homebrew:
+    packages:
+    - harfbuzz
+    - fribidi    
 cache: packages
 warnings_are_errors: true
 os:
   - linux
   - osx
+osx_image: xcode12.2  
 after_success:
   - Rscript -e 'covr::coveralls()'
   - Rscript -e 'pkgdown::build_site()'
