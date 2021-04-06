@@ -179,10 +179,10 @@ dynatopGIS <- R6::R6Class(
         }, 
         #' @description Create a catchment classification based on any number of landscape layer cuts or burns
         #' @param layer_name name of the new layer to create
-        #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)
+        #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values). A value of \code{NA} implies to layer is already cut and can be used in the classification directly.
         #' @param burns a vector of layer names which are to be burnt on
         #'
-        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Not that cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         classify = function(layer_name,cuts,burns=NULL){
             private$apply_classify(cuts,burns,layer_name)
             invisible(self)
@@ -190,16 +190,39 @@ dynatopGIS <- R6::R6Class(
 
         #' @description Compute a Dynamic TOPMODEL
         #'
-        #' @param class_layer the layer defining the topographic classes
-        #' @param dist_class_layer the layer defining the distance classes
-        #' @param dist_layer the layer dfining the disatances to the channel
         #' @param layer_name name for the new model and layers
+        #' @param class_layer the layer defining the topographic classes
+        #' @param dist_layer the layer defining the distances to the channel
+        #' @param transmissivity transmissivity profile to use
+        #' @param channel_solver channel solver to use
+        #' @param dist_delta used in computing flow linkages see details        
+        #' @param rain_layer the layer defining the rainfall inputs
+        #' @param rain_label Prepended to rain_layer values to give rainfall series name        
+        #' @param pet_layer the layer defining the pet inputs
+        #' @param pet_label Prepended to pet_layer values to give pet series name
         #' @param verbose print more details of progress
         #'
-        #' @details The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min. 
-        create_model = function(layer_name,class_layer,dist_class_layer,dist_layer,verbose=FALSE){
-            private$apply_create_model(class_layer,dist_class_layer,dist_layer,
-                                       layer_name,verbose)
+        #' @details The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta ot the shortest distance within the HRU.
+        #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
+        #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, overwise an input table for the models gernerated with the value "missing" used in place of the series name.
+        create_model = function(layer_name,class_layer,dist_layer,
+                                transmissivity=c("exponential","boundend_exponential","constant"),
+                                channel_solver=c("histogram"),
+                                dist_delta=0,
+                                rain_layer=NULL,rain_label=character(0),
+                                pet_layer=NULL,pet_label=character(0),
+                                verbose=FALSE){
+            ## check valid transmissivity and channel_solver
+            transmissivity <- match.arg(transmissivity)
+            channel_solver <- match.arg(channel_solver)
+            
+            private$apply_create_model(class_layer, dist_layer,dist_delta,
+                                       rain_layer, rain_label,
+                                       pet_layer, pet_label,
+                                       layer_name,verbose,
+                                       transmissivity,
+                                       channel_solver)
+
             invisible(self)
         },
         #' @description Compute HSU fractional inputs
@@ -211,7 +234,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @details Fractions are computed for all HSUs (including the channel) using raster::crosstab. It does not accout for unequal cells areas or HSUs which only cover a fraction of a cell
         input_frac = function(hsu_layer,input_layer,hsu_label="hsu_",input_label=""){
-            private$apply_input_frac(hsu_layer,input_layer,hsu_label,input_label)
+            stop("This function is depreciated - see the $create_model options for rainfall and PET")
         },            
         #' @description get the version number
         #' @return a numeric version number
@@ -276,7 +299,7 @@ dynatopGIS <- R6::R6Class(
                
     ),
     private = list(
-        version = "0.2.0.9010",
+        version = "0.2.0.9030",
         wdir=character(0),
         meta_path = character(0),
         meta=list(
@@ -331,8 +354,6 @@ dynatopGIS <- R6::R6Class(
                 names(private$meta$layers)
             }
         },
-        
-                
         ## check raster layer
         check_rst = function(fn,nm){
             rst <- fn
@@ -351,7 +372,6 @@ dynatopGIS <- R6::R6Class(
             ## TODO
             warning("No checks on the meta are currently performed")
         },
-
         ## adding dem
         apply_add_dem = function(dem,fill_na,verbose){
             
@@ -360,7 +380,7 @@ dynatopGIS <- R6::R6Class(
             }
 
             if(!("RasterLayer" %in% class(dem))){
-                ## then dem should be a character string points to the file
+                ## then dem should be a character string pointing to the file
                 dem <- as.character(dem)
                 if(file.exists(as.character(dem))){
                     dem <- raster::raster(dem)
@@ -389,12 +409,11 @@ dynatopGIS <- R6::R6Class(
                 dem[!is.na(na_clumps)] <- -1e6+1 # set to low value to indicate missing
             }
 
-            
+            ## fill meta data
             if(length(private$meta$crs)==0){ private$meta$crs = crs(dem) }
             if(length(private$meta$extent)==0){ private$meta$extent <- extent(dem) }
             if(length(private$meta$resolution)==0){ private$meta$resolution <- res(dem) }
             private$check_rst(dem,"DEM")
-
             
             fn <- private$make_filename("dem")
             writeRaster(dem,fn); private$meta$layers[["dem"]]$file <- fn
@@ -423,9 +442,16 @@ dynatopGIS <- R6::R6Class(
             if( !all( c("length","startNode","endNode") %in% names(property_names)) ){
                 stop("A required property name is not specified in property_names")
             }
-            if(!("width" %in% names(property_names)) & !is_polygon){
-                warning("Modifying to spatial polygons using default width")
-                sp_object[['width']] <- default_width
+
+            ## check if SpatialPolygon object - if not buffer using a width
+            if(!is(sp_object,"SpatialPolygonsDataFrame")){               
+                if(!("width" %in% names(property_names)) & !is_polygon){
+                    warning("Modifying to spatial polygons using default width")
+                    sp_object[['width']] <- default_width ## add width
+                }else{
+                    warning("Modifying to spatial polygons using specified width")
+                }
+                sp_object <- rgeos::gBuffer(sp_object, byid=TRUE, width=sp_object[['width']])
             }
 
             ## see if variables refered to in property_names exist
@@ -433,7 +459,6 @@ dynatopGIS <- R6::R6Class(
                 stop("A field specified in property_names is not present")
             }
 
-            
             ## populate meta data from channel if missing
             if(length(private$meta$crs)==0){ private$meta$crs = crs(sp_object) }
             
@@ -450,18 +475,15 @@ dynatopGIS <- R6::R6Class(
 
             }
              
-
-            ## ensure correct columns are in the sp_object
+            ## ensure correct columns are in the sp_object by copying to correct name
             for(ii in names(property_names)){
                 sp_object[[ii]] <- sp_object[[property_names[ii]]]
             }
-
-            
+          
             ## arrange in id in order of flow direction - so lower values at bottom of network
-            
-            unds <- unique(c(sp_object[['startNode']],sp_object[['endNode']]))
-            if(any(is.na(unds)|is.nan(unds)|is.infinite("er"))){
-                stop("To and From nodes must have unique, non-missing codes")
+            unds <- unique(c(sp_object[['startNode']],sp_object[['endNode']])) # unique nodes
+            if(any(is.na(unds)|is.nan(unds)|is.infinite(unds))){ ## TODO was is.infinte("er")??
+                stop("The nodes in startNode and endNode must have unique, non-missing codes")
             }
             nfrom <- setNames(rep(0,length(unds)),unds)
             tmp <- table(sp_object[['startNode']])
@@ -481,7 +503,7 @@ dynatopGIS <- R6::R6Class(
                 nfrom[jj] <-  nfrom[jj] - tmp[jj]
             }
                       
-            ## convert factors to strings
+            ## convert factors to strings - can probably be depreciated with R >= v4
             idx <- sapply(sp_object@data, is.factor)
             sp_object@data[idx] <- lapply(sp_object@data[idx], as.character)
 
@@ -492,12 +514,6 @@ dynatopGIS <- R6::R6Class(
                 stop("Some non-finite values of channel length and width found!")
             }
             
-            ## add width if required
-            if(!is_polygon){
-                ## buffer to convert to spatial polygons object
-                sp_object <- rgeos::gBuffer(sp_object, byid=TRUE, width=sp_object[['width']])
-            }
-
             file_name <- private$make_filename("channel",TRUE)
             raster::shapefile(sp_object,file_name)
             private$meta$layers[["channel"]]$file <- file_name
@@ -953,132 +969,170 @@ dynatopGIS <- R6::R6Class(
         },
         
         ## create a model  
-        apply_create_model = function(topo_class_lyr,dist_class_lyr,dist_lyr,layer_name,verbose){
+        apply_create_model = function(class_lyr,dist_lyr,delta_dist,
+                                      rain_lyr,rainfall_label,
+                                      pet_lyr,pet_label,layer_name,verbose,
+                                      transmissivity,channel_solver){
             
             rq <- c("atb","gradient","land_area","filled_dem",
                     "channel","channel_area","channel_id",
-                    topo_class_lyr,dist_class_lyr,dist_lyr)
+                    class_lyr,dist_lyr,
+                    rain_lyr,pet_lyr)
+            
             pos_val <- private$find_layer(TRUE)
 
             has_rq <- rq %in% names(pos_val)
             if(!all(has_rq)){
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
-            if(!private$meta$layers[[topo_class_lyr]]$type == "classification"){
-                stop(topo_class_lyr, " is not a classification")
-            }
-            if(!private$meta$layers[[dist_class_lyr]]$type == "classification" & !(dist_class_lyr=="band")){
-                stop(dist_class_lyr, " is not a classification")
+            if(!private$meta$layers[[class_lyr]]$type == "classification"){
+                stop(class_lyr, " is not a classification")
             }
 
-            ## create the map of the new HSUs
-            if(verbose){ cat("Creating new HSU layer","\n") }
-            private$apply_classify(setNames(list(NA,NA),
-                                            c(topo_class_lyr,dist_class_lyr)),NULL,layer_name)
-            pos_val <- private$find_layer(TRUE)
-            
             ## initialise model
             if(verbose){ cat("Initialising model","\n") }
-            model <- list(map = list(hillslope = pos_val[layer_name],
+            model <- list(
+                options=c("transmissivity_profile"=transmissivity,
+                          "channel_solver"=channel_solver),
+                map = list(hillslope = character(0),
                                      channel = pos_val["channel"],
                                      channel_id = pos_val["channel_id"]))
             
             ## Create the channel table
-            if(verbose){ cat("Creating Channel table","\n") }            
+            if(verbose){ cat("Creating Channel table","\n") }
+            ## load data
             channel_id <- raster::raster(pos_val["channel_id"])
             channel_area <- raster::raster(pos_val["channel_id"])
             chn <- raster::shapefile(pos_val["channel"])
-            
+            par <- switch(channel_solver,
+                          "histogram" = c(v_ch = 1),
+                          stop("Unrecognised channel_solver")
+                          )
+            ## make model table
             model$channel <- chn@data
             model$channel$id <- as.integer(model$channel$id)
-            model$channel[["precip"]] <- "unknown"
-            model$channel[["pet"]] <- "unknown"
-            model$channel[["v_ch"]] <- "v_ch_default"
+            ## model$channel$v_ch <- "v_ch_default"
             model$channel[["area"]] <- 0
             tmp <- zonal(channel_area,channel_id,sum)
-            model$channel[["area"]][match(tmp[,"zone"],model$channel[["id"]])] <- tmp[,"value"]
+            model$channel[["area"]][match(tmp[,"zone"],model$channel[["id"]])] <- tmp[,"value"] ## some areas will be zero
+            for(ii in names(par)){
+                model$channel[[ii]] <- as.numeric(par[ii])
+            }
+            
+            ## tidy up
+            rm(chn,channel_area)
+
+            if(verbose){ cat("Computing hillslope HRU ID values","\n") }
+            ## read in classification used for HRUs and distance
+            cls <- raster::raster(pos_val[class_lyr])
+            dst <- raster::raster(pos_val[dist_lyr])
+            ## compute minimum distance for each HRU and add new id
+            min_dst <- zonal(dst,cls,min) # minimum distance for each classification
+            if(!all(is.finite(min_dst)) | !all(unique(cls)%in%min_dst[,"zone"])){
+                stop("Unable to compute a finite minimum distance for all HRUs")
+            }
+            min_dst <- min_dst[order(min_dst[,"value"]),] # shortest distance in first row
+            min_dst <- cbind(min_dst,id=max(model$channel$id) + 1:nrow(min_dst)) ## add new id
+
+            ## create new map of HRUs with correct id and remove cls
+            fn <- private$make_filename(layer_name)
+            hsu <- raster::subs(cls, as.data.frame(min_dst[,c("zone","id")]),
+                                subsWithNA=TRUE, filename=fn, overwrite=TRUE)
+            private$meta$layers[[layer_name]] <- list(file=fn,type="model",
+                                                      method=list(class=class_lyr,
+                                                                  distance=dist_lyr))
+            pos_val <- private$find_layer(TRUE)
+            model$map$hillslope <- pos_val[layer_name] ## update the name fo the hillslope map
+            rm(cls)
+
+            ## work out the parameters needed for each transmissivity profile
+            par <- switch(transmissivity,
+                          "exponential" = c(r_sfmax = Inf, s_rzmax = 0.05, s_rz0 = 0.75,
+                                            ln_t0 = -2, m = 0.04, t_d = 7200, c_sf = 0.1),
+                          "bounded_exponential" = c(r_sfmax = Inf, s_rzmax = 0.05, s_rz0 = 0.75,
+                                                    ln_t0 = -2, m = 0.04, D = 5, t_d = 7200, c_sf = 0.1),
+                          "constant" = c(r_sfmax = Inf, s_rzmax = 0.05, s_rz0 = 0.75,
+                                         c_sz = 0.4, D = 5, t_d = 7200, c_sf = 0.1),
+                          stop("Unrecognised tranmissivity")
+                          )
+            
+            ## create hillslope table
+            if(verbose){ cat("Creating hillslope table","\n") }
+            la <- raster::raster(pos_val["land_area"])
+            gr <- raster::raster(pos_val["gradient"])
+            atb <- raster::raster(pos_val["atb"])
+            
+            model$hillslope <- data.frame(
+                id = as.integer(min_dst[,"id"]),
+                area = zonal(la,hsu,sum)[,"value"],
+                atb_bar = zonal(la*atb,hsu,sum)[,"value"],
+                s_bar = zonal(la*gr,hsu,sum)[,"value"],
+                min_dst = min_dst[,"value"],
+                width = as.numeric(NA),
+                class = min_dst[,"zone"],
+                stringsAsFactors=FALSE
+            )
+            ##     r_sfmax="r_sfmax_default",
+            ##     s_rzmax="s_rzmax_default",
+            ##     s_rz0="s_rz0_default",
+            ##     ln_t0="ln_t0_default",
+            ##     m="m_default",
+            ##     t_d="t_d_default",
+            ##     c_sf="c_sf_default",
+            ##     stringsAsFactors=FALSE
+            ## )
+            model$hillslope$atb_bar <- model$hillslope$atb_bar/model$hillslope$area
+            model$hillslope$s_bar <- model$hillslope$s_bar/model$hillslope$area
+            ## add tranmissivity dependent parameters
+            for(ii in names(par)){
+                model$hillslope[[ii]] <- as.numeric(par[ii])
+            }
+            
+            ## tidy up
+            rm(atb)
 
             ## Create channel flow directions
-            cfd <- rep(list(NULL),length(model$channel$id))
+            if(verbose){
+                cat("Creating channel flow directions","\n")
+                vbcnt <- c(0,rep(nrow(model$channel)/20,2),nrow(model$channel))
+            }else{
+                vbcnt <- c(0,Inf)
+            }
+            model$flow_direction <- rep(list(NULL),max(model$hillslope$id))
+            
             for(rw in 1:nrow(model$channel)){
                 jdx <- which( model$channel[['startNode']]==
                               model$channel[['endNode']][rw])
                 if( length(jdx) > 0 ){
-                    cfd[[rw]] <- data.frame(from = as.integer(model$channel$id[rw]),
-                                            to = as.integer(model$channel$id[jdx]),
-                                            frc= rep(1/length(jdx),length(jdx)))
+                    ii <- as.integer(model$channel$id[rw])
+                    model$flow_direction[[ii]] <- data.frame(
+                        from = ii,
+                        to = as.integer(model$channel$id[jdx]),
+                        frc= rep(1/length(jdx),length(jdx))
+                    )
+                }
+                
+                if(vbcnt[1] >= vbcnt[2]){
+                    cat(round(100*vbcnt[1] / vbcnt[4],1),
+                        "% complete","\n")
+                    vbcnt[2] <- vbcnt[2] + vbcnt[3]
                 }
             }
-
             
-            ## Load data for hillslope creation
-            if(verbose){ cat("Loading initial data for hsu computation","\n") }
-            ## load the hsu required for all stages of table creation
-            hsu <- as.matrix(raster::raster(pos_val[layer_name]))
-            tcls <- as.matrix(raster::raster(pos_val[topo_class_lyr]))
-            dcls <- as.matrix(raster::raster(pos_val[dist_class_lyr]))
-            la <- as.matrix(raster::raster(pos_val["land_area"]))
-            gr <- as.matrix(raster::raster(pos_val["gradient"]))
-            atb <- as.matrix(raster::raster(pos_val["atb"]))
-
-            brk <- self$get_class_method(layer_name)$cuts[[dist_lyr]]
-            udcls <- sort(unique(as.vector(dcls))) # sort removes NA values
-            if(is.na(brk)){
-                if(!tolower(dist_lyr)=="band"){
-                    warning("Using mean resolution as delta_x")
-                }
-                Dx <- setNames( rep(mean(private$meta$resolution),length(udcls)),
-                                    udcls )
+            ## create hilslope flow directions (and contour length)
+            if(verbose){
+                cat("Computing hillslope flow directions","\n")
+                vbcnt <- c(0,rep(nrow(model$channel)/20,2),nrow(model$channel))
             }else{
-                Dx <- setNames( diff(brk), udcls )
+                vbcnt <- c(0,Inf)
             }
             
-            ## create table
-            if(verbose){ cat("Creating hillslope table","\n") }
-            
-            uhsu <- sort(unique(as.integer(hsu)))
-            str_uhsu <- paste(uhsu)
-            model$hillslope <- data.frame(
-                hsu_id = as.integer(uhsu),
-                area = tapply(la,hsu,sum)[str_uhsu],
-                atb_bar = tapply(la*atb,hsu,sum)[str_uhsu],
-                s_bar = tapply(la*gr,hsu,sum)[str_uhsu],
-                band = tapply(dcls,hsu,unique)[str_uhsu],
-                class = tapply(tcls,hsu,unique)[str_uhsu],
-                precip="unknown",
-                pet="unknown",
-                r_sfmax="r_sfmax_default",
-                s_rzmax="s_rzmax_default",
-                s_rz0="s_rz0_default",
-                ln_t0="ln_t0_default",
-                m="m_default",
-                t_d="t_d_default",
-                c_sf="c_sf_default",
-                stringsAsFactors=FALSE
-            )
-            model$hillslope$delta_x = Dx[paste(model$hillslope$band)]
-            model$hillslope$atb_bar <- model$hillslope$atb_bar/model$hillslope$area
-            model$hillslope$s_bar <- model$hillslope$s_bar/model$hillslope$area
-
-            ## sort and reapply to give ids correct ordering
-            if(verbose){ cat("Altering map with new id values","\n") }
-            model$hillslope <- model$hillslope[order(model$hillslope$band,decreasing=TRUE),]
-            model$hillslope$id <- as.integer( (nrow(model$hillslope):1)+max(model$channel$id) )
-            hsu <- raster::raster(pos_val[layer_name])
-            #tmp <- model$hillslope[c("hsu_id","id")]
-            hsu <- raster::subs(hsu, model$hillslope[c("hsu_id","id")], #tmp,#model$hillslope, by="hsu_id", which="id",
-                                subsWithNA=TRUE, filename=pos_val[layer_name], overwrite=TRUE)
             hsu <- as.matrix(hsu)
-
-            
-            ## tidy up a bit
-            model$hillslope$hsu_id <- NULL
-            rm(atb,tcls)
-            
-            ## work out hillslope flow directions
-            if(verbose){ cat("Computing hillslope flow directions","\n") }
             dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
+            la <- as.matrix(la)
             channel_id <- as.matrix(channel_id)
+            dst <- as.matrix(dst)
+            gr <- as.matrix(gr)
             
             ## distance between cell centres
             dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
@@ -1088,135 +1142,95 @@ dynatopGIS <- R6::R6Class(
             ## neighbouring cells
             nr <- nrow(dem); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
 
-            ## save for flow direction
-            fd <- setNames( rep(list(numeric(0)),nrow(model$hillslope)),
-                           model$hillslope$id )
-                
-            idx <- which(la>0) ## cells to look at
+            ## create a record for the flow directions
+            fd <- rep(0,max(model$hillslope$id))
+            fd <- setNames(fd, 1:length(fd))
 
-            ## control verbose print out
-            n_to_eval <- length(idx)
-            if(verbose){
-                vbcnt <- c(0,rep(length(idx)/20,2))
-            }else{
-                vbcnt <- c(0,Inf,Inf)
-            }
-            
-            
-            ## work out the hsu id that received flow
-            receiving_hsu <- pmax(hsu,channel_id,na.rm=TRUE)
-
-            dc <- c( setNames(rep(0,nrow(model$channel)),model$channel$id), setNames(model$hillslope$band,model$hillslope$id) )
-            for(ii in idx){
-                
-                hii <- hsu[ii]
-                hiistr <- paste(hii)
-                
-                ## flow direction
-                if(is.finite(channel_id[ii])){
-                    ## partial channel cell so all flow goes to that channel reach
-                    flw <- setNames( gr[ii]*dxy[2], channel_id[ii])                    
-                }else{ 
-                    ## a fully land cell
-                    dcii <- dc[hiistr]
-                    
+            for( id in model$hillslope$id ){
+                ## set width to zero
+                w <- 0
+                ## zero flow direction record
+                fd[] <- 0
+                ## index of hsu cells
+                idx <- which(hsu==id)
+                ## evaluate channel cells
+                jdx <- idx[is.finite(channel_id[idx])]
+                gcl <- gr[jdx]*mean(private$meta$resolution)
+                tmp <- tapply(gcl,channel_id[jdx],sum)
+                fd[names(tmp)] <- fd[names(tmp)] + tmp
+                w <- length(jdx)
+                ## evaluate cells near the bottom that aren't channel cells
+                jdx <- idx[ (dst[idx] <= min_dst[min_dst[,"id"]==id,"value"]) &
+                            !is.finite(channel_id[idx])]
+                for(ii in jdx){
                     jj <- ii+delta ## neighbouring cell numbers
-                    hjj <- receiving_hsu[jj]
-                    hjjstr <- paste(hjj)
-                    dcjj <- dc[hjjstr]
-                    
+                    hjj <- hsu[jj]
                     gcl <- (dem[ii]-dem[jj])*dcl/dxy
-                    
-                    to_lower <- is.finite(gcl) & is.finite(hjj) & gcl>0 & dcjj<dcii
-
-                    flw <- tapply(gcl[to_lower],hjj[to_lower],sum)
-                }
-                
-                if(length(flw)>0){
-                    nw <- setdiff(names(flw),names( fd[[hiistr]]))
-                    if(length(nw)>0){
-                        fd[[hiistr]] <- c(fd[[hiistr]], setNames(rep(0,length(nw)),nw))
+                    to_lower <- is.finite(gcl) & is.finite(hjj) & gcl>0 & hjj<hsu[ii]
+                    if(any(to_lower)){
+                        tmp <- tapply(gcl[to_lower],hjj[to_lower],sum)
+                        fd[names(tmp)] <- fd[names(tmp)] + tmp
+                        w <- w+1
                     }
-                    fd[[hiistr]][names(flw)] <- fd[[hiistr]][names(flw)] + flw
-                
                 }
                 
-                ## verbose output here
+                ## make into a data frame
+                idx <- fd>0
+                model$flow_direction[[id]] <- data.frame(
+                    to = as.integer(names(fd[idx])),
+                    from=id,
+                    frc = fd[idx]/sum(fd[idx])
+                )
+                ## popualte width
+                model$hillslope$width[ model$hillslope$id==id ] <- w*mean(private$meta$resolution)
+                
                 if(vbcnt[1] >= vbcnt[2]){
-                    cat(round(100*vbcnt[1] / (vbcnt[3]*20),1),
-                        "% complete","\n")
+                    cat(round(100*vbcnt[1] / vbcnt[4],1),
+                        "% of Hillslope HRUs complete","\n")
                     vbcnt[2] <- vbcnt[2] + vbcnt[3]
                 }
-                vbcnt[1] <- vbcnt[1] + 1
-                
             }
             
             
             ## check all HSUs have valid outflows
-            nlink <- sapply(fd,length)
-            if( any(nlink==0) ){
-                chng <- data.frame(from = as.integer(names(nlink[nlink==0])),
-                                   to = NA)
-                warning("Merging HSUs ",paste(chng$from,collapse=", "))
-                ## need to merge some HSUs
-                for(ii in 1:nrow(chng)){
-                    rw <- model$hillslope$id==chng$from[ii] ## row number of item to drop
-                    idx <- which(model$hillslope$class==model$hillslope$class[rw] &
-                                 model$hillslope$band < model$hillslope$band[rw])
-                    if(length(idx)==0){
-                        stop("HSU with id ",chng$from[ii]," has no possible outflow locations")
-                    }
-                    
-                    idx <- idx[ which.max( model$hillslope$band[idx]) ]
-                    if(verbose){
-                        cat("Merging HSU ",chng$from[ii]," with HSU ",model$hillslope$id[idx],"\n")
-                        cat("Area moved is ",model$hillslope$area[rw],"\n")
-                    }
-                    model$hillslope$area[idx] <- model$hillslope$area[idx] + model$hillslope$area[rw]
-                    chng$to[ii] <- model$hillslope$id[idx]
+            nlink <- sapply(model$flow_direction,length)
+            if( !any(nlink==0) ){
+                stop("There is no outflow from the system!!")
+            }else{
+                idx <- which(nlink==0)
+                if( any(idx %in% model$hillslope$id) ){
+                    stop( "The following Hillslope HSUs have no valid outflows: \n",
+                         paste(idx %in% model$hillslope$id, collapse=", "))
                 }
-                ## drop rows from the table
-                model$hillslope <- model$hillslope[-chnd$from,]
-                ## tidy up the map
-                hsu <- raster::raster(pos_val[layer_name])
-                raster::subs(hsu, chng, by="from", which="to",
-                             subsWithNA=TRUE, filename=pos_val[layer_name], overwrite=TRUE)
-                
-            }
-            fd[nlink==0] <- NULL
-            
-            ## create flow directions matrix
-            for(ii in names(fd)){
-                fd[[ii]] <- data.frame(from=as.integer(ii),
-                                       to=as.integer(names(fd[[ii]])),
-                                       frc = as.numeric(fd[[ii]]/sum(fd[[ii]]))
-                                       )
+                cat("The following Channel HSUs are outflows:",
+                    paste(idx, collapse=", "),"\n")
             }
             
-            model$flow_direction <- rbind( do.call(rbind,fd), do.call(rbind,cfd) )
-
-            
+            ## create flow directions data frame        
+            model$flow_direction <- do.call(rbind,model$flow_direction)
+            model$flow_direction <- model$flow_direction[
+                                              order(model$flow_direction$from,decreasing=TRUE),]
+                        
             ## parameter values
-            if(verbose){ cat("Setting default parameter values","\n") }
-            model$param <- c(r_sfmax_default=Inf,
-                             s_rzmax_default=0.05,
-                             s_rz0_default=0.75,
-                             ln_t0_default=-2,
-                             m_default=0.04,
-                             t_d_default=2*60*60,
-                             c_sf_default=0.1,
-                             v_ch_default=1)
+            ## if(verbose){ cat("Setting default parameter values","\n") }
+            ## model$param <- c(r_sfmax_default=Inf,
+            ##                  s_rzmax_default=0.05,
+            ##                  s_rz0_default=0.75,
+            ##                  ln_t0_default=-2,
+            ##                  m_default=0.04,
+            ##                  t_d_default=2*60*60,
+            ##                  c_sf_default=0.1,
+            ##                  v_ch_default=1)
             
             ## ############################################
             ## Add gauges at all outlets from river network
             ## ############################################
             #browser()
             if(verbose){ cat("Adding gauges at the outlets","\n") }
-            idx <- which(!(model$channel$id %in% model$flow_dir[,"from"]))
+            idx <- setdiff(model$channel$id, model$flow_dir[,"from"])
             model$gauge <- data.frame(
-                name = paste("channel",model$channel$id[idx],sep="_"),
-                id = model$channel$id[idx],
-                fraction = rep(1,length(idx)),
+                name = paste("channel",idx,sep="_"),
+                id = idx,
                 stringsAsFactors=FALSE
             )
             
@@ -1228,7 +1242,6 @@ dynatopGIS <- R6::R6Class(
             model$point_inflow <- data.frame(
                 name = character(0),
                 id = integer(0),
-                fraction = numeric(0),
                 stringsAsFactors=FALSE
             )
             
@@ -1241,49 +1254,96 @@ dynatopGIS <- R6::R6Class(
                 stringsAsFactors=FALSE
             )
 
+            ## #################################
+            if(verbose){ cat("Computing rainfall weights","\n") }
+            if( is.null(rain_lyr) ){
+                model$rainfall_input <- data.frame(
+                    name = "unknown",
+                    id = c(model$channel$id,model$hillslope$id),
+                    frc = as.numeric(1) )
+            }else{
+                rlyr <- raster::raster(pos_val[rain_lyr])
+                hsu <- raster::raster(pos_val[layer_name])
+                channel_id <- raster::raster(pos_val["channel_id"])
+                ## this is just the frequency of the cells - should weight by area as well
+                tmp <- rbind(crosstab(hsu,rlyr,long=TRUE),
+                             crosstab(channel_id,rlyr,long=TRUE))
+                names(tmp) <- c("id","name","frc")
+                tmp4id <- as.integer(tmp$id)
+                tmp$name <- paste0(rainfall_label,tmp$name)
+                ## tmp is ordered by id so the following returns correct order
+                tmp$frc <- unlist(tapply(tmp$frc,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
+                ## set
+                model$rainfall_input <- tmp
+            }
+            
+            ## #################################
+            if(verbose){ cat("Computing the pet weights","\n") }
+            if( is.null(rain_lyr) ){
+                model$pet_input <- data.frame(
+                    name = "unknown",
+                    id = c(model$channel$id,model$hillslope$id),
+                    frc = as.numeric(1) )
+            }else{
+                plyr <- raster::raster(pos_val[pet_lyr])
+                hsu <- raster::raster(pos_val[layer_name])
+                channel_id <- raster::raster(pos_val["channel_id"])
+                ## this is just the frequency of the cells - should weight by area as well
+                tmp <- rbind(crosstab(hsu,plyr,long=TRUE),
+                             crosstab(channel_id,plyr,long=TRUE))
+                names(tmp) <- c("id","name","frc")
+                tmp4id <- as.integer(tmp$id)
+                tmp$name <- paste0(pet_label,tmp$name)
+                ## tmp is ordered by id so the following returns correct order
+                tmp$frc <- unlist(tapply(tmp$frc,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
+                ## set
+                model$pet_input <- tmp
+            }
+
+            ## ############################
             ## add model to record
             fn <- file.path(private$wdir,paste0(layer_name,".rds"))
             saveRDS(model,fn)
             private$meta$layers[[layer_name]]$model_file <- fn
-            private$meta$layers[[layer_name]]$type <- "model"
             private$write_meta()
             
-        },
-        apply_input_frac = function(hsu_layer,input_layer,hsu_label,input_label){
-            
-            rq <- c(hsu_layer,input_layer,"channel_id")
-            pos_val <- private$find_layer(TRUE)
-
-            has_rq <- rq %in% names(pos_val)
-            if(!all(has_rq)){
-                stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
-            }
-            if(!(private$meta$layers[[hsu_layer]]$type %in% "model")){
-                stop(hsu_layer, " is not a model layer")
-            }
-            if(!(private$meta$layers[[input_layer]]$type %in% c("user","classification"))){
-                stop(input_layer, " is not a user defined or classification layer")
-            }
-            ## load data
-            hsu_grid <- raster::raster(pos_val[hsu_layer])
-            chn_grid <- raster::raster(pos_val["channel_id"])
-            input_grid <- raster::raster(pos_val[input_layer])
-            ## make the matrix
-            out <- rbind(raster::crosstab(chn_grid,input_grid),
-                         raster::crosstab(hsu_grid,input_grid))
-            ## relabel rows and columns
-            ##browser()
-            rownames(out) <- paste0(hsu_label,rownames(out))
-            colnames(out) <- paste0(input_label,colnames(out))
-            ## check for NA
-            if(!all(is.finite(out))){
-                stop("Non finite values in the cross tabulation \n",
-                     "Check the input is defined for all hsu cells")
-            }
-            ## sweep out the rowSums to get scaled to 1
-            out <- sweep(out,1,rowSums(out),"/")
-            return(out)
         }
+        ## ,
+        ## apply_input_frac = function(hsu_layer,input_layer,hsu_label,input_label){
+            
+        ##     rq <- c(hsu_layer,input_layer,"channel_id")
+        ##     pos_val <- private$find_layer(TRUE)
+
+        ##     has_rq <- rq %in% names(pos_val)
+        ##     if(!all(has_rq)){
+        ##         stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
+        ##     }
+        ##     if(!(private$meta$layers[[hsu_layer]]$type %in% "model")){
+        ##         stop(hsu_layer, " is not a model layer")
+        ##     }
+        ##     if(!(private$meta$layers[[input_layer]]$type %in% c("user","classification"))){
+        ##         stop(input_layer, " is not a user defined or classification layer")
+        ##     }
+        ##     ## load data
+        ##     hsu_grid <- raster::raster(pos_val[hsu_layer])
+        ##     chn_grid <- raster::raster(pos_val["channel_id"])
+        ##     input_grid <- raster::raster(pos_val[input_layer])
+        ##     ## make the matrix
+        ##     out <- rbind(raster::crosstab(chn_grid,input_grid),
+        ##                  raster::crosstab(hsu_grid,input_grid))
+        ##     ## relabel rows and columns
+        ##     ##browser()
+        ##     rownames(out) <- paste0(hsu_label,rownames(out))
+        ##     colnames(out) <- paste0(input_label,colnames(out))
+        ##     ## check for NA
+        ##     if(!all(is.finite(out))){
+        ##         stop("Non finite values in the cross tabulation \n",
+        ##              "Check the input is defined for all hsu cells")
+        ##     }
+        ##     ## sweep out the rowSums to get scaled to 1
+        ##     out <- sweep(out,1,rowSums(out),"/")
+        ##     return(out)
+        ## }
         
     )
     )

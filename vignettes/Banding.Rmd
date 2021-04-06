@@ -1,13 +1,16 @@
 ---
-title: "Banding of HSUs"
+title: "Distance Calculations"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Banding of HSUs}
+  %\VignetteIndexEntry{Distance Calculations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 --- 
+# NOTE
 
-# Banding
+**THIS IS NOT COMPLETE**
+
+## Banding
 
 This document tries to explain the process of creating a Dynamic TOPMODEL from
 the GIS data by agglomorating the raster cells into HSUs.

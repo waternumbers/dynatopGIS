@@ -345,14 +345,14 @@ Create a catchment classification based on any number of landscape layer cuts or
 \describe{
 \item{\code{layer_name}}{name of the new layer to create}
 
-\item{\code{cuts}}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)}
+\item{\code{cuts}}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values). A value of \code{NA} implies to layer is already cut and can be used in the classification directly.}
 
 \item{\code{burns}}{a vector of layer names which are to be burnt on}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Not that cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
 }
 
 }
@@ -365,8 +365,14 @@ Compute a Dynamic TOPMODEL
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(
   layer_name,
   class_layer,
-  dist_class_layer,
   dist_layer,
+  transmissivity = c("exponential", "boundend_exponential", "constant"),
+  channel_solver = c("histogram"),
+  dist_delta = 0,
+  rain_layer = NULL,
+  rain_label = character(0),
+  pet_layer = NULL,
+  pet_label = character(0),
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -378,16 +384,30 @@ Compute a Dynamic TOPMODEL
 
 \item{\code{class_layer}}{the layer defining the topographic classes}
 
-\item{\code{dist_class_layer}}{the layer defining the distance classes}
+\item{\code{dist_layer}}{the layer defining the distances to the channel}
 
-\item{\code{dist_layer}}{the layer dfining the disatances to the channel}
+\item{\code{transmissivity}}{transmissivity profile to use}
+
+\item{\code{channel_solver}}{channel solver to use}
+
+\item{\code{dist_delta}}{used in computing flow linkages see details}
+
+\item{\code{rain_layer}}{the layer defining the rainfall inputs}
+
+\item{\code{rain_label}}{Prepended to rain_layer values to give rainfall series name}
+
+\item{\code{pet_layer}}{the layer defining the pet inputs}
+
+\item{\code{pet_label}}{Prepended to pet_layer values to give pet series name}
 
 \item{\code{verbose}}{print more details of progress}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The distance layer is cut into classes and combined with \code{class_layer} using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min.
+The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta ot the shortest distance within the HRU.
+Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
+The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, overwise an input table for the models gernerated with the value "missing" used in place of the series name.
 }
 
 }

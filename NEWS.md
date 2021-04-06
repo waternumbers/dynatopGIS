@@ -1,3 +1,19 @@
+# dynatopGIS 0.2.0.9030
+
+## Breaking changes
+
+- Incorporated rainfall and pet weight into the model output
+
+# dynatopGIS 0.2.0.9030
+
+## Breaking changes
+
+- New format for flow linkages in a seperate table
+
+## other changes
+
+- Added ability to compute weights for gridded inputs
+
 # dynatopGIS 0.2.0.9001
 
 ## Breaking changes
