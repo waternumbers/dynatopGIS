@@ -1257,7 +1257,7 @@ dynatopGIS <- R6::R6Class(
             ## #################################
             if(verbose){ cat("Computing rainfall weights","\n") }
             if( is.null(rain_lyr) ){
-                model$rainfall_input <- data.frame(
+                model$precip_input <- data.frame(
                     name = "unknown",
                     id = c(model$channel$id,model$hillslope$id),
                     frc = as.numeric(1) )
@@ -1266,20 +1266,22 @@ dynatopGIS <- R6::R6Class(
                 hsu <- raster::raster(pos_val[layer_name])
                 channel_id <- raster::raster(pos_val["channel_id"])
                 ## this is just the frequency of the cells - should weight by area as well
-                tmp <- rbind(crosstab(hsu,rlyr,long=TRUE),
-                             crosstab(channel_id,rlyr,long=TRUE))
-                names(tmp) <- c("id","name","frc")
-                tmp4id <- as.integer(tmp$id)
+                tmp <- list(crosstab(hsu,rlyr,long=TRUE),
+                            crosstab(channel_id,rlyr,long=TRUE))
+                for(ii in 1:length(tmp)){names(tmp[[ii]]) <- c("id","name","cnt")}
+                tmp <- do.call(rbind,tmp)
+                tmp <- tmp[order(tmp$id),]
+                tmp$id <- as.integer(tmp$id)
                 tmp$name <- paste0(rainfall_label,tmp$name)
                 ## tmp is ordered by id so the following returns correct order
-                tmp$frc <- unlist(tapply(tmp$frc,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
+                tmp$frc <- unlist(tapply(tmp$cnt,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
                 ## set
-                model$rainfall_input <- tmp
+                model$precip_input <- tmp[,c("id","name","frc")]
             }
             
             ## #################################
             if(verbose){ cat("Computing the pet weights","\n") }
-            if( is.null(rain_lyr) ){
+            if( is.null(pet_lyr) ){
                 model$pet_input <- data.frame(
                     name = "unknown",
                     id = c(model$channel$id,model$hillslope$id),
@@ -1289,15 +1291,16 @@ dynatopGIS <- R6::R6Class(
                 hsu <- raster::raster(pos_val[layer_name])
                 channel_id <- raster::raster(pos_val["channel_id"])
                 ## this is just the frequency of the cells - should weight by area as well
-                tmp <- rbind(crosstab(hsu,plyr,long=TRUE),
-                             crosstab(channel_id,plyr,long=TRUE))
-                names(tmp) <- c("id","name","frc")
-                tmp4id <- as.integer(tmp$id)
+                tmp <- list(crosstab(hsu,plyr,long=TRUE),
+                            crosstab(channel_id,plyr,long=TRUE))
+                for(ii in 1:length(tmp)){names(tmp[[ii]]) <- c("id","name","cnt")}
+                tmp <- do.call(rbind,tmp)
+                tmp <- tmp[order(tmp$id),]
+                tmp$id <- as.integer(tmp$id)
                 tmp$name <- paste0(pet_label,tmp$name)
                 ## tmp is ordered by id so the following returns correct order
                 tmp$frc <- unlist(tapply(tmp$frc,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
-                ## set
-                model$pet_input <- tmp
+                model$pet_input <- tmp[,c("id","name","frc")]
             }
 
             ## ############################
