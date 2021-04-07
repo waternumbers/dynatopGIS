@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0.9020</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0.9030</span>
       </span>
     </div>
 
@@ -98,7 +98,7 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="../articles/Banding.html">Banding of HSUs</a>
+      <a href="../articles/Banding.html">Distance Calculations</a>
     </li>
     <li>
       <a href="../articles/sink_filling.html">Filling sinks and gaps in the DEM</a>
@@ -374,13 +374,13 @@
 <p><div class="arguments"></p><dl>
 <dt><code>layer_name</code></dt><dd><p>name of the new layer to create</p></dd>
 
-<dt><code>cuts</code></dt><dd><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values)</p></dd>
+<dt><code>cuts</code></dt><dd><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values). A value of <code>NA</code> implies to layer is already cut and can be used in the classification directly.</p></dd>
 
 <dt><code>burns</code></dt><dd><p>a vector of layer names which are to be burnt on</p></dd>
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Not that cuts are impliment using <code><a href='https://rdrr.io/pkg/raster/man/cut.html'>raster::cut</a></code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
+<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are impliment using <code><a href='https://rdrr.io/pkg/raster/man/cut.html'>raster::cut</a></code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
 
 <p><hr>
 <a id="method-create_model"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>create_model()</code></h3>
@@ -388,8 +388,14 @@
 <p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>create_model</span><span class='op'>(</span>
   <span class='va'>layer_name</span>,
   <span class='va'>class_layer</span>,
-  <span class='va'>dist_class_layer</span>,
   <span class='va'>dist_layer</span>,
+  transmissivity <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"exponential"</span>, <span class='st'>"boundend_exponential"</span>, <span class='st'>"constant"</span><span class='op'>)</span>,
+  channel_solver <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"histogram"</span><span class='op'>)</span>,
+  dist_delta <span class='op'>=</span> <span class='fl'>0</span>,
+  rain_layer <span class='op'>=</span> <span class='cn'>NULL</span>,
+  rain_label <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/character.html'>character</a></span><span class='op'>(</span><span class='fl'>0</span><span class='op'>)</span>,
+  pet_layer <span class='op'>=</span> <span class='cn'>NULL</span>,
+  pet_label <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/character.html'>character</a></span><span class='op'>(</span><span class='fl'>0</span><span class='op'>)</span>,
   verbose <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre><p></div></p>
 
@@ -399,15 +405,29 @@
 
 <dt><code>class_layer</code></dt><dd><p>the layer defining the topographic classes</p></dd>
 
-<dt><code>dist_class_layer</code></dt><dd><p>the layer defining the distance classes</p></dd>
+<dt><code>dist_layer</code></dt><dd><p>the layer defining the distances to the channel</p></dd>
 
-<dt><code>dist_layer</code></dt><dd><p>the layer dfining the disatances to the channel</p></dd>
+<dt><code>transmissivity</code></dt><dd><p>transmissivity profile to use</p></dd>
+
+<dt><code>channel_solver</code></dt><dd><p>channel solver to use</p></dd>
+
+<dt><code>dist_delta</code></dt><dd><p>used in computing flow linkages see details</p></dd>
+
+<dt><code>rain_layer</code></dt><dd><p>the layer defining the rainfall inputs</p></dd>
+
+<dt><code>rain_label</code></dt><dd><p>Prepended to rain_layer values to give rainfall series name</p></dd>
+
+<dt><code>pet_layer</code></dt><dd><p>the layer defining the pet inputs</p></dd>
+
+<dt><code>pet_label</code></dt><dd><p>Prepended to pet_layer values to give pet series name</p></dd>
 
 <dt><code>verbose</code></dt><dd><p>print more details of progress</p></dd>
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>The distance layer is cut into classes and combined with <code>class_layer</code> using classify to produce the HSUs. Flow between HSUs is computed based on the raster cells that drain to HSU of a lower distance class (closer to the bottom of the hillslope). If no such cells exist then the flow is determined by the cells whose distance is less then the lowest diatance within the HSU plus delta_min.</p>
+<p>The <code>class_layer</code> is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta ot the shortest distance within the HRU.
+Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
+The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id values of different rainfall (pet) series. If the value of <code>rain_layer</code> (<code>pet_layer</code>) is not <code>NULL</code> the weights used to compute an averaged input value for each HRU are computed, overwise an input table for the models gernerated with the value "missing" used in place of the series name.</p>
 
 <p><hr>
 <a id="method-input_frac"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>input_frac()</code></h3>
