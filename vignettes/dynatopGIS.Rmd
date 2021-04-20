@@ -18,19 +18,19 @@ knitr::opts_chunk$set(
 The purpose of this vignette is to provide an outline of the steps needed to
 build a dynamic TOPMODEL implementation using the dynatopGIS package.
 
-# Implimentation notes
+# Implementation notes
 
-The dynatopGIS package impliments a structured, object orientated, data
+The dynatopGIS package implements a structured, object orientated, data
 flow. The steps outlined below create a `dynatopGIS` catchment object to which
 actions are then applied to generate a model. 
 
 The `dynatopGIS` package is written using the object orientated framework
 provided by the `R6` package. This means that some aspects of working with the
-objects may appear ìdiosymatic for some R users. In using the package as
-outliend in this vignette these problems are largely obscured, except for the
-call structure. However before adapting the code, or doing more compelx analysis
+objects may appear ìdiosyncratic for some R users. In using the package as
+outlined in this vignette these problems are largely obscured, except for the
+call structure. However, before adapting the code, or doing more complex analysis
 users should read about `R6` class objects (e.g. in the `R6` package vignettes
-or in the Advanced R book). One particuler gotya is when coping an object. Using
+or in the Advanced R book). One particular gotcha is when copying an object. Using
 
 ```{r eval=FALSE}
 my_new_object  <-  my_object
@@ -46,9 +46,9 @@ my_new_object  <-  my_object$clone()
 # Getting started
 
 The dynatopGIS packages works through a number of steps to generate a dynamic
-TOPMODEL object suitabel for use in with the `dynatop` package. Each steps
+TOPMODEL object suitable for use in with the `dynatop` package. Each step
 generates one or more layers which are saved as raster or shape files into the projects
-working directory (which is not nessecarily the R working directory). A record
+working directory (which is not necessarily the R working directory). A record
 of these layers is kept in the json format meta data file.
 
 This vignette demonstrates the use of the `dynatopGIS` package using data from the Swindale
@@ -60,13 +60,13 @@ To start first load the library
 library("dynatopGIS")
 ```
 
-For this vignette we will store the data into a tempory dirctory
+For this vignette we will store the data into a temporary directory
 
 ```{r tempory_dir}
 demo_dir <- tempfile("dygis")
 dir.create(demo_dir)
 ```
-and initialise the analysis by creating a new object specifying the loaction
+and initialise the analysis by creating a new object specifying the location
 of the meta data file, which will be created if it doesn't exist.
 
 ```{r, initialization}
@@ -75,15 +75,15 @@ ctch <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
 
 # Adding catchment data
 
-The basis of the analysis are a rasterised Digital Elevation Model (DEM) of
+The basis of the analysis is a rasterised Digital Elevation Model (DEM) of
 the catchment and a vectorised representation of the river network with
-attributes. Current these can be in any format supported by the ```raster```
+attributes. Currently these can be in any format supported by the ```raster```
 and ```sp``` libraries respectivly.
 
-However within the calculations used for sink filling,
+However, within the calculations used for sink filling,
 flow routing and topographic index calculations the raster DEM is presumed
 to be projected so that is has square cells such that
-the difference between the cell centers (in meters) does not alter.
+the difference between the cell centres (in meters) does not alter.
 
 For Swindale the suitable DEM and channel files can be found using:
 
@@ -92,7 +92,7 @@ dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopDa
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData", mustWork = TRUE)
 ```
 
-Since teh DEM is quite high resolution for the purposes of this vignette we
+Since the DEM is quite high resolution for the purposes of this vignette we
 will aggregate it to 100m.
 
 ```{r, aggregate}
@@ -107,7 +107,7 @@ case we add the DEM with
 ctch$add_dem(agg_dem)
 ```
 *Note:* An additional row and column of `NA` is added to each edge of the
-DEM. All raster layers in the project are of the same projection,
+DEM. All raster layers in the project have the same projection,
 resolution and extent of the extended DEM.
 
 Adding river channel data is more complex. The `add_channel` method requires a
@@ -119,10 +119,10 @@ which requires the following properties
 -   *startNode* - a label for the upstream end of the river length
 -   *length* - the length in meters
 
-Additional proporties are currently kept but ignored with two exceptions:
+Additional properties are currently kept but ignored with two exceptions:
 -   *id* - this is copied to `original_id` with a warning since `id` is used internally
 -   *width* - if the channel is specified with a line sections then the *width*
-    property is used to buffer the lines to create channle polygons.
+    property is used to buffer the lines to create channel polygons.
 	
 Since it is possible that these properties are present in a data file
 under different names the `add_channel` method allows for
@@ -157,7 +157,7 @@ width of 2m is used.
 
 # Computing Basic Properties
 
-So far the DEM and channel data exist in isolation. Next we compute some basic
+So far, the DEM and channel data exist in isolation. Next, we compute some basic
 summaries for each square in the DEM, specifically:
 -   land area - the area in the DEM cell covered by land
 -   channel area - the area in the DEM cell covered by channel
@@ -193,7 +193,7 @@ or returned, for example
 ```{r, get_layer}
 ctch$get_layer("dem")
 ```
-All layers are retuened as `RasterLayer` objects with the exception of the
+All layers are returned as `RasterLayer` objects with the exception of the
 `channel` layer which is returned as a `SpatialPolygonsDataFrame` object. The
 complete meta data file can be retrieved with
 
@@ -207,9 +207,9 @@ tmp <- ctch$get_meta()
 For the hill slope to be connected to the river network all DEM cells must
 drain to those that intersect with the river network.
 
-The algorithm of <TODO add ref> implimented in the `sink_fill` method ensures
+The algorithm of implemented in the `sink_fill` method ensures
 this is the case. Since the algorithm is iterative the execution time of the
-function is limited by capping setting a maximum number of iterations. If
+function is limited by capping the maximum number of iterations. If
 this limit is reached without completion the method can call again with the
 "hot start" option to continue from where it finished.
 
@@ -225,14 +225,14 @@ raster::plot( ctch$get_layer('filled_dem') - ctch$get_layer('dem'),
 
 # Computing properties
 
-Two sets of properties are required for Dynamic TOPMODEL. The fist set is
+Two sets of properties are required for Dynamic TOPMODEL. The first set is
 those required within the evaluation of the model; gradient and contour
-length. the second set are those used for dividing the catchment up into
-Hydrological Response Units (HSUs). Traditionally the summary used for the
+length. The second set are those used for dividing the catchment up into
+Hydrological Response Units (HRUs). Traditionally the summary used for the
 separation of the HRUs is the topographic index, which is the natural
 logarithm of the upslope area divided by gradient.
 
-These are computed using the formulea in Quinn 1991 (TO DO add ref).
+These are computed using the formulae in [Quinn et al. 1991](https://doi.org/10.1002/hyp.3360050106).
 
 The upstream area is computed by routing down slope with the fraction of the
 area being routed to the next downstream pixel being proportional to the
@@ -277,7 +277,7 @@ tmp <- raster::reclassify( tmp,
                                  byrow=TRUE))
 ```
 
-The resulting raster object can know be written to a file
+The resulting raster object can now be written to a file
 
 ```{r, write_height_layer}
 raster::writeRaster(tmp,file.path(demo_dir,"greater_500.tif"))
@@ -299,7 +299,7 @@ to a channel
 - *Dominant flow length* - the distance to a channel moving in the dominant
 (largest fraction) flow direction from any grid cell
 - *Expected flow length* - the distance to the channel based on a weighted
-average of the downlope flow lengths. Weights are given by the fraction of
+average of the downslope flow lengths. Weights are given by the fraction of
 flow in each direction.
 - *Band* - A strict computational order, starting at the channel arranged such
 that if all pixels in band $i+1,i+2,\ldots$ are evaluated the inflows to band
@@ -316,22 +316,22 @@ ctch$get_layer()
 ctch$plot_layer("band")
 ```
 
-# Classifying into Hydrological Similarity Units
+# Classifying into Hydrological Response Units
 
 Methods are provided for the classification of the catchment into Hydrological
- Similarity Units (HSUs). The classifications generated in this process are
- augmented with a further distance based seperation when generating a
+ Response Units (HRUs). The classifications generated in this process are
+ augmented with a further distance based separation when generating a
  `dynatop` model (see following section).
  
-By definition each channel length is treated as a single HSU. Two ways are
-provided for dividing the hillslope up into HSUs.
+By definition each channel length is treated as a single HRU. Two ways are
+provided for dividing the hillslope up into HRUs.
 The first way is *splitting* where one or more landscape properties are
-divided up into classes and HSUs defined by each unique combination of
+divided up into classes and HRUs defined by each unique combination of
 classes.
 The second *burning* enforces classes onto distinct areas.
 
 The `classify` method of a `dynatopGIS` allows the use of both methods, first
-*splitting* then *burning* to create hillslope HSUs.
+*splitting* then *burning* to create hillslope HRUs.
 
 ## Splitting
 
@@ -345,20 +345,20 @@ the variables should be numeric and are used as follows:
 - Single value: defines the number of splits which are automatically selected
 - Vector of values: treated as the breaks between classes
 
-To demonstate this HSUs for Swindale based on dividing the topographic index
+To demonstate this HRUs for Swindale based on dividing the topographic index
 into 21 classes and using the band distance measure 'as is' can be generated by
 
 ```{r, atb_split}
 ctch$classify("atb_band_split",cuts=list(atb=20,band=NA))
 ```
 
-or if the land greater then 500 in altitude is treated as a single HSU using a 'burn'
+or if the land greater then 500 in altitude is treated as a single HRU using a 'burn'
 
 ```{r, atb_height_split}
 ctch$classify("atb_band_500_split",cuts=list(atb=20,band=NA),burns="greater_500")
 ```
-Note that by giving the area to be burnt in negative value when it was
-generated above we have ensured that the values do not clash whith those generated by the cuts which
+Note that by giving the area to be burnt in a negative value when it was
+generated above we have ensured that the values do not clash with those generated by the cuts which
 (except potentially when a cut is NA) will always be positive.
 
 The final classificationcan be plotted as with any other layer
@@ -368,7 +368,7 @@ ctch$plot_layer("atb_band_500_split")
 ```
 
 In the meta data the cuts and burns used to generate the layer are
-recorded. these can be retreved with
+recorded. These can be retrieved with
 
 ```{r see_class}
 ctch$get_class_method("atb_band_500_split")
@@ -376,23 +376,23 @@ ctch$get_class_method("atb_band_500_split")
 
 # Generating a dynamic TOPMODEL
 
-A Dynamic TOPMODEL sutiable for use with the ```dynatop``` package can be
+A Dynamic TOPMODEL suitable for use with the ```dynatop``` package can be
 generated using the `create_model` method. This uses an existing
 classification 
 to generate the model. The required model structure is
 given in the vignettes of `dynatop` package and is not described here in
 details. 
 
-Since `dynatop` simulations make use of ordered HSUs to work downslope, a
+Since `dynatop` simulations make use of ordered HRUs to work downslope, a
 classification which used a distance layer (see earlier section) which represents the ordered downslope
 sequencing of the pixels is recommended. *It is strongly recommended that the 'band'
 distance metric is used directly as shown below*.
 
-Even if a distance distance layer is
+Even if a distance layer is
 not used in the classification one must be given to the `create_model`
 method, so the resulting HRUs can be ordered.
 
-For example in the case of the division of Swindale by topographic index into
+For example, in the case of the division of Swindale by topographic index into
 21 classes and the bands directly the resulting model can be generated by
 
 ```{r, model_atb_split}
@@ -405,15 +405,15 @@ Looking at the files within the `demo_dir` folder
 list.files(demo_dir,pattern="new_model*")
 ```
 
-shows that an addition raster map of the HSUs has been created in
+shows that an addition raster map of the HRUs has been created in
 `new_model.tif` along with a file `new_model.rds` containing a model
 suitable for `dynatop`
 
-The map of HSUs can be plotted as with any layer
+The map of HRUs can be plotted as with any layer
 
 ```{r plot_model}
 ctch$plot_layer("new_model")
 ```
 
-The values on the map correspond to the ìd column of the hillslope tabel in
+The values on the map correspond to the ìd column of the hillslope table in
 the `dynatop` model.

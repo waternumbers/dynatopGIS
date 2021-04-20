@@ -24,20 +24,20 @@ the `sink_fill` function and provide some simple demonstrations.
 
 The routine used is deliberately simple, doing the minimum required to populate
 sinks and missing data to produce valid flow directions. More complex routines
-can by found in many GIS packages and published work.
+can be found in many GIS packages and published work.
 
 # Algorithm
 In the following we take $z_{k}$ to be the height of the dem at cell $k$, $\mathcal{N}_{k}$ to be the set of index values for the neighbouring
 points in space with non-missing
 (i.e not `NA` or `NaN` in R)
-height values and $\hat{\mathcal{N}}_{k}$ teh set of index values for
+height values and $\hat{\mathcal{N}}_{k}$ the set of index values for
 neighbouring points with finite heights.
 
 ## Identifying data requiring replacement
 
 ### Determining missing data in the DEM
 
-To determine which data are missing non-finite values not associated witht he
+To determine which data are missing non-finite values not associated with the
 edge of the DEM are identified. This is done by
 
 1. Replacing all non-finite values in the dem with `NA`
@@ -59,8 +59,8 @@ identify sinks. Where a sink is identified set $z_{k}$ to `-Inf` ($-\infty$), ad
 ## Replacing values
 
 Replacing the unknown values from the 'lowest' up would ensure all could be
-relaced by a single pass through the points in $\mathcal{R}$. However since
-the values are not known this not possible. Instead we approximate this by:
+replaced by a single pass through the points in $\mathcal{R}$. However, since
+the values are not known this not possible. Instead, we approximate this by:
 
 1. For each $k \in \mathcal{R}$ compute $m_k = \min_{j \in
 \hat{\mathcal{N}}_k} \left(z_{j}\right)$
@@ -75,7 +75,7 @@ generated.
 
 # Examples
 
-Example dates is generated randomly
+Example data is generated randomly
 
 ```{r, data}
 M <- matrix(1:100,10,10)
@@ -88,7 +88,7 @@ chn$endNode <- "node2"
 chn$width <- 0.001
 ```
 
-## handling of a larger area of missing
+## Handling of a larger area of missing data
 
 ```{r, example1}
 ex1_dem <- dem
@@ -106,7 +106,7 @@ ex1$plot_layer("filled_dem",FALSE)
 unlink(ex1_dir, recursive=TRUE)
 ```
 
-## handling of a single island
+## Handling of a single island
 
 ```{r, example2}
 ex2_dem <- dem
