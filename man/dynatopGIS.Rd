@@ -366,7 +366,7 @@ Compute a Dynamic TOPMODEL
   layer_name,
   class_layer,
   dist_layer,
-  transmissivity = c("exponential", "boundend_exponential", "constant"),
+  transmissivity = c("exponential", "bounded_exponential", "constant"),
   channel_solver = c("histogram"),
   dist_delta = 0,
   rain_layer = NULL,

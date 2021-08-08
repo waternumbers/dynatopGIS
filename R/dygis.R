@@ -206,7 +206,7 @@ dynatopGIS <- R6::R6Class(
         #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, overwise an input table for the models gernerated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
-                                transmissivity=c("exponential","boundend_exponential","constant"),
+                                transmissivity=c("exponential","bounded_exponential","constant"),
                                 channel_solver=c("histogram"),
                                 dist_delta=0,
                                 rain_layer=NULL,rain_label=character(0),
@@ -539,7 +539,7 @@ dynatopGIS <- R6::R6Class(
             ch_area <- raster::area(chn) # areas of river channels
             
             ## extract cells index, and fraction of river area in cell
-            ch_cell<- raster::extract(land_area,chn,weights=TRUE,
+            ch_cell <- raster::extract(land_area,chn,weights=TRUE,
                                       cellnumbers=TRUE,na.rm=TRUE)
 
             
@@ -547,17 +547,32 @@ dynatopGIS <- R6::R6Class(
             channel_area <- dem; channel_area[!is.na(dem)] <- 0
             channel_id <- dem*NA
 
-            ## Loop and add the chanel id and channel area
-            for(ii in 1:length(ch_cell)){
-                idx <- ch_cell[[ii]][,'cell']
-                la <- ch_cell[[ii]][,'value']
-                ca <- ch_area[ii]*ch_cell[[ii]][,'weight']
-                ca <- pmin(ca,la)
-                jdx <- !is.na(channel_area[idx]) & (ca > channel_area[idx])
-                channel_area[ idx[jdx] ] <- ca[jdx]
-                channel_id[ idx[jdx] ] <- chn[["id"]][ii]
-            }
 
+            for(ii in 1:length(ch_cell)){
+                ch_cell[[ii]][,"weight"] <- ch_area[ii]*ch_cell[[ii]][,'weight']
+                ch_cell[[ii]] <- cbind(ch_cell[[ii]],cid=chn[["id"]][ii])
+            }
+            ch_cell <- do.call(rbind,ch_cell)
+            nm <- colnames(ch_cell)
+            ch_cell <- lapply(split(ch_cell,ch_cell[,"cell"],identity),matrix,ncol=ncol(ch_cell))
+            for(ii in 1:length(ch_cell)){
+                ch_cell[[ii]] <- ch_cell[[ii]][which.max(ch_cell[[ii]][,nm=="weight"]),,drop=FALSE]
+            }
+            ch_cell <- do.call(rbind,ch_cell)
+            channel_area[ ch_cell[,nm=="cell"] ] <- pmin(ch_cell[,nm=="value"],
+                                                         ch_cell[,nm=="weight"])
+            channel_id[ ch_cell[,nm=="cell"] ] <- ch_cell[,nm=="cid" ]
+            ## ## Loop and add the chanel id and channel area	
+            ## for(ii in 1:length(ch_cell)){
+            ##     idx <- ch_cell[[ii]][,'cell']
+            ##     la <- ch_cell[[ii]][,'value']
+            ##     ca <- ch_area[ii]*ch_cell[[ii]][,'weight']
+            ##     ca <- pmin(ca,la)
+            ##     jdx <- !is.na(channel_area[idx]) & (ca > channel_area[idx])
+            ##     channel_area[ idx[jdx] ] <- ca[jdx]
+            ##     channel_id[ idx[jdx] ] <- chn[["id"]][ii]
+            ## }
+            
             ## correct land area
             land_area <- land_area - channel_area
             
