@@ -24,6 +24,7 @@ This package contains the code for setting up a dynamic TOPMODEL implimentation
 \item \href{#method-compute_properties}{\code{dynatopGIS$compute_properties()}}
 \item \href{#method-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
 \item \href{#method-classify}{\code{dynatopGIS$classify()}}
+\item \href{#method-combine_classes}{\code{dynatopGIS$combine_classes()}}
 \item \href{#method-create_model}{\code{dynatopGIS$create_model()}}
 \item \href{#method-input_frac}{\code{dynatopGIS$input_frac()}}
 \item \href{#method-get_version}{\code{dynatopGIS$get_version()}}
@@ -85,7 +86,7 @@ Get current working directory
 }
 
 \subsection{Details}{
-Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
 }
 
 }
@@ -108,7 +109,7 @@ Set current working directory
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
 }
 
 }
@@ -335,9 +336,9 @@ The algorithm passed through the cells in increaing height. For measures of flow
 \if{html}{\out{<a id="method-classify"></a>}}
 \if{latex}{\out{\hypertarget{method-classify}{}}}
 \subsection{Method \code{classify()}}{
-Create a catchment classification based on any number of landscape layer cuts or burns
+Create a catchment classification based cutting an existing layer into classes
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$classify(layer_name, cuts, burns = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$classify(layer_name, base_layer, cuts)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -345,7 +346,32 @@ Create a catchment classification based on any number of landscape layer cuts or
 \describe{
 \item{\code{layer_name}}{name of the new layer to create}
 
-\item{\code{cuts}}{A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values). A value of \code{NA} implies to layer is already cut and can be used in the classification directly.}
+\item{\code{base_layer}}{name of the layer to be cut into classes}
+
+\item{\code{cuts}}{values on which to cut into classes. These should be numeric and define either the number of bands (single value) or breaks between band (multiple values).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-combine_classes"></a>}}
+\if{latex}{\out{\hypertarget{method-combine_classes}{}}}
+\subsection{Method \code{combine_classes()}}{
+Combine any number of classifications based on unique combinations and burns
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$combine_classes(layer_name, pairs, burns = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{layer_name}}{name of the new layer to create}
+
+\item{\code{pairs}}{a vector of layer names to combine into new classes through unique combinations. Names should correspond to raster layers in the project directory.}
 
 \item{\code{burns}}{a vector of layer names which are to be burnt on}
 }
@@ -366,7 +392,7 @@ Compute a Dynamic TOPMODEL
   layer_name,
   class_layer,
   dist_layer,
-  transmissivity = c("exponential", "bounded_exponential", "constant"),
+  transmissivity = c("exp", "bexp", "cnst", "dexp"),
   channel_solver = c("histogram"),
   dist_delta = 0,
   rain_layer = NULL,

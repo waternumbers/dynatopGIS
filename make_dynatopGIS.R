@@ -26,11 +26,11 @@ pkgName <- sub('\\.tar.gz$', '', basename(tmp))
 mch <- rhub::check(path = tmp,
                    platform = c("macos-highsierra-release-cran","windows-x86_64-release"))
 
-tmp <- paste0(pkgName,".tgz")
+tmp <- file.path("..",paste0(pkgName,".tgz"))
 download.file(file.path(mch$urls()$artifacts[1],tmp),tmp)
 drat::insertPackage(tmp,dratPath)
 
-tmp <- paste0(pkgName,".zip")
+tmp <- file.path("..",paste0(pkgName,".zip"))
 download.file(file.path(mch$urls()$artifacts[2],tmp),tmp)
 drat::insertPackage(tmp,dratPath)
 
@@ -42,7 +42,7 @@ drat::pruneRepo(dratPath,pkg=pkgName,remove="git")## this only does source files
 ## This code runs to generate the model used in the dynatop examples
 ## it also checks the verbose mode code
 rm(list=ls())
-pacPath <- './dynatopGIS'
+pacPath <- '.'# ##/dynatopGIS'
 devtools::load_all(pacPath)
 #library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData"))
@@ -64,8 +64,9 @@ profvis::profvis({
     c2$sink_fill(verbose=TRUE)
     c2$compute_properties(verbose=TRUE)
     c2$compute_flow_lengths(verbose=TRUE)
-    c2$classify("atb_split_band",list(atb=20,band=NA))
-    c2$create_model("Swindale","atb_split_band","band",verbose=TRUE)
+    c2$classify("atb_20","atb",20)
+    c2$combine_classes("atb_20_band",c("atb_20","band"))
+    c2$create_model("Swindale","atb_20_band","band",verbose=TRUE)
 })
 file.copy(file.path(demo_dir,"Swindale.rds"),"./dynatop/inst/extdata/",TRUE)
 file.copy(file.path(demo_dir,"Swindale.tif"),"./dynatop/inst/extdata/",TRUE)

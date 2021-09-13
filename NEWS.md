@@ -1,3 +1,13 @@
+# dynatopGIS 0.2.0.9101
+
+## Breakign changes
+
+- Previous classify method broken into two parts
+  - `classify` to cut a layer into classes
+  - `combine_classes` to combine classes using cantor pairing and burns
+  
+- Output of model altered to reflect changes in `dynatop` v0.2.0.9101
+
 # dynatopGIS 0.2.0.9030
 
 ## Breaking changes

@@ -33,14 +33,14 @@ dynatopGIS <- R6::R6Class(
         #' @description Get project emta data
         get_meta = function(){ private$meta },
         #' @description Get current working directory
-        #' @details Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+        #' @details Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
         get_working_directory = function(){private$wdir},
         #' @description Set current working directory
         #'
         #' @param file_path the path to the new directory to create
         #' @param create should the driectory be created if it doesn't exist
         #'
-        #' @details Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.
+        #' @details Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
         set_working_directory = function(file_path,create=TRUE){
             if(!dir.exists(file_path) & create){ dir.create(file_path,recursive=TRUE) }
             if(!dir.exists(file_path)){ stop("Directory does not exist") }
@@ -177,17 +177,26 @@ dynatopGIS <- R6::R6Class(
             private$apply_flow_lengths(verbose)
             invisible(self)
         }, 
-        #' @description Create a catchment classification based on any number of landscape layer cuts or burns
+        #' @description Create a catchment classification based cutting an existing layer into classes
         #' @param layer_name name of the new layer to create
-        #' @param cuts A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values). A value of \code{NA} implies to layer is already cut and can be used in the classification directly.
+        #' @param base_layer name of the layer to be cut into classes
+        #' @param cuts values on which to cut into classes. These should be numeric and define either the number of bands (single value) or breaks between band (multiple values).
+        #'
+        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        classify = function(layer_name,base_layer,cuts){
+            private$apply_classify(layer_name, base_layer, cuts)
+            invisible(self)
+        },
+        #' @description Combine any number of classifications based on unique combinations and burns
+        #' @param layer_name name of the new layer to create
+        #' @param pairs a vector of layer names to combine into new classes through unique combinations. Names should correspond to raster layers in the project directory.
         #' @param burns a vector of layer names which are to be burnt on
         #'
         #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
-        classify = function(layer_name,cuts,burns=NULL){
-            private$apply_classify(cuts,burns,layer_name)
+        combine_classes = function(layer_name,pairs,burns=NULL){
+            private$apply_combine_classes(layer_name,pairs,burns)
             invisible(self)
         },
-
         #' @description Compute a Dynamic TOPMODEL
         #'
         #' @param layer_name name for the new model and layers
@@ -206,7 +215,7 @@ dynatopGIS <- R6::R6Class(
         #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, overwise an input table for the models gernerated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
-                                transmissivity=c("exponential","bounded_exponential","constant"),
+                                transmissivity=c("exp","bexp","cnst","dexp"),
                                 channel_solver=c("histogram"),
                                 dist_delta=0,
                                 rain_layer=NULL,rain_label=character(0),
@@ -247,7 +256,7 @@ dynatopGIS <- R6::R6Class(
         #' @return a list with two elements, cuts and burns
         get_class_method = function(layer_name){
             layer_name <- match.arg(layer_name,private$find_layer())
-            if( private$meta$layers[[layer_name]]$type == "classification" ){
+            if( private$meta$layers[[layer_name]]$type %in% c( "classification","combined_classes") ){
                 private$meta$layers[[layer_name]]$method
             }else{
                 stop(layer_name," is not a classification")
@@ -918,10 +927,50 @@ dynatopGIS <- R6::R6Class(
         },
         
         ## split_to_class
-        apply_classify = function(cuts,burns,layer_name){
+        apply_classify = function(layer_name,base_layer,cuts){
+
+            ## check all layers are present
+            layer_name <- as.character(layer_name)
+            base_layer <- as.character(base_layer)
+            pos_val <- private$find_layer(TRUE)
+
+            ## check base layer exists
+            if(!(base_layer %in% names(pos_val))){
+                stop(paste(c("Missing layers:",base_layer,sep="\n")))
+            }
+
+            ## check layer_name isn't already used
+            if(layer_name %in% names(pos_val)){
+                stop("layer_name is already used")
+            }
+
+            ## load base layer
+            x <- raster::raster(pos_val[base_layer])
+
+            ## work out breaks
+            brk <- as.numeric(cuts)
+            if( length(brk)==1 | is.na(brk) ){
+                ## this defines brks in the same way as cut would otherwise
+                rng <- cellStats(x,range)
+                brk <- seq(rng[1],rng[2],length=brk+1)
+            }
+            ## cut the raster
+            x <- cut(x,breaks=brk,include.lowest=TRUE)
+
+            ## write out
+            fn <- private$make_filename(layer_name)
+            writeRaster(x,fn)
+            ## add to meta
+            private$meta$layers[[layer_name]] <- list(file=fn,type="classification",
+                                                      method=list(layer=base_layer,
+                                                                  cuts=brk))
+            private$write_meta()
+        },
+        ## split_to_class
+        apply_combine_classes = function(layer_name,pairs,burns){
 
             ## check all cuts and burns are in possible layers
-            rq <- c(names(cuts),burns)
+            rq <- c(pairs,burns)
             layer_name <- as.character(layer_name)
             pos_val <- private$find_layer(TRUE)
 
@@ -930,34 +979,16 @@ dynatopGIS <- R6::R6Class(
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
 
-            ## check layer_name isn;t already used
+            ## check layer_name isn't already used
             if(layer_name %in% names(pos_val)){
                 stop("layer_name is already used")
             }
                 
             ## work out new cuts by cantor_pairing
             init <- TRUE
-            for(ii in names(cuts)){
-                brk <- as.numeric(cuts[[ii]])
-                fn <- pos_val[ii] ## work out filename
-                x <- raster::raster(fn)
-                if( !(length(brk)==1 & is.na(brk[1])) ){
-                    
-                    if(length(brk)==1){
-                        ## this defines brks in the same way as cut would otherwise
-                        rng <- cellStats(x,range)
-                        brk <- seq(rng[1],rng[2],length=brk+1)
-                        ## the following does quantile based cuts
-                        #brk <- brk+1
-                        #brk <- quantile(x,probs=(0:brk)/brk)
-                        cuts[[ii]] <- brk
-                    }
-                    ## else{
-                    ##     brk <- unqiue(brk,rng)
-                    ##     brk <- brk[brk<=rng[2] & brk>=rng[1]]
-                    ## }
-                    x <- cut(x,breaks=brk,include.lowest=TRUE)
-                }
+            for(ii in pairs){
+                x <- raster::raster(pos_val[ii]) ## read in raster
+                
                 if(init){
                     cp <- x
                     init <- FALSE
@@ -967,19 +998,41 @@ dynatopGIS <- R6::R6Class(
                     cp <- cut(cp, c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf))
                 }
             }
-
-            ## add in burns
-            for(ii in burns){
-                fn <- pos_val[ii] ## work out filename
-                x <- raster::raster(fn)
-                idx <- Which(is.finite(x))
-                cp[idx] <- x[idx]
+            
+            ## make table of layer values - should be able to combine with above??
+            uq <- sort(unique(cp))
+            cuq <- sapply(uq,function(x){min(Which(cp==x,cells=TRUE))})
+            df <- matrix(NA,length(uq),length(pairs)+length(burns)+1)
+            colnames(df) <- c(layer_name,pairs,burns)
+            df[,layer_name] <- uq
+            for(ii in pairs){
+                x <- raster::raster(pos_val[ii]) ## read in raster
+                df[,ii] <- x[cuq]
             }
             
+            ## add in burns
+            for(ii in burns){
+                x <- raster::raster(pos_val[ii]) ## read in raster
+                idx <- Which(is.finite(x))
+                cp[idx] <- x[idx]
+
+                ux <- sort(unique(x))
+                ## ux that are alreasy layer numbers
+                idx <- df[,layer_name] %in% ux
+                df[idx,ii] <- df[idx,layer_name]
+                ## for ux not in df[,layer_name]
+                ux <- ux[!(ux %in% df[,layer_name])]
+                y <- matrix(NA,length(ux),ncol(df))
+                colnames(y) <- colnames(df)
+                y[,layer_name] <- y[,ii] <- ux
+                df <- rbind(df,y)
+                
+            }
+
             fn <- private$make_filename(layer_name)
             writeRaster(cp,fn)
-            private$meta$layers[[layer_name]] <- list(file=fn,type="classification",
-                                                    method=list(cuts=cuts,burns=burns))
+            private$meta$layers[[layer_name]] <- list(file=fn,type="combined_classes",
+                                                      method=df)
             private$write_meta()
         },
         
@@ -1000,18 +1053,18 @@ dynatopGIS <- R6::R6Class(
             if(!all(has_rq)){
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
-            if(!private$meta$layers[[class_lyr]]$type == "classification"){
+            if(!private$meta$layers[[class_lyr]]$type %in% c("classification","combined_classes")){
                 stop(class_lyr, " is not a classification")
             }
 
             ## initialise model
             if(verbose){ cat("Initialising model","\n") }
             model <- list(
-                options=c("transmissivity_profile"=transmissivity,
-                          "channel_solver"=channel_solver),
+                options=c("channel_solver"=channel_solver),
                 map = list(hillslope = character(0),
-                                     channel = pos_val["channel"],
-                                     channel_id = pos_val["channel_id"]))
+                           channel = pos_val["channel"],
+                           channel_id = pos_val["channel_id"]))
+            
             
             ## Create the channel table
             if(verbose){ cat("Creating Channel table","\n") }
@@ -1060,14 +1113,21 @@ dynatopGIS <- R6::R6Class(
             model$map$hillslope <- pos_val[layer_name] ## update the name fo the hillslope map
             rm(cls)
 
+
             ## work out the parameters needed for each transmissivity profile
             par <- switch(transmissivity,
-                          "exponential" = c(r_sfmax = Inf, s_rzmax = 0.05, s_rz0 = 0.75,
-                                            ln_t0 = -2, m = 0.04, t_d = 7200, c_sf = 0.1),
-                          "bounded_exponential" = c(r_sfmax = Inf, s_rzmax = 0.05, s_rz0 = 0.75,
-                                                    ln_t0 = -2, m = 0.04, D = 5, t_d = 7200, c_sf = 0.1),
-                          "constant" = c(r_sfmax = Inf, s_rzmax = 0.05, s_rz0 = 0.75,
-                                         c_sz = 0.4, D = 5, t_d = 7200, c_sf = 0.1),
+                          "exp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
+                                    ln_t0 = -2, c_sz = NA, m = 0.04, D= NA, m_2 = NA, omega = NA,
+                                    s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                          "bexp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
+                                     ln_t0 = -2, c_sz = NA, m = 0.04, D=5, m_2 = NA, omega = NA,
+                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                          "dexp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
+                                     ln_t0 = -2, c_sz = NA, m = 0.04, D= NA, m_2 = 0.0002, omega = 0.5,
+                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                          "cnst" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
+                                     ln_t0 = NA, c_sz = 0.01, m = NA, D= 10, m_2 = NA, omega = NA,
+                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6),
                           stop("Unrecognised tranmissivity")
                           )
             
@@ -1084,7 +1144,6 @@ dynatopGIS <- R6::R6Class(
                 s_bar = zonal(la*gr,hsu,sum)[,"value"],
                 min_dst = min_dst[,"value"],
                 width = as.numeric(NA),
-                class = min_dst[,"zone"],
                 stringsAsFactors=FALSE
             )
             ##     r_sfmax="r_sfmax_default",
@@ -1098,7 +1157,29 @@ dynatopGIS <- R6::R6Class(
             ## )
             model$hillslope$atb_bar <- model$hillslope$atb_bar/model$hillslope$area
             model$hillslope$s_bar <- model$hillslope$s_bar/model$hillslope$area
+
+            ## add classes
+            cl <- min_dst[,c("id","zone")]
+            if(private$meta$layers[[class_lyr]]$type == "combined_classes"){
+                tmp <- private$meta$layers[[class_lyr]]$method
+                colnames(tmp) <- paste0("cls_",colnames(tmp))
+                cl <- merge(tmp,cl,by.y="zone",by.x=paste0("cls_",class_lyr),all.y=TRUE)
+            }else{
+                colnames(cl) <- c("id",paste0("cls_",class_lyr))
+            }
+            
+            cl <- cl[order(cl[,"id"]),]
+            cl <- as.data.frame(cl)
+
+            if(!all(cl$id == model$hillslope$id)){
+                stop("Classes are out of order...")
+            }
+            for(ii in setdiff(names(cl),"id")){
+                model$hillslope[[ii]] <- as.integer(cl[[ii]])
+            }
+
             ## add tranmissivity dependent parameters
+            model$hillslope$opt = transmissivity
             for(ii in names(par)){
                 model$hillslope[[ii]] <- as.numeric(par[ii])
             }
