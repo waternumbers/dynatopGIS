@@ -26,13 +26,13 @@ pkgName <- sub('\\.tar.gz$', '', basename(tmp))
 mch <- rhub::check(path = tmp,
                    platform = c("macos-highsierra-release-cran","windows-x86_64-release"))
 
-tmp <- file.path("..",paste0(pkgName,".tgz"))
-download.file(file.path(mch$urls()$artifacts[1],tmp),tmp)
-drat::insertPackage(tmp,dratPath)
+tmp <- paste0(pkgName,".tgz")
+download.file(file.path(mch$urls()$artifacts[1],tmp),file.path("..",tmp))
+drat::insertPackage(file.path("..",tmp),dratPath)
 
-tmp <- file.path("..",paste0(pkgName,".zip"))
-download.file(file.path(mch$urls()$artifacts[2],tmp),tmp)
-drat::insertPackage(tmp,dratPath)
+tmp <- paste0(pkgName,".zip")
+download.file(file.path(mch$urls()$artifacts[2],tmp),file.path("..",tmp))
+drat::insertPackage(file.path("..",tmp),dratPath)
 
 ## tidy up drat
 drat::pruneRepo(dratPath,pkg=pkgName,remove="git")## this only does source files
@@ -65,14 +65,19 @@ profvis::profvis({
     c2$compute_properties(verbose=TRUE)
     c2$compute_flow_lengths(verbose=TRUE)
     c2$classify("atb_20","atb",20)
-    c2$combine_classes("atb_20_band",c("atb_20","band"))
-    c2$create_model("Swindale","atb_20_band","band",verbose=TRUE)
+    c2$combine_classes("atb_20_band3",c("atb_20","band"))
+    c2$create_model("Swindale_exp","atb_20_band","band",transmissivity="exp",verbose=TRUE)
+    c2$create_model("Swindale_bexp","atb_20_band","band",transmissivity="bexp",verbose=TRUE)
+    c2$create_model("Swindale_dexp","atb_20_band","band",transmissivity="dexp",verbose=TRUE)
+    c2$create_model("Swindale_cnst","atb_20_band","band",transmissivity="cnst",verbose=TRUE)
 })
-file.copy(file.path(demo_dir,"Swindale.rds"),"./dynatop/inst/extdata/",TRUE)
-file.copy(file.path(demo_dir,"Swindale.tif"),"./dynatop/inst/extdata/",TRUE)
-file.copy(file.path(demo_dir,"channel_id.tif"),"./dynatop/inst/extdata/",TRUE)
+
+file.copy(list.files(demo_dir,pattern="^Swindale.*\\.rds$", full.names = TRUE),
+          "../dynatop/build_scripts/",TRUE)
+file.copy(file.path(demo_dir,"Swindale.tif"),"../dynatop/inst/extdata/",TRUE)
+file.copy(file.path(demo_dir,"channel_id.tif"),"../dynatop/inst/extdata/",TRUE)
 file.copy(list.files(demo_dir, "^channel[.]", full.names = TRUE),
-          "./dynatop/inst/extdata/",TRUE)
+          "../dynatop/inst/extdata/",TRUE)
 
 
 

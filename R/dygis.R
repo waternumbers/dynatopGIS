@@ -1001,7 +1001,8 @@ dynatopGIS <- R6::R6Class(
             
             ## make table of layer values - should be able to combine with above??
             uq <- sort(unique(cp))
-            cuq <- sapply(uq,function(x){min(Which(cp==x,cells=TRUE))})
+            cuq <- sapply(uq,function(x){which.max(cp==x)[1]})
+            
             df <- matrix(NA,length(uq),length(pairs)+length(burns)+1)
             colnames(df) <- c(layer_name,pairs,burns)
             df[,layer_name] <- uq
@@ -1144,6 +1145,10 @@ dynatopGIS <- R6::R6Class(
                 s_bar = zonal(la*gr,hsu,sum)[,"value"],
                 min_dst = min_dst[,"value"],
                 width = as.numeric(NA),
+                s_sf = as.numeric(NA),
+                s_rz = as.numeric(NA),
+                s_uz = as.numeric(NA),
+                s_sz = as.numeric(NA),
                 stringsAsFactors=FALSE
             )
             ##     r_sfmax="r_sfmax_default",
@@ -1183,7 +1188,7 @@ dynatopGIS <- R6::R6Class(
             for(ii in names(par)){
                 model$hillslope[[ii]] <- as.numeric(par[ii])
             }
-            
+           
             ## tidy up
             rm(atb)
 

@@ -15,7 +15,7 @@ Imports:
     R6,
 	raster,
 	sp,
-q	rgeos,
+	rgeos,
 	rgdal,
 	methods,
 	igraph
