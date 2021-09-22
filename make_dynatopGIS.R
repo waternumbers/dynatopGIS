@@ -27,12 +27,12 @@ mch <- rhub::check(path = tmp,
                    platform = c("macos-highsierra-release-cran","windows-x86_64-release"))
 
 tmp <- paste0(pkgName,".tgz")
-download.file(file.path(mch$urls()$artifacts[1],tmp),tmp)
-drat::insertPackage(tmp,dratPath)
+download.file(file.path(mch$urls()$artifacts[1],tmp),file.path("..",tmp))
+drat::insertPackage(file.path("..",tmp),dratPath)
 
 tmp <- paste0(pkgName,".zip")
-download.file(file.path(mch$urls()$artifacts[2],tmp),tmp)
-drat::insertPackage(tmp,dratPath)
+download.file(file.path(mch$urls()$artifacts[2],tmp),file.path("..",tmp))
+drat::insertPackage(file.path("..",tmp),dratPath)
 
 ## tidy up drat
 drat::pruneRepo(dratPath,pkg=pkgName,remove="git")## this only does source files
@@ -42,7 +42,7 @@ drat::pruneRepo(dratPath,pkg=pkgName,remove="git")## this only does source files
 ## This code runs to generate the model used in the dynatop examples
 ## it also checks the verbose mode code
 rm(list=ls())
-pacPath <- './dynatopGIS'
+pacPath <- '.'# ##/dynatopGIS'
 devtools::load_all(pacPath)
 #library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData"))
@@ -64,14 +64,20 @@ profvis::profvis({
     c2$sink_fill(verbose=TRUE)
     c2$compute_properties(verbose=TRUE)
     c2$compute_flow_lengths(verbose=TRUE)
-    c2$classify("atb_split_band",list(atb=20,band=NA))
-    c2$create_model("Swindale","atb_split_band","band",verbose=TRUE)
+    c2$classify("atb_20","atb",20)
+    c2$combine_classes("atb_20_band3",c("atb_20","band"))
+    c2$create_model("Swindale_exp","atb_20_band","band",transmissivity="exp",verbose=TRUE)
+    c2$create_model("Swindale_bexp","atb_20_band","band",transmissivity="bexp",verbose=TRUE)
+    c2$create_model("Swindale_dexp","atb_20_band","band",transmissivity="dexp",verbose=TRUE)
+    c2$create_model("Swindale_cnst","atb_20_band","band",transmissivity="cnst",verbose=TRUE)
 })
-file.copy(file.path(demo_dir,"Swindale.rds"),"./dynatop/inst/extdata/",TRUE)
-file.copy(file.path(demo_dir,"Swindale.tif"),"./dynatop/inst/extdata/",TRUE)
-file.copy(file.path(demo_dir,"channel_id.tif"),"./dynatop/inst/extdata/",TRUE)
+
+file.copy(list.files(demo_dir,pattern="^Swindale.*\\.rds$", full.names = TRUE),
+          "../dynatop/build_scripts/",TRUE)
+file.copy(file.path(demo_dir,"Swindale.tif"),"../dynatop/inst/extdata/",TRUE)
+file.copy(file.path(demo_dir,"channel_id.tif"),"../dynatop/inst/extdata/",TRUE)
 file.copy(list.files(demo_dir, "^channel[.]", full.names = TRUE),
-          "./dynatop/inst/extdata/",TRUE)
+          "../dynatop/inst/extdata/",TRUE)
 
 
 
