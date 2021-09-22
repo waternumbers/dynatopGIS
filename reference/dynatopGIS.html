@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0.9032</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0.9102</span>
       </span>
     </div>
 
@@ -160,6 +160,7 @@
 <li><p><a href='#method-compute_properties'><code>dynatopGIS$compute_properties()</code></a></p></li>
 <li><p><a href='#method-compute_flow_lengths'><code>dynatopGIS$compute_flow_lengths()</code></a></p></li>
 <li><p><a href='#method-classify'><code>dynatopGIS$classify()</code></a></p></li>
+<li><p><a href='#method-combine_classes'><code>dynatopGIS$combine_classes()</code></a></p></li>
 <li><p><a href='#method-create_model'><code>dynatopGIS$create_model()</code></a></p></li>
 <li><p><a href='#method-input_frac'><code>dynatopGIS$input_frac()</code></a></p></li>
 <li><p><a href='#method-get_version'><code>dynatopGIS$get_version()</code></a></p></li>
@@ -202,7 +203,7 @@
 <p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>get_working_directory</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.</p>
+<p>Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.</p>
 
 <p><hr>
 <a id="method-set_working_directory"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>set_working_directory()</code></h3>
@@ -217,7 +218,7 @@
 
 </dl><p></div></p>
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
-<p>Newly generated layers are added to the working directory. By deafult this is the directory containing the meta date file.</p>
+<p>Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.</p>
 
 <p><hr>
 <a id="method-add_dem"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>add_dem()</code></h3>
@@ -367,14 +368,31 @@
 
 <p><hr>
 <a id="method-classify"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>classify()</code></h3>
-<p>Create a catchment classification based on any number of landscape layer cuts or burns</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
-<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>classify</span><span class='op'>(</span><span class='va'>layer_name</span>, <span class='va'>cuts</span>, burns <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+<p>Create a catchment classification based cutting an existing layer into classes</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>classify</span><span class='op'>(</span><span class='va'>layer_name</span>, <span class='va'>base_layer</span>, <span class='va'>cuts</span><span class='op'>)</span></pre><p></div></p>
 
 <h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
 <p><div class="arguments"></p><dl>
 <dt><code>layer_name</code></dt><dd><p>name of the new layer to create</p></dd>
 
-<dt><code>cuts</code></dt><dd><p>A named list of cuts of make to form the HRU. Names should correspond to raster layers in the project directory. Values should be numeric and define either the number of bands (single value) or breaks between band (multiple values). A value of <code>NA</code> implies to layer is already cut and can be used in the classification directly.</p></dd>
+<dt><code>base_layer</code></dt><dd><p>name of the layer to be cut into classes</p></dd>
+
+<dt><code>cuts</code></dt><dd><p>values on which to cut into classes. These should be numeric and define either the number of bands (single value) or breaks between band (multiple values).</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Details</h4>
+<p>This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are impliment using <code><a href='https://rdrr.io/pkg/raster/man/cut.html'>raster::cut</a></code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
+
+<p><hr>
+<a id="method-combine_classes"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>combine_classes()</code></h3>
+<p>Combine any number of classifications based on unique combinations and burns</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>dynatopGIS</span><span class='op'>$</span><span class='fu'>combine_classes</span><span class='op'>(</span><span class='va'>layer_name</span>, <span class='va'>pairs</span>, burns <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>layer_name</code></dt><dd><p>name of the new layer to create</p></dd>
+
+<dt><code>pairs</code></dt><dd><p>a vector of layer names to combine into new classes through unique combinations. Names should correspond to raster layers in the project directory.</p></dd>
 
 <dt><code>burns</code></dt><dd><p>a vector of layer names which are to be burnt on</p></dd>
 
@@ -389,7 +407,7 @@
   <span class='va'>layer_name</span>,
   <span class='va'>class_layer</span>,
   <span class='va'>dist_layer</span>,
-  transmissivity <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"exponential"</span>, <span class='st'>"bounded_exponential"</span>, <span class='st'>"constant"</span><span class='op'>)</span>,
+  transmissivity <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"exp"</span>, <span class='st'>"bexp"</span>, <span class='st'>"cnst"</span>, <span class='st'>"dexp"</span><span class='op'>)</span>,
   channel_solver <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"histogram"</span><span class='op'>)</span>,
   dist_delta <span class='op'>=</span> <span class='fl'>0</span>,
   rain_layer <span class='op'>=</span> <span class='cn'>NULL</span>,
