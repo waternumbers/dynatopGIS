@@ -1,6 +1,6 @@
 Package: dynatopGIS
 Title: GIS tools for helping build dynamic TOPMODEL implementations
-Version: 0.2.0.9101
+Version: 0.2.0.9102
 Authors@R: 
     person(given = "Paul",
            family = "Smith",

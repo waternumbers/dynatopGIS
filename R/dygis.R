@@ -1000,9 +1000,25 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## make table of layer values - should be able to combine with above??
-            uq <- sort(unique(cp))
-            cuq <- sapply(uq,function(x){which.max(cp==x)[1]})
-            
+            cpv <- raster::getValues(cp) ## quicker when a vector
+            uq <- sort(unique(cp)) ## unique values
+            cuq <- rep(NA,length(uq)) ##index of unique values
+            uqf <- rep(FALSE,length(uq)) ## flag for search
+            ii <- 1
+            while(!all(uqf) & ii <= length(cpv)){
+                if(!is.na(cpv[ii])){
+                    idx <- uq==cpv[ii]
+                    if( !uqf[idx] ){
+                        cuq[idx] <- ii
+                        uqf[idx] <- TRUE
+                    }
+                }
+                ii <- ii+1
+            }
+            if(!all(uqf)){
+                stop("Error in computing combinations")
+            }
+            ## create data frame
             df <- matrix(NA,length(uq),length(pairs)+length(burns)+1)
             colnames(df) <- c(layer_name,pairs,burns)
             df[,layer_name] <- uq
