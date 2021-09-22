@@ -1,8 +1,7 @@
 # dynatopGIS
 
 <!-- badges: start -->
-  [![Travis build
-  status](https://travis-ci.org/waternumbers/dynatopGIS.svg?branch=master)](https://travis-ci.org/waternumbers/dynatopGIS)
+  [![Build Status](https://app.travis-ci.com/waternumbers/dynatopGIS.svg?branch=master)](https://app.travis-ci.com/waternumbers/dynatopGIS)
   [![AppVeyor Build
   Status](https://ci.appveyor.com/api/projects/status/github/waternumbers/dynatopGIS?branch=master&svg=true)](https://ci.appveyor.com/project/waternumbers/dynatopGIS)
     [![Coverage Status](https://coveralls.io/repos/github/waternumbers/dynatopGIS/badge.svg?branch=master)](https://coveralls.io/github/waternumbers/dynatopGIS?branch=master)
