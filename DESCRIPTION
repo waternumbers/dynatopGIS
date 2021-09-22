@@ -18,7 +18,8 @@ Imports:
 	rgeos,
 	rgdal,
 	methods,
-	igraph
+	igraph,
+	jsonlite
 Depends:
 	R (>= 3.1)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
