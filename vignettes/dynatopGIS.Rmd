@@ -88,24 +88,18 @@ the difference between the cell centres (in meters) does not alter.
 For Swindale the suitable DEM and channel files can be found using:
 
 ```{r, data_files}
-dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData", mustWork = TRUE)
-channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData", mustWork = TRUE)
-```
-
-Since the DEM is quite high resolution for the purposes of this vignette we
-will aggregate it to 100m.
-
-```{r, aggregate}
-raw_dem <- raster::raster(dem_file)
-agg_dem <- raster::aggregate(raw_dem,10)
+dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
+channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS", mustWork = TRUE)
 ```
 
 Either the DEM or channel files can be added to the project first. In this
 case we add the DEM with
 
 ```{r, add_dem}
-ctch$add_dem(agg_dem)
+dem <- raster::raster(dem_file)
+ctch$add_dem(dem)
 ```
+
 *Note:* An additional row and column of `NA` is added to each edge of the
 DEM. All raster layers in the project have the same projection,
 resolution and extent of the extended DEM.
@@ -354,14 +348,14 @@ To demonstate a pairing combination consider combining the atb classes
 generated above with the classification provided by the distance band
 
 ```{r, atb_20_band}
-ctch$combine_classes("atb_20_band",c("atb","band"))
+ctch$combine_classes("atb_20_band",c("atb_20","band"))
 ctch$plot_layer("atb_20_band")
 ```
 
 Additionally the land greater then 500 in altitude can be burnt in with
 
 ```{r, atb_20_band_burn}
-ctch$combine_classes("atb_20_band_500",pairs=c("atb","band"),burns="greater_500")
+ctch$combine_classes("atb_20_band_500",pairs=c("atb_20","band"),burns="greater_500")
 ctch$plot_layer("atb_20_band_500")
 ```
 
@@ -370,7 +364,7 @@ in the computations can be returned
 
 
 ```{r see_class}
-ctch$get_class_method("atb_20_band_500")
+head( ctch$get_class_method("atb_20_band_500") )
 ```
 
 Note that by giving the area to be burnt in a negative value when it was

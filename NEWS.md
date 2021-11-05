@@ -1,6 +1,10 @@
+# dynatop 0.2.1
+
+- Tidying up of vignettes and package imports for CRAN
+
 # dynatopGIS 0.2.0.9101
 
-## Breakign changes
+## Breaking changes
 
 - Previous classify method broken into two parts
   - `classify` to cut a layer into classes

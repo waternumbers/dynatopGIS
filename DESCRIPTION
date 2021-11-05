@@ -1,36 +1,32 @@
 Package: dynatopGIS
-Title: GIS tools for helping build dynamic TOPMODEL implementations
-Version: 0.2.0.9102
+Title: GIS Tools for Helping Build Dynamic TOPMODEL Implementations
+Version: 0.2.1
 Authors@R: 
     person(given = "Paul",
            family = "Smith",
            role = c("aut", "cre"),
            email = "paul@waternumbers.co.uk",
            comment = c(ORCID = "0000-0002-0034-3412"))
-Description: This package assists in building implimentations of dynamic TOPMODEL for use with the dynatop package.
+Description: A set of GIS algorithms for processing river network and DEM data to build implementations of Dynamic TOPMODEL for use with the dynatop package.
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
 Imports:
     R6,
 	raster,
-	sp,
 	rgeos,
-	rgdal,
 	methods,
-	igraph,
 	jsonlite
 Depends:
-	R (>= 3.1)
+	R (>= 4.0.0)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
 URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
-RoxygenNote: 7.1.1
-Suggests: 
+RoxygenNote: 7.1.2
+Suggests:
+	rgdal,
+	igraph,
     knitr,
     rmarkdown,
     covr,
-    pkgdown,
-    dynatopData
+    pkgdown
 VignetteBuilder: knitr
-Remotes:
-    waternumbers/dynatopData

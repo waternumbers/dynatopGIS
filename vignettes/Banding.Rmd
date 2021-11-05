@@ -1,51 +1,68 @@
 ---
-title: "Distance Calculations"
+title: "Distance Classification"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Distance Calculations}
+  %\VignetteIndexEntry{Distance Classification}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 --- 
-# NOTE
 
-**THIS IS NOT COMPLETE**
+This document explains the use of "distance" in the classification of
+of the hillslopes into Hydrological Response Units (HRUs). This is a key
+difference in the classification and model creation scheme used with
+dynatopGIS compared to previous model implementations (e.g. the dynatopmodel).
 
-## Banding
+As with earlier versions of Dynamic TOPMODEL "physical" classification of the
+raster cells representing the hillslopes by
+characteristics such as topographic index, soil parameters and rainfall inputs
+forms etc. is the basis of determining HRUs. However having the performed a
+"physical" classification there is the need to determine the connectivity of
+the HRUs and (possibly) the computational sequence for their solution.
 
-This document tries to explain the process of creating a Dynamic TOPMODEL from
-the GIS data by agglomorating the raster cells into HSUs.
+Consider the methods utilised in the `dynatopmodel` package which determined the connectivity based on
+the down slope contributions of each raster cell in the HRU. This
+resulted in a matrix $\mathbf{M)$ of flow fractions such that if the vector of
+outflows from the HRUs was $\mathbf{l}_{o}$ the inflows $\mathbf{l}_{i}$ are
+given by 
+\[
+\mathbf{l}_{i} = \mathbf{M} \mathbf{l}_{o}
+\]
+Determining the down slope contributions in such as fashion enables a high
+degree of spatial averaging of the inflow. For example an area at the bottom
+of the hillslope near a channel may fall into the same class as the low
+gradient area higher up the hillslope, where it might be reasonable to presume
+the inflow from adjacent HRUs was much lower. While such averaging may prove
+adequate for the hydrological simulation of the outflow it limits the ability
+of the model to represent interventions on a smaller scale (e.g. reforestation
+of a low fraction of raster cells; leaky dams limiting slowing the transfer of
+surface water)
 
-The computation of the average topographic index or gradient for a number of
-raster cells grouped into an HSU is straight forward. The main challange is in
-determining the computational sequence of the HSUs and there connectivity.
+To address this a "distance" is used to ensure an order to the HRUs. 
+Currently the code allows for the computation of four distances
 
-The computational sequence of the HSUs is required for the solutions of the 
-the surface and saturated zone routings within the `dynatop` package; which
-presume the inflow to the HSU is available at the time of solution.
+- *Band*. A strict sequencing such that all the cells up slope of a raster cell in band $n$ are in
+bands $n+1$ and greater.
 
-To compute the HSUs in an appropriate computational sequence the "physical
-classification" by spatial characteristics (e.g. topographic index, raster maps
-of soil parameters, rainfall inputs etc.) is augmented by an additional "band
-classification" based on the band of the raster cell.
+- *Shortest length*. The minimum length to a river channel through any flow
+  path.
+  
+- *Dominant length*. The length to a river channel following the flow
+direction with the highest fraction for each pixel on the path.
 
-The band of the raster pixel is computed from the flow directions between the
-pixels such that all the cells upslope of a raster cell in band $n$ are in
-cells $1$ to $n-1$. In this sense "upslope" is determined by considering any
-higher pixel to be "upslope".
+- *Expected length*. The length to a river channel based on the sum of
+  down slope flow weighted by the fraction of flow to each cell.
+  
+The "distance" can be used in two ways. Optionally it can be used within the
+classification of the HRUs thereby providing spatially ordered HRUs. 
+A "distance" is also used in the determining
+the connectivity. Each HRU is assigned a single distance based on the raster
+cells within it that are closest to the river. The flow directions from these cells are then used to
+determine the down slope contributions; which go to HRUs assigned a shorter distance.
 
-One option is to treat each band as it's own class. In this case the
-computational sequence can exactly match the "band classification". This allows all the
-connectivity between the raster cells to be represented.
+> Although this technique is fairly generic it is strongly suggested that the
+> band distance is used, both in classification and model generation.
 
-However if we create a "band classification" that merges bands
-together the situation is more challanging. It is presumed that bands are merged in
-order: that is band $n$ can be merged with bands $n-1$ and/or band $n+1$ but
-cannot be merged with band $n-1$ and/or $n+2$ unless it is also merged with the
-intervining band.
-
-Suppose that some merging of the computational bands is used, so that when
-used alongside a "physical classification" a number of HSUs are produced. To
-each HSUs we ascribe an order number which is the maximum band value taken by
-a pixel within the HSU. Note that multiple HSUs may have the same order.
-
-The pixels....to be continued....
+In handling the flow contributions this way we ensure a computational sequence
+for the HRUs is established (that is $\mathbf{M}$ is triangular) which is
+required for the computational scheme used within the associated dynatop
+package.

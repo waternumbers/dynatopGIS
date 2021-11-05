@@ -3,12 +3,12 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/waternumbers/dynatopGIS/workflows/R-CMD-check/badge.svg)](https://github.com/waternumbers/dynatopGIS/actions)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/waternumbers/dynatopGIS?branch=master&svg=true)](https://ci.appveyor.com/project/waternumbers/dynatopGIS)
-[![codecov](https://codecov.io/gh/waternumbers/dynatopGIS/branch/master/graph/badge.svg?token=Me8PRw9Z8C)](https://codecov.io/gh/waternumbers/dynatopGIS)
+[![codecov](https://app.codecov.io/gh/waternumbers/dynatopGIS/branch/master/graph/badge.svg?token=Me8PRw9Z8C)](https://app.codecov.io/gh/waternumbers/dynatopGIS)
 <!-- badges: end -->
 
 This R package contains the code to generate a dynamic TOPMODEL from GIS
 data. A related package for computing dynamic TOPMODEL simulations can be found
-[here](https://waternumbers.github.io/dynatop).
+[here](https://waternumbers.github.io/dynatop/).
 
 These two packages are intended as successors to the original Dynamic TOPMODEL implementation in R;
 the [dynatopmodel](https://CRAN.R-project.org/package=dynatopmodel) package. Currently
@@ -40,4 +40,4 @@ devtools::install_github("waternumbers/dynatopGIS")
 ```
 
 Prebuild packages (usually including the latest
-version) are available from the waternumbers drat repository [here](https://waternumbers.github.io/drat).
+version) are available from the waternumbers drat repository [here](https://waternumbers.github.io/drat/).

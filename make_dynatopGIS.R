@@ -3,7 +3,7 @@ rm(list=ls())
 graphics.off()
 
 ## path of the package
-pacPath <- '.'#/dynatopGIS'
+pacPath <- '.'
 devtools::document(pacPath)
 devtools::check(pacPath)
 
@@ -15,27 +15,33 @@ pkgdown::clean_site(pacPath)
 ## build, populate drat
 ## linux
 dratPath <- "~/Documents/Software/drat"
-tmp <- devtools::build(pacPath)
-install.packages(tmp)
-drat::insertPackage(tmp,dratPath)
+buildFile <- devtools::build(pacPath)
+install.packages(buildFile)
+drat::insertPackage(buildFile,dratPath)
 
 ## mac and windows
 rhub::validate_email() # for first time that session
-pkgName <- sub('\\.tar.gz$', '', basename(tmp)) 
+pkgName <- sub('\\.tar.gz$', '', basename(buildFile)) 
 ## rhub::platforms()[,1] # lists platforms
-mch <- rhub::check(path = tmp,
-                   platform = c("macos-highsierra-release-cran","windows-x86_64-release"))
+mch <- rhub::check(path = buildFile,
+                   platform = c("macos-highsierra-release-cran","windows-x86_64-release",
+                                "macos-m1-bigsur-release"))
 
-tmp <- paste0(pkgName,".tgz")
-download.file(file.path(mch$urls()$artifacts[1],tmp),file.path("..",tmp))
-drat::insertPackage(file.path("..",tmp),dratPath)
-
-tmp <- paste0(pkgName,".zip")
-download.file(file.path(mch$urls()$artifacts[2],tmp),file.path("..",tmp))
-drat::insertPackage(file.path("..",tmp),dratPath)
+ext <- c(".tgz",".zip",".tgz")
+outPath <- dirname(buildFile)
+for(ii in 1:2){ ## m1 not fixed yet in drat
+    tmp <- paste0(pkgName,ext[ii])
+    outFile <- file.path(outPath,tmp)
+    download.file(file.path(mch$urls()$artifacts[ii],tmp),outFile)
+    drat::insertPackage(outFile,dratPath)
+}
 
 ## tidy up drat
 drat::pruneRepo(dratPath,pkg=pkgName,remove="git")## this only does source files
+
+## prior to submission
+mch <- rhub::check_for_cran(path = buildFile)
+mch <- rhub::check_with_valgrind(path = buildFile)
 
 ############################################################################
 
@@ -81,3 +87,17 @@ file.copy(list.files(demo_dir, "^channel[.]", full.names = TRUE),
 
 
 
+############################################################################
+
+## This code builds the inst extdata directory from the raw data files in dynatopData
+
+rm(list=ls())
+dem_file <- system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData", mustWork = TRUE)
+raw_dem <- raster::raster(dem_file)
+agg_dem <- raster::aggregate(raw_dem,10)
+writeRaster(agg_dem,"./inst/extdata/SwindaleDTM40m.tif")
+
+file.copy( list.files(dirname(dem_file),pattern="^SwindaleRiver",full.names=TRUE),
+          "./inst/extdata/")
+
+          
