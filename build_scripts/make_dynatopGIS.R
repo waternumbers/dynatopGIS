@@ -3,7 +3,7 @@ rm(list=ls())
 graphics.off()
 
 ## path of the package
-pacPath <- '.'
+pacPath <- '../'
 devtools::document(pacPath)
 devtools::check(pacPath)
 

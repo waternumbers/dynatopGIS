@@ -3,7 +3,7 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/waternumbers/dynatopGIS/workflows/R-CMD-check/badge.svg)](https://github.com/waternumbers/dynatopGIS/actions)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/waternumbers/dynatopGIS?branch=master&svg=true)](https://ci.appveyor.com/project/waternumbers/dynatopGIS)
-[![codecov](https://app.codecov.io/gh/waternumbers/dynatopGIS/branch/master/graph/badge.svg?token=Me8PRw9Z8C)](https://app.codecov.io/gh/waternumbers/dynatopGIS)
+[![codecov](https://img.shields.io/codecov/c/gh/waternumbers/dynatopGIS/master)](https://app.codecov.io/gh/waternumbers/dynatopGIS)
 <!-- badges: end -->
 
 This R package contains the code to generate a dynamic TOPMODEL from GIS

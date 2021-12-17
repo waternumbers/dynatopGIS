@@ -8,3 +8,5 @@ make_dynatopGIS.R
 ^\.git$
 ^\.gitignore$
 ^\.github$
+^build_scripts
+
