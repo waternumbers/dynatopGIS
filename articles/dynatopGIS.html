@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,18 +33,12 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
-<li>
-  <a href="../index.html">
-    <span class="fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
 <li>
   <a href="../articles/dynatopGIS.html">Get started</a>
 </li>
@@ -67,7 +63,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/waternumbers/dynatopGIS/">
+  <a href="https://github.com/waternumbers/dynatopGIS/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -88,7 +84,7 @@
       <h1 data-toc-skip>Building a Dynamic TOPMODEL</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/waternumbers/dynatopGIS/blob/master/vignettes/dynatopGIS.Rmd"><code>vignettes/dynatopGIS.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/waternumbers/dynatopGIS/blob/HEAD/vignettes/dynatopGIS.Rmd" class="external-link"><code>vignettes/dynatopGIS.Rmd</code></a></small>
       <div class="hidden name"><code>dynatopGIS.Rmd</code></div>
 
     </div>
@@ -96,9 +92,9 @@
     
     
 <p>The purpose of this vignette is to provide an outline of the steps needed to build a dynamic TOPMODEL implementation using the dynatopGIS package.</p>
-<div id="implementation-notes" class="section level1">
-<h1 class="hasAnchor">
-<a href="#implementation-notes" class="anchor"></a>Implementation notes</h1>
+<div class="section level1">
+<h1 id="implementation-notes">Implementation notes<a class="anchor" aria-label="anchor" href="#implementation-notes"></a>
+</h1>
 <p>The dynatopGIS package implements a structured, object orientated, data flow. The steps outlined below create a <code>dynatopGIS</code> catchment object to which actions are then applied to generate a model.</p>
 <p>The <code>dynatopGIS</code> package is written using the object orientated framework provided by the <code>R6</code> package. This means that some aspects of working with the objects may appear ìdiosyncratic for some R users. In using the package as outlined in this vignette these problems are largely obscured, except for the call structure. However, before adapting the code, or doing more complex analysis users should read about <code>R6</code> class objects (e.g. in the <code>R6</code> package vignettes or in the Advanced R book). One particular gotcha is when copying an object. Using</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -107,44 +103,42 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">my_new_object</span>  <span class="op">&lt;-</span>  <span class="va">my_object</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="getting-started" class="section level1">
-<h1 class="hasAnchor">
-<a href="#getting-started" class="anchor"></a>Getting started</h1>
+<div class="section level1">
+<h1 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+</h1>
 <p>The dynatopGIS packages works through a number of steps to generate a dynamic TOPMODEL object suitable for use in with the <code>dynatop</code> package. Each step generates one or more layers which are saved as raster or shape files into the projects working directory (which is not necessarily the R working directory). A record of these layers is kept in the json format meta data file.</p>
 <p>This vignette demonstrates the use of the <code>dynatopGIS</code> package using data from the Swindale catchment in the UK. This is included in the <code>dynatopData</code> package.</p>
 <p>To start first load the library</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="st"><a href="https://waternumbers.github.io/dynatopGIS/">"dynatopGIS"</a></span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://waternumbers.github.io/dynatopGIS/" class="external-link">"dynatopGIS"</a></span><span class="op">)</span></code></pre></div>
 <p>For this vignette we will store the data into a temporary directory</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">demo_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html">tempfile</a></span><span class="op">(</span><span class="st">"dygis"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/files2.html">dir.create</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">demo_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"dygis"</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></code></pre></div>
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpNGLo16/</span>
-<span class="co">#&gt; dygis39e85837ee0d/meta.json</span>
+<code class="sourceCode R"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span>
+<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/Rtmp6LxNVK/</span>
+<span class="co">#&gt; dygis3c86532c6ec4/meta.json</span>
 <span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span>
 <span class="co">#&gt; performed</span></code></pre></div>
 </div>
-<div id="adding-catchment-data" class="section level1">
-<h1 class="hasAnchor">
-<a href="#adding-catchment-data" class="anchor"></a>Adding catchment data</h1>
+<div class="section level1">
+<h1 id="adding-catchment-data">Adding catchment data<a class="anchor" aria-label="anchor" href="#adding-catchment-data"></a>
+</h1>
 <p>The basis of the analysis is a rasterised Digital Elevation Model (DEM) of the catchment and a vectorised representation of the river network with attributes. Currently these can be in any format supported by the <code>raster</code> and <code>sp</code> libraries respectivly.</p>
 <p>However, within the calculations used for sink filling, flow routing and topographic index calculations the raster DEM is presumed to be projected so that is has square cells such that the difference between the cell centres (in meters) does not alter.</p>
 <p>For Swindale the suitable DEM and channel files can be found using:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
+<span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
 <p>Either the DEM or channel files can be added to the project first. In this case we add the DEM with</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span>
+<code class="sourceCode R"><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span>
 <span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
 <span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>
-<span class="co">#&gt; Loading required namespace: igraph</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<span class="co">#&gt; Loading required namespace: igraph</span></code></pre></div>
 <p><em>Note:</em> An additional row and column of <code>NA</code> is added to each edge of the DEM. All raster layers in the project have the same projection, resolution and extent of the extended DEM.</p>
 <p>Adding river channel data is more complex. The <code>add_channel</code> method requires a <code>SpatialLinesDataFrame</code> or <code>SpatialPolygonsDataFrame</code> as generated by the <code>sp</code> package. Each entry in the data.frame is treated as a length of river channel which requires the following properties</p>
 <ul>
@@ -158,7 +152,7 @@
 <p>Additional properties are currently kept but ignored with two exceptions: - <em>id</em> - this is copied to <code>original_id</code> with a warning since <code>id</code> is used internally - <em>width</em> - if the channel is specified with a line sections then the <em>width</em> property is used to buffer the lines to create channel polygons.</p>
 <p>Since it is possible that these properties are present in a data file under different names the <code>add_channel</code> method allows for renaming. To illustrate this let us examine the river network for Swindale</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">rgdal</span><span class="fu">::</span><span class="fu"><a href="http://rgdal.r-forge.r-project.org/reference/readOGR.html">readOGR</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span>
+<code class="sourceCode R"><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">rgdal</span><span class="fu">::</span><span class="fu"><a href="http://rgdal.r-forge.r-project.org/reference/readOGR.html" class="external-link">readOGR</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span>
@@ -168,7 +162,7 @@
 <span class="co">#&gt; It has 11 fields</span>
 <span class="co">#&gt; Integer64 fields read as strings:  length</span>
 <span class="co">#&gt; Warning in rgdal::readOGR(channel_file): Z-dimension discarded</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="va">sp_lines</span><span class="op">)</span>
+<span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sp_lines</span><span class="op">)</span>
 <span class="co">#&gt; class       : SpatialLinesDataFrame </span>
 <span class="co">#&gt; features    : 6 </span>
 <span class="co">#&gt; extent      : 349884.5, 351675.7, 508614.5, 513074.7  (xmin, xmax, ymin, ymax)</span>
@@ -179,7 +173,7 @@
 <span class="co">#&gt; max values  : Mosedale Beck, ED03FEDD-0F4B-40C7-86E8-6F0EA8BAC182, D968F174-FB80-404A-A4A7-2862CC722482, D649B60C-E631-47FA-971E-CA388DBDDE63, inlandRiver, in direction,      false,    740,    NA,        -1,  739.76377764</span></code></pre></div>
 <p>The main properties are present under appropriate names and a call to the <code>add_channel</code> method with no options would be successful. However if we want to carry over the addition information in the “indentifier” as “channel_id” a named vector giving the variable names to be used could be provided. In this case:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span>channel_id<span class="op">=</span><span class="st">"identifier"</span>,
+<code class="sourceCode R"><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>channel_id<span class="op">=</span><span class="st">"identifier"</span>,
                     endNode<span class="op">=</span><span class="st">"endNode"</span>,
                     startNode<span class="op">=</span><span class="st">"startNode"</span>,
                     length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></code></pre></div>
@@ -190,33 +184,23 @@
 <span class="co">#&gt; Modifying to spatial polygons using default width</span></code></pre></div>
 <p>Since the data set for Swindale does not contain a channel width the default width of 2m is used.</p>
 </div>
-<div id="computing-basic-properties" class="section level1">
-<h1 class="hasAnchor">
-<a href="#computing-basic-properties" class="anchor"></a>Computing Basic Properties</h1>
+<div class="section level1">
+<h1 id="computing-basic-properties">Computing Basic Properties<a class="anchor" aria-label="anchor" href="#computing-basic-properties"></a>
+</h1>
 <p>So far, the DEM and channel data exist in isolation. Next, we compute some basic summaries for each square in the DEM, specifically: - land area - the area in the DEM cell covered by land - channel area - the area in the DEM cell covered by channel - channel id - the id of the channel within the cell, corresponding to the id in the channel object.</p>
 <p>If multiple river lengths intersect a DEM cell the properties of the channel length with the largest area of intersection are used.</p>
 <p>This computation is done by calling</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_areas</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span>
 <span class="co">#&gt; Warning in .local(x, ...): This function is only useful for Raster* objects with</span>
-<span class="co">#&gt; a longitude/latitude coordinates</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<span class="co">#&gt; a longitude/latitude coordinates</span></code></pre></div>
 </div>
-<div id="getting-and-plotting-catchment-information" class="section level1">
-<h1 class="hasAnchor">
-<a href="#getting-and-plotting-catchment-information" class="anchor"></a>Getting and plotting catchment information</h1>
+<div class="section level1">
+<h1 id="getting-and-plotting-catchment-information">Getting and plotting catchment information<a class="anchor" aria-label="anchor" href="#getting-and-plotting-catchment-information"></a>
+</h1>
 <p>The <code>dynatopGIS</code> class has methods for returning and plotting the GIS data in the project. The names of all the different GIS layers stored is returned by</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
@@ -224,8 +208,6 @@
 <p>These can be plotted (with or without the channel), for example</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"dem"</span>, add_channel<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
@@ -233,8 +215,6 @@
 <p>or returned, for example</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"dem"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; class      : RasterLayer </span>
 <span class="co">#&gt; dimensions : 163, 124, 20212  (nrow, ncol, ncell)</span>
 <span class="co">#&gt; resolution : 40, 40  (x, y)</span>
@@ -247,101 +227,63 @@
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_meta</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 </div>
-<div id="filling-sinks" class="section level1">
-<h1 class="hasAnchor">
-<a href="#filling-sinks" class="anchor"></a>Filling sinks</h1>
+<div class="section level1">
+<h1 id="filling-sinks">Filling sinks<a class="anchor" aria-label="anchor" href="#filling-sinks"></a>
+</h1>
 <p>For the hill slope to be connected to the river network all DEM cells must drain to those that intersect with the river network.</p>
 <p>The algorithm of implemented in the <code>sink_fill</code> method ensures this is the case. Since the algorithm is iterative the execution time of the function is limited by capping the maximum number of iterations. If this limit is reached without completion the method can call again with the “hot start” option to continue from where it finished.</p>
 <p>For Swindale, where the example DEM is already partially filled the algorithm only alters a small area near the foot of the catchment.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'filled_dem'</span><span class="op">)</span> <span class="op">-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'dem'</span><span class="op">)</span>,
-             main<span class="op">=</span><span class="st">"Changes to height"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html" class="external-link">plot</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'filled_dem'</span><span class="op">)</span> <span class="op">-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'dem'</span><span class="op">)</span>,
+             main<span class="op">=</span><span class="st">"Changes to height"</span><span class="op">)</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/sink_fill-1.png" width="700"></p>
 </div>
-<div id="computing-properties" class="section level1">
-<h1 class="hasAnchor">
-<a href="#computing-properties" class="anchor"></a>Computing properties</h1>
+<div class="section level1">
+<h1 id="computing-properties">Computing properties<a class="anchor" aria-label="anchor" href="#computing-properties"></a>
+</h1>
 <p>Two sets of properties are required for Dynamic TOPMODEL. The first set is those required within the evaluation of the model; gradient and contour length. The second set are those used for dividing the catchment up into Hydrological Response Units (HRUs). Traditionally the summary used for the separation of the HRUs is the topographic index, which is the natural logarithm of the upslope area divided by gradient.</p>
-<p>These are computed using the formulae in <a href="https://doi.org/10.1002/hyp.3360050106">Quinn et al. 1991</a>.</p>
+<p>These are computed using the formulae in <a href="https://doi.org/10.1002/hyp.3360050106" class="external-link">Quinn et al. 1991</a>.</p>
 <p>The upstream area is computed by routing down slope with the fraction of the area being routed to the next downstream pixel being proportional to the gradient times the contour length.</p>
 <p>The local value of the gradient is computed using the average of a subset of between pixel gradients. For a normal ‘hill slope’ cell these are the gradients to downslope pixels weighted by contour length. In the case of pixels which contain river channels the average of the gradients from upslope pixels weighted by contour length us used.</p>
 <p>These properties are computed in an algorithm that passes over the data once in descending height. It is called as follows</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <p>The plot of the topographic index shows a pattern of increasing values closer to the river channels</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## plot of topographic index (log(a/tan b))</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">'atb'</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot_atb-1.png" width="700"></p>
-<div id="adding-additional-layer" class="section level2">
-<h2 class="hasAnchor">
-<a href="#adding-additional-layer" class="anchor"></a>Adding additional layer</h2>
+<div class="section level2">
+<h2 id="adding-additional-layer">Adding additional layer<a class="anchor" aria-label="anchor" href="#adding-additional-layer"></a>
+</h2>
 <p>Properties may come in addional GIS layers. To demonstrate the addition of an additional layer we will extract the filled dem</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span></code></pre></div>
 <p>then seperate it into a layers representing land above and below 500m.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/reclassify.html">reclassify</a></span><span class="op">(</span> <span class="va">tmp</span>,
-                          <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span>,<span class="cn">NA</span>,
+<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/reclassify.html" class="external-link">reclassify</a></span><span class="op">(</span> <span class="va">tmp</span>,
+                          <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span>,<span class="cn">NA</span>,
                                    <span class="fl">500</span>,<span class="fl">1000</span>,<span class="op">-</span><span class="fl">999</span><span class="op">)</span>,
                                  byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>The resulting raster object can now be written to a file</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/writeRaster.html">writeRaster</a></span><span class="op">(</span><span class="va">tmp</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<code class="sourceCode R"><span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">tmp</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>which is added to the meta data with</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="st">"greater_500"</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
+<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="st">"greater_500"</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
 <span class="co">#&gt;  [1] "dem"          "channel"      "filled_dem"   "land_area"    "channel_area"</span>
 <span class="co">#&gt;  [6] "channel_id"   "gradient"     "upslope_area" "atb"          "greater_500"</span></code></pre></div>
 </div>
 </div>
-<div id="flow-distances-and-ordering" class="section level1">
-<h1 class="hasAnchor">
-<a href="#flow-distances-and-ordering" class="anchor"></a>Flow distances and ordering</h1>
+<div class="section level1">
+<h1 id="flow-distances-and-ordering">Flow distances and ordering<a class="anchor" aria-label="anchor" href="#flow-distances-and-ordering"></a>
+</h1>
 <p>Since <code>dynatop</code> simulations make use of ordered HRUs to work downslope, a metric is required to order the downslope sequencing. The calculation of four such metrics is supported</p>
 <ul>
 <li>
@@ -355,27 +297,7 @@
 </ul>
 <p>The computation is initiated with</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span></code></pre></div>
+<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <p>The additional layers can be examined as expected</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
@@ -385,16 +307,14 @@
 <span class="co">#&gt; [10] "band"                 "shortest_flow_length" "dominant_flow_length"</span>
 <span class="co">#&gt; [13] "expected_flow_length" "greater_500"</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"band"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/flow_length_plot-1.png" width="700"></p>
 </div>
-<div id="classifying-into-hydrological-response-units" class="section level1">
-<h1 class="hasAnchor">
-<a href="#classifying-into-hydrological-response-units" class="anchor"></a>Classifying into Hydrological Response Units</h1>
+<div class="section level1">
+<h1 id="classifying-into-hydrological-response-units">Classifying into Hydrological Response Units<a class="anchor" aria-label="anchor" href="#classifying-into-hydrological-response-units"></a>
+</h1>
 <p>Methods are provided for the classification of the catchment areas of similar hyrological response. The classifications generated in this process are augmented with a further distance based separation when generating a <code>dynatop</code> model (see following section).</p>
 <p>By definition each channel length is treated as belonging to a single class.</p>
 <p>To classify the hillslope two methods can be used.</p>
@@ -402,14 +322,7 @@
 <p>For example to cut the topographic index for Swindale into 21 classes:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"atb"</span>,cuts<span class="op">=</span><span class="fl">20</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
@@ -433,58 +346,23 @@
 </ul>
 <p>To demonstate a pairing combination consider combining the atb classes generated above with the classification provided by the distance band</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
+<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_20_band-1.png" width="700"></p>
 <p>Additionally the land greater then 500 in altitude can be burnt in with</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band_500"</span>,pairs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span>,burns<span class="op">=</span><span class="st">"greater_500"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
+<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band_500"</span>,pairs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span>,burns<span class="op">=</span><span class="st">"greater_500"</span><span class="op">)</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_20_band_burn-1.png" width="700"></p>
 <p>The each class in the combined classification the values of the classes used in the computations can be returned</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span> <span class="op">)</span>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span> <span class="op">)</span>
 <span class="co">#&gt;      atb_20_band_500 atb_20 band greater_500</span>
 <span class="co">#&gt; [1,]               1      1    1          NA</span>
 <span class="co">#&gt; [2,]               2      2    1          NA</span>
@@ -494,54 +372,27 @@
 <span class="co">#&gt; [6,]               6      4    2          NA</span></code></pre></div>
 <p>Note that by giving the area to be burnt in a negative value when it was generated above we have ensured that the values do not clash with those generated by the cuts which (except potentially when a cut is NA) will always be positive.</p>
 </div>
-<div id="generating-a-dynamic-topmodel" class="section level1">
-<h1 class="hasAnchor">
-<a href="#generating-a-dynamic-topmodel" class="anchor"></a>Generating a dynamic TOPMODEL</h1>
+<div class="section level1">
+<h1 id="generating-a-dynamic-topmodel">Generating a dynamic TOPMODEL<a class="anchor" aria-label="anchor" href="#generating-a-dynamic-topmodel"></a>
+</h1>
 <p>A Dynamic TOPMODEL suitable for use with the <code>dynatop</code> package can be generated using the <code>create_model</code> method. This uses an existing classification to generate the model. The required model structure is given in the vignettes of <code>dynatop</code> package and is not described here in details.</p>
 <p>Since <code>dynatop</code> simulations make use of ordered HRUs to work downslope, a classification which used a distance layer (see earlier section) which represents the ordered downslope sequencing of the pixels is recommended. <em>It is strongly recommended that the ‘band’ distance metric is used directly as shown below</em>.</p>
 <p>Even if a distance layer is not used in the classification one must be given to the <code>create_model</code> method, so the resulting HRUs can be ordered.</p>
 <p>For example, in the case of the division of Swindale by topographic index into 21 classes and the bands directly the resulting model can be generated by</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="st">"new_model"</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
-
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; The following Channel HSUs are outflows: 1</span></code></pre></div>
 <p>Looking at the files within the <code>demo_dir</code> folder</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/list.files.html">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span>
+<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span>
 <span class="co">#&gt; [1] "new_model.rds" "new_model.tif"</span></code></pre></div>
 <p>shows that an addition raster map of the HRUs has been created in <code>new_model.tif</code> along with a file <code>new_model.rds</code> containing a model suitable for <code>dynatop</code></p>
 <p>The map of HRUs can be plotted as with any layer</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"new_model"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
@@ -561,11 +412,13 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Paul Smith.</p>
+  <p></p>
+<p>Developed by Paul Smith.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
 </div>
 
       </footer>
@@ -573,6 +426,8 @@
 
   
 
+
+  
 
   </body>
 </html>
