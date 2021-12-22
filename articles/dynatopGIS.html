@@ -106,8 +106,8 @@
 <div class="section level1">
 <h1 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
 </h1>
-<p>The dynatopGIS packages works through a number of steps to generate a dynamic TOPMODEL object suitable for use in with the <code>dynatop</code> package. Each step generates one or more layers which are saved as raster or shape files into the projects working directory (which is not necessarily the R working directory). A record of these layers is kept in the json format meta data file.</p>
-<p>This vignette demonstrates the use of the <code>dynatopGIS</code> package using data from the Swindale catchment in the UK. This is included in the <code>dynatopData</code> package.</p>
+<p>The dynatopGIS packages works through a number of steps to generate a Dynamic TOPMODEL object suitable for use in with the <code>dynatop</code> package. Each step generates one or more layers which are saved as raster or shape files into the projects working directory (which is not necessarily the R working directory). A record of these layers is kept in the json format meta data file.</p>
+<p>This vignette demonstrates the use of the <code>dynatopGIS</code> package using data from the Swindale catchment in the UK.</p>
 <p>To start first load the library</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://waternumbers.github.io/dynatopGIS/" class="external-link">"dynatopGIS"</a></span><span class="op">)</span></code></pre></div>
@@ -118,8 +118,8 @@
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/Rtmp6LxNVK/</span>
-<span class="co">#&gt; dygis3c86532c6ec4/meta.json</span>
+<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpKaObIS/</span>
+<span class="co">#&gt; dygis388d4f1c2473/meta.json</span>
 <span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span>
 <span class="co">#&gt; performed</span></code></pre></div>
 </div>
