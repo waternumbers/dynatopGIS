@@ -1,0 +1,44 @@
+Resubmission
+
+Thanks to Gregor Sayer for the constructive feedback.
+
+*Response to previous comments*
+
+If there are references describing the methods in your package, please add these
+
+- Two references added to description text in DESCRIPTION
+
+Please always explain all acronyms in the description text.
+
+- Acronyms removed. Note TOPMODEL is a name traditionally spelt in capitals,
+text has been added to clarify what it is.
+
+Please always write package names, software names and API (application
+programming interface) names in single quotes in title and description. e.g:
+--> 'dynatop'
+
+- Done
+
+Please add small executable examples in your Rd-files if possible, to illustrate the use of the exported function but also enable automatic testing.
+
+- Added to documention with use of \donttest to keep run times within 5s
+
+*Current submission*
+
+Checked without warnings or errors on:
+R-patched (OpenSUSE)
+win-builder release
+win-builder devel
+macbuilder
+
+Remaining NOTES on spelling:
+
+Beven (10:244) - authors name in reference
+
+TOPMODEL (2:44, 10:184, 10:351)	- The name given to a set of hydrological
+modelling concepts, usually capitalised. Usage is consistent with the 'dynatopmodel' package and clarified in text.
+
+al (10:52) - from et al. in reference
+et (10:49) - from et al. in reference
+
+hydrological (10:213) - standard English word relating to the study of water on the earth

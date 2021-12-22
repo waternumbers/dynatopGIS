@@ -1,4 +1,41 @@
 #' R6 Class for processing a catchment to make a Dynamic TOPMODEL
+#' @examples
+#' ## The vignettes contains more examples of the method calls.
+#' 
+#' ## create temport directory for output
+#' demo_dir <- tempfile("dygis")
+#' dir.create(demo_dir)
+#'
+#' ## initialise processing
+#' ctch <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
+#'
+#' ## add digital elevation and channel data
+#' dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
+#' dem <- raster::raster(dem_file)
+#' ctch$add_dem(dem)
+#' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
+#' package="dynatopGIS", mustWork = TRUE)
+#' sp_lines <- rgdal::readOGR(channel_file)
+#' property_names <- c(channel_id="identifier",endNode="endNode",startNode="startNode",length="length")
+#' ctch$add_channel(sp_lines,property_names)
+#'
+#' ## compute properties 
+#' ctch$compute_areas()
+#' ctch$sink_fill() ## fill sinks in the catchment
+#' \donttest{
+#' ctch$compute_properties() # like topograpihc index and contour length
+#' ctch$compute_flow_lengths()
+#' }
+#' ## classify and create a model
+#' \donttest{
+#' ctch$classify("atb_20","atb",cuts=20) # classify using the topographic index
+#' ctch$get_class_method("atb_20") ## see the details of the classification
+#' ctch$combine_classes("atb_20_band",c("atb_20","band")) ## combine classes
+#' ctch$create_model("new_model","atb_20_band","band") ## create a model
+#' list.files(demo_dir,pattern="new_model*") ## look at the output files for the model
+#' }
+#' ## tidy up
+#' unlink(demo_dir)
 #' @export
 dynatopGIS <- R6::R6Class(
     "dynatopGIS",

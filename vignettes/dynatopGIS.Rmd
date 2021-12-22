@@ -45,14 +45,14 @@ my_new_object  <-  my_object$clone()
 
 # Getting started
 
-The dynatopGIS packages works through a number of steps to generate a dynamic
+The dynatopGIS packages works through a number of steps to generate a Dynamic
 TOPMODEL object suitable for use in with the `dynatop` package. Each step
 generates one or more layers which are saved as raster or shape files into the projects
 working directory (which is not necessarily the R working directory). A record
 of these layers is kept in the json format meta data file.
 
 This vignette demonstrates the use of the `dynatopGIS` package using data from the Swindale
-catchment in the UK. This is included in the `dynatopData` package.
+catchment in the UK.
 
 To start first load the library
 

@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "paul@waternumbers.co.uk",
            comment = c(ORCID = "0000-0002-0034-3412"))
-Description: A set of GIS algorithms for processing river network and DEM data to build implementations of Dynamic TOPMODEL for use with the dynatop package.
+Description: A set of algorithms based on Quinn et al. (1991) <doi:10.1002/hyp.3360050106> for processing river network and digital elevation data to build implementations of Dynamic TOPMODEL, a semi-distributed hydrological model proposed in Beven and Freer (2001) <doi:10.1002/hyp.252>. The 'dynatop' package implements simulation code for Dynamic TOPMODEL based on the output of 'dynatopGIS'.
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
