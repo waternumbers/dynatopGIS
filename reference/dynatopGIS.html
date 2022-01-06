@@ -760,13 +760,12 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 <span class="r-in"></span>
 <span class="r-in"><span class="co">## initialise processing</span></span>
 <span class="r-in"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Creating meta file at/tmp/RtmpnIWMPf/dygis36dd2b45899f/meta.json</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Creating meta file at/tmp/RtmpKqQdem/dygis3bba406679f8/meta.json</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>No checks on the meta are currently performed</span>
 <span class="r-in"></span>
 <span class="r-in"><span class="co">## add digital elevation and channel data</span></span>
 <span class="r-in"><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span class="r-in"><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="r-in"><span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required namespace: igraph</span>
 <span class="r-in"><span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>,</span>

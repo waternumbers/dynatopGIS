@@ -118,8 +118,8 @@
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpKaObIS/</span>
-<span class="co">#&gt; dygis388d4f1c2473/meta.json</span>
+<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpF0gvGm/</span>
+<span class="co">#&gt; dygis3d6171efba/meta.json</span>
 <span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span>
 <span class="co">#&gt; performed</span></code></pre></div>
 </div>
@@ -135,8 +135,6 @@
 <p>Either the DEM or channel files can be added to the project first. In this case we add the DEM with</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span>
-<span class="co">#&gt; Warning in showSRID(SRS_string, format = "PROJ", multiline = "NO", prefer_proj =</span>
-<span class="co">#&gt; prefer_proj): Discarded datum OSGB 1936 in Proj4 definition</span>
 <span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>
 <span class="co">#&gt; Loading required namespace: igraph</span></code></pre></div>
 <p><em>Note:</em> An additional row and column of <code>NA</code> is added to each edge of the DEM. All raster layers in the project have the same projection, resolution and extent of the extended DEM.</p>
