@@ -32,7 +32,7 @@ outPath <- dirname(buildFile)
 for(ii in 1:2){ ## m1 not fixed yet in drat
     tmp <- paste0(pkgName,ext[ii])
     outFile <- file.path(outPath,tmp)
-    download.file(file.path(mch$urls()$artifacts[ii],tmp),outFile)
+    #download.file(file.path(mch$urls()$artifacts[ii],tmp),outFile)
     drat::insertPackage(outFile,dratPath)
 }
 

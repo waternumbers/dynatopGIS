@@ -1,5 +1,5 @@
 Package: dynatopGIS
-Title: GIS Tools for Helping Build Dynamic TOPMODEL Implementations
+Title: Algorithms for Helping Build Dynamic TOPMODEL Implementations from Spatial Data
 Version: 0.2.1
 Authors@R: 
     person(given = "Paul",
