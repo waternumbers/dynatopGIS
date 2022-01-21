@@ -92,9 +92,9 @@
     
     
 <p>The purpose of this vignette is to provide an outline of the steps needed to build a dynamic TOPMODEL implementation using the dynatopGIS package.</p>
-<div class="section level1">
-<h1 id="implementation-notes">Implementation notes<a class="anchor" aria-label="anchor" href="#implementation-notes"></a>
-</h1>
+<div class="section level2">
+<h2 id="implementation-notes">Implementation notes<a class="anchor" aria-label="anchor" href="#implementation-notes"></a>
+</h2>
 <p>The dynatopGIS package implements a structured, object orientated, data flow. The steps outlined below create a <code>dynatopGIS</code> catchment object to which actions are then applied to generate a model.</p>
 <p>The <code>dynatopGIS</code> package is written using the object orientated framework provided by the <code>R6</code> package. This means that some aspects of working with the objects may appear ìdiosyncratic for some R users. In using the package as outlined in this vignette these problems are largely obscured, except for the call structure. However, before adapting the code, or doing more complex analysis users should read about <code>R6</code> class objects (e.g. in the <code>R6</code> package vignettes or in the Advanced R book). One particular gotcha is when copying an object. Using</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -103,9 +103,9 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">my_new_object</span>  <span class="op">&lt;-</span>  <span class="va">my_object</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 </div>
-<div class="section level1">
-<h1 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
-</h1>
+<div class="section level2">
+<h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
+</h2>
 <p>The dynatopGIS packages works through a number of steps to generate a Dynamic TOPMODEL object suitable for use in with the <code>dynatop</code> package. Each step generates one or more layers which are saved as raster or shape files into the projects working directory (which is not necessarily the R working directory). A record of these layers is kept in the json format meta data file.</p>
 <p>This vignette demonstrates the use of the <code>dynatopGIS</code> package using data from the Swindale catchment in the UK.</p>
 <p>To start first load the library</p>
@@ -118,14 +118,14 @@
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpF0gvGm/</span>
-<span class="co">#&gt; dygis3d6171efba/meta.json</span>
+<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpXBvgSw/</span>
+<span class="co">#&gt; dygis3d3c53fd01d6/meta.json</span>
 <span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span>
 <span class="co">#&gt; performed</span></code></pre></div>
 </div>
-<div class="section level1">
-<h1 id="adding-catchment-data">Adding catchment data<a class="anchor" aria-label="anchor" href="#adding-catchment-data"></a>
-</h1>
+<div class="section level2">
+<h2 id="adding-catchment-data">Adding catchment data<a class="anchor" aria-label="anchor" href="#adding-catchment-data"></a>
+</h2>
 <p>The basis of the analysis is a rasterised Digital Elevation Model (DEM) of the catchment and a vectorised representation of the river network with attributes. Currently these can be in any format supported by the <code>raster</code> and <code>sp</code> libraries respectivly.</p>
 <p>However, within the calculations used for sink filling, flow routing and topographic index calculations the raster DEM is presumed to be projected so that is has square cells such that the difference between the cell centres (in meters) does not alter.</p>
 <p>For Swindale the suitable DEM and channel files can be found using:</p>
@@ -182,9 +182,9 @@
 <span class="co">#&gt; Modifying to spatial polygons using default width</span></code></pre></div>
 <p>Since the data set for Swindale does not contain a channel width the default width of 2m is used.</p>
 </div>
-<div class="section level1">
-<h1 id="computing-basic-properties">Computing Basic Properties<a class="anchor" aria-label="anchor" href="#computing-basic-properties"></a>
-</h1>
+<div class="section level2">
+<h2 id="computing-basic-properties">Computing Basic Properties<a class="anchor" aria-label="anchor" href="#computing-basic-properties"></a>
+</h2>
 <p>So far, the DEM and channel data exist in isolation. Next, we compute some basic summaries for each square in the DEM, specifically: - land area - the area in the DEM cell covered by land - channel area - the area in the DEM cell covered by channel - channel id - the id of the channel within the cell, corresponding to the id in the channel object.</p>
 <p>If multiple river lengths intersect a DEM cell the properties of the channel length with the largest area of intersection are used.</p>
 <p>This computation is done by calling</p>
@@ -196,9 +196,9 @@
 <span class="co">#&gt; Warning in .local(x, ...): This function is only useful for Raster* objects with</span>
 <span class="co">#&gt; a longitude/latitude coordinates</span></code></pre></div>
 </div>
-<div class="section level1">
-<h1 id="getting-and-plotting-catchment-information">Getting and plotting catchment information<a class="anchor" aria-label="anchor" href="#getting-and-plotting-catchment-information"></a>
-</h1>
+<div class="section level2">
+<h2 id="getting-and-plotting-catchment-information">Getting and plotting catchment information<a class="anchor" aria-label="anchor" href="#getting-and-plotting-catchment-information"></a>
+</h2>
 <p>The <code>dynatopGIS</code> class has methods for returning and plotting the GIS data in the project. The names of all the different GIS layers stored is returned by</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
@@ -225,9 +225,9 @@
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_meta</span><span class="op">(</span><span class="op">)</span></code></pre></div>
 </div>
-<div class="section level1">
-<h1 id="filling-sinks">Filling sinks<a class="anchor" aria-label="anchor" href="#filling-sinks"></a>
-</h1>
+<div class="section level2">
+<h2 id="filling-sinks">Filling sinks<a class="anchor" aria-label="anchor" href="#filling-sinks"></a>
+</h2>
 <p>For the hill slope to be connected to the river network all DEM cells must drain to those that intersect with the river network.</p>
 <p>The algorithm of implemented in the <code>sink_fill</code> method ensures this is the case. Since the algorithm is iterative the execution time of the function is limited by capping the maximum number of iterations. If this limit is reached without completion the method can call again with the “hot start” option to continue from where it finished.</p>
 <p>For Swindale, where the example DEM is already partially filled the algorithm only alters a small area near the foot of the catchment.</p>
@@ -238,9 +238,9 @@
              main<span class="op">=</span><span class="st">"Changes to height"</span><span class="op">)</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/sink_fill-1.png" width="700"></p>
 </div>
-<div class="section level1">
-<h1 id="computing-properties">Computing properties<a class="anchor" aria-label="anchor" href="#computing-properties"></a>
-</h1>
+<div class="section level2">
+<h2 id="computing-properties">Computing properties<a class="anchor" aria-label="anchor" href="#computing-properties"></a>
+</h2>
 <p>Two sets of properties are required for Dynamic TOPMODEL. The first set is those required within the evaluation of the model; gradient and contour length. The second set are those used for dividing the catchment up into Hydrological Response Units (HRUs). Traditionally the summary used for the separation of the HRUs is the topographic index, which is the natural logarithm of the upslope area divided by gradient.</p>
 <p>These are computed using the formulae in <a href="https://doi.org/10.1002/hyp.3360050106" class="external-link">Quinn et al. 1991</a>.</p>
 <p>The upstream area is computed by routing down slope with the fraction of the area being routed to the next downstream pixel being proportional to the gradient times the contour length.</p>
@@ -256,9 +256,9 @@
 <span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot_atb-1.png" width="700"></p>
-<div class="section level2">
-<h2 id="adding-additional-layer">Adding additional layer<a class="anchor" aria-label="anchor" href="#adding-additional-layer"></a>
-</h2>
+<div class="section level3">
+<h3 id="adding-additional-layer">Adding additional layer<a class="anchor" aria-label="anchor" href="#adding-additional-layer"></a>
+</h3>
 <p>Properties may come in addional GIS layers. To demonstrate the addition of an additional layer we will extract the filled dem</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span></code></pre></div>
@@ -279,9 +279,9 @@
 <span class="co">#&gt;  [6] "channel_id"   "gradient"     "upslope_area" "atb"          "greater_500"</span></code></pre></div>
 </div>
 </div>
-<div class="section level1">
-<h1 id="flow-distances-and-ordering">Flow distances and ordering<a class="anchor" aria-label="anchor" href="#flow-distances-and-ordering"></a>
-</h1>
+<div class="section level2">
+<h2 id="flow-distances-and-ordering">Flow distances and ordering<a class="anchor" aria-label="anchor" href="#flow-distances-and-ordering"></a>
+</h2>
 <p>Since <code>dynatop</code> simulations make use of ordered HRUs to work downslope, a metric is required to order the downslope sequencing. The calculation of four such metrics is supported</p>
 <ul>
 <li>
@@ -310,9 +310,9 @@
 <span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/flow_length_plot-1.png" width="700"></p>
 </div>
-<div class="section level1">
-<h1 id="classifying-into-hydrological-response-units">Classifying into Hydrological Response Units<a class="anchor" aria-label="anchor" href="#classifying-into-hydrological-response-units"></a>
-</h1>
+<div class="section level2">
+<h2 id="classifying-into-hydrological-response-units">Classifying into Hydrological Response Units<a class="anchor" aria-label="anchor" href="#classifying-into-hydrological-response-units"></a>
+</h2>
 <p>Methods are provided for the classification of the catchment areas of similar hyrological response. The classifications generated in this process are augmented with a further distance based separation when generating a <code>dynatop</code> model (see following section).</p>
 <p>By definition each channel length is treated as belonging to a single class.</p>
 <p>To classify the hillslope two methods can be used.</p>
@@ -370,9 +370,9 @@
 <span class="co">#&gt; [6,]               6      4    2          NA</span></code></pre></div>
 <p>Note that by giving the area to be burnt in a negative value when it was generated above we have ensured that the values do not clash with those generated by the cuts which (except potentially when a cut is NA) will always be positive.</p>
 </div>
-<div class="section level1">
-<h1 id="generating-a-dynamic-topmodel">Generating a dynamic TOPMODEL<a class="anchor" aria-label="anchor" href="#generating-a-dynamic-topmodel"></a>
-</h1>
+<div class="section level2">
+<h2 id="generating-a-dynamic-topmodel">Generating a dynamic TOPMODEL<a class="anchor" aria-label="anchor" href="#generating-a-dynamic-topmodel"></a>
+</h2>
 <p>A Dynamic TOPMODEL suitable for use with the <code>dynatop</code> package can be generated using the <code>create_model</code> method. This uses an existing classification to generate the model. The required model structure is given in the vignettes of <code>dynatop</code> package and is not described here in details.</p>
 <p>Since <code>dynatop</code> simulations make use of ordered HRUs to work downslope, a classification which used a distance layer (see earlier section) which represents the ordered downslope sequencing of the pixels is recommended. <em>It is strongly recommended that the ‘band’ distance metric is used directly as shown below</em>.</p>
 <p>Even if a distance layer is not used in the classification one must be given to the <code>create_model</code> method, so the resulting HRUs can be ordered.</p>
@@ -416,7 +416,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
