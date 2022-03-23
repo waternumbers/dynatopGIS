@@ -1,4 +1,10 @@
-# dynatop 0.2.1
+# dynatopGIS 0.2.1.9000
+
+- fixed bug in computation of channel area in the model
+- fixed bug in reloading meta data when these was a classification
+- added runoff attenuation parameters for hillslope HRU in create_model method
+
+# dynatopGIS 0.2.1
 
 - Tidying up of vignettes and package imports for CRAN
 
