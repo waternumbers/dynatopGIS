@@ -1063,7 +1063,8 @@ dynatopGIS <- R6::R6Class(
                 x <- raster::raster(pos_val[ii]) ## read in raster
                 df[,ii] <- x[cuq]
             }
-            
+
+            #browser()
             ## add in burns
             for(ii in burns){
                 x <- raster::raster(pos_val[ii]) ## read in raster
@@ -1086,7 +1087,7 @@ dynatopGIS <- R6::R6Class(
             fn <- private$make_filename(layer_name)
             writeRaster(cp,fn)
             private$meta$layers[[layer_name]] <- list(file=fn,type="combined_classes",
-                                                      method=df)
+                                                      method=as.data.frame(df)) ## need to be df else looses names
             private$write_meta()
         },
         
@@ -1124,7 +1125,7 @@ dynatopGIS <- R6::R6Class(
             if(verbose){ cat("Creating Channel table","\n") }
             ## load data
             channel_id <- raster::raster(pos_val["channel_id"])
-            channel_area <- raster::raster(pos_val["channel_id"])
+            channel_area <- raster::raster(pos_val["channel_area"])
             chn <- raster::shapefile(pos_val["channel"])
             par <- switch(channel_solver,
                           "histogram" = c(v_ch = 1),
@@ -1172,21 +1173,22 @@ dynatopGIS <- R6::R6Class(
             par <- switch(transmissivity,
                           "exp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
                                     ln_t0 = -2, c_sz = NA, m = 0.04, D= NA, m_2 = NA, omega = NA,
-                                    s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                                    s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0.0, t_raf=Inf),
                           "bexp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
                                      ln_t0 = -2, c_sz = NA, m = 0.04, D=5, m_2 = NA, omega = NA,
-                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0, t_raf=Inf),
                           "dexp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
                                      ln_t0 = -2, c_sz = NA, m = 0.04, D= NA, m_2 = 0.0002, omega = 0.5,
-                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0, t_raf=Inf),
                           "cnst" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
                                      ln_t0 = NA, c_sz = 0.01, m = NA, D= 10, m_2 = NA, omega = NA,
-                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6),
+                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0.0, t_raf=Inf),
                           stop("Unrecognised tranmissivity")
                           )
             
             ## create hillslope table
             if(verbose){ cat("Creating hillslope table","\n") }
+            
             la <- raster::raster(pos_val["land_area"])
             gr <- raster::raster(pos_val["gradient"])
             atb <- raster::raster(pos_val["atb"])
@@ -1219,6 +1221,7 @@ dynatopGIS <- R6::R6Class(
             ## add classes
             cl <- min_dst[,c("id","zone")]
             if(private$meta$layers[[class_lyr]]$type == "combined_classes"){
+                #browser()
                 tmp <- private$meta$layers[[class_lyr]]$method
                 colnames(tmp) <- paste0("cls_",colnames(tmp))
                 cl <- merge(tmp,cl,by.y="zone",by.x=paste0("cls_",class_lyr),all.y=TRUE)
