@@ -1,4 +1,4 @@
-# dynatopGIS 0.2.1.9000
+# dynatopGIS 0.2.2
 
 - fixed bug in computation of channel area in the model
 - fixed bug in reloading meta data when these was a classification
