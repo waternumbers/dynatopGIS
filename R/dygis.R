@@ -345,7 +345,7 @@ dynatopGIS <- R6::R6Class(
                
     ),
     private = list(
-        version = "0.2.0.9030",
+        version = "0.2.2",
         wdir=character(0),
         meta_path = character(0),
         meta=list(
