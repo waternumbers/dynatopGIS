@@ -8,12 +8,12 @@ vignette: >
 --- 
 
 This document explains the use of "distance" in the classification of
-of the hillslopes into Hydrological Response Units (HRUs). This is a key
+of the hill slopes into Hydrological Response Units (HRUs). This is a key
 difference in the classification and model creation scheme used with
 dynatopGIS compared to previous model implementations (e.g. the dynatopmodel).
 
 As with earlier versions of Dynamic TOPMODEL "physical" classification of the
-raster cells representing the hillslopes by
+raster cells representing the hill slopes by
 characteristics such as topographic index, soil parameters and rainfall inputs
 forms etc. is the basis of determining HRUs. However having the performed a
 "physical" classification there is the need to determine the connectivity of

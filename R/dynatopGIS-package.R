@@ -1,6 +1,6 @@
 #' dynatopGIS
 #'
-#' This package contains the code for setting up a dynamic TOPMODEL implimentation
+#' This package contains the code for setting up a dynamic TOPMODEL implementation
 #'
 #' @name dynatopGIS
 #' @docType package

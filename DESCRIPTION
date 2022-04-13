@@ -30,3 +30,4 @@ Suggests:
     covr,
     pkgdown
 VignetteBuilder: knitr
+Language: en-GB

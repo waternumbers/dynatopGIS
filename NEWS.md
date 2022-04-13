@@ -2,7 +2,7 @@
 
 - fixed bug in computation of channel area in the model
 - fixed bug in reloading meta data when these was a classification
-- added runoff attenuation parameters for hillslope HRU in create_model method
+- added run-off attenuation parameters for hillslope HRU in create_model method
 
 # dynatopGIS 0.2.1
 
@@ -28,7 +28,7 @@
 
 ## Breaking changes
 
-- New format for flow linkages in a seperate table
+- New format for flow linkages in a separate table
 
 ## other changes
 
@@ -52,14 +52,14 @@
 
 ## Other changes
 
-- More efficent implimentation of property computation using few passes of the
+- More efficient implementation of property computation using few passes of the
   data
   
 # dynatop 0.11
 
 ## Other Changes
 
-- Data sets for vigneete split off into dynatopData package
+- Data sets for vignette split off into dynatopData package
 - Under the hood changes to package build 
 
 # dynatopGIS 0.1
@@ -108,7 +108,7 @@
   filled dem 
   
 ## Bug fixes
-- Model generation - missing sbar added and class of data frame columns altered
+- Model generation - missing average gradient property added and class of data frame columns altered
 - Linking Rcpp function - alter NAMESPACE so should be included
 
 ## Other changes
@@ -135,7 +135,7 @@ code for performing simulations.
 - Change in approach to writing all intermediate files to
       - produce a record of analysis
 	  - allow for future developments with larger size GIS data
-- Porting of sink_fill and atb calculations from original topmodel CRAN package
+- Porting of sink_fill and atb calculations from original 'topmodel' CRAN package
   to Rcpp
 - Improved method of determining river network intersection with DEM from shape files
 - Changes to sink filling and atb calculations to recognise burnt in river network
