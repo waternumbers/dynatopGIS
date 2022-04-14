@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.2</span>
       </span>
     </div>
 
@@ -91,8 +91,8 @@
 
     
     
-<p>This document explains the use of “distance” in the classification of of the hillslopes into Hydrological Response Units (HRUs). This is a key difference in the classification and model creation scheme used with dynatopGIS compared to previous model implementations (e.g. the dynatopmodel).</p>
-<p>As with earlier versions of Dynamic TOPMODEL “physical” classification of the raster cells representing the hillslopes by characteristics such as topographic index, soil parameters and rainfall inputs forms etc. is the basis of determining HRUs. However having the performed a “physical” classification there is the need to determine the connectivity of the HRUs and (possibly) the computational sequence for their solution.</p>
+<p>This document explains the use of “distance” in the classification of of the hill slopes into Hydrological Response Units (HRUs). This is a key difference in the classification and model creation scheme used with dynatopGIS compared to previous model implementations (e.g. the dynatopmodel).</p>
+<p>As with earlier versions of Dynamic TOPMODEL “physical” classification of the raster cells representing the hill slopes by characteristics such as topographic index, soil parameters and rainfall inputs forms etc. is the basis of determining HRUs. However having the performed a “physical” classification there is the need to determine the connectivity of the HRUs and (possibly) the computational sequence for their solution.</p>
 <p>Consider the methods utilised in the <code>dynatopmodel</code> package which determined the connectivity based on the down slope contributions of each raster cell in the HRU. This resulted in a matrix <span class="math inline">\(\mathbf{M)\)</span> of flow fractions such that if the vector of outflows from the HRUs was <span class="math inline">\(\mathbf{l}_{o}\)</span> the inflows <span class="math inline">\(\mathbf{l}_{i}\)</span> are given by <span class="math display">\[
 \mathbf{l}_{i} = \mathbf{M} \mathbf{l}_{o}
 \]</span> Determining the down slope contributions in such as fashion enables a high degree of spatial averaging of the inflow. For example an area at the bottom of the hillslope near a channel may fall into the same class as the low gradient area higher up the hillslope, where it might be reasonable to presume the inflow from adjacent HRUs was much lower. While such averaging may prove adequate for the hydrological simulation of the outflow it limits the ability of the model to represent interventions on a smaller scale (e.g. reforestation of a low fraction of raster cells; leaky dams limiting slowing the transfer of surface water)</p>

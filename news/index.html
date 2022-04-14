@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.1.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.2</span>
       </span>
     </div>
 
@@ -61,10 +61,10 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="0.2.1.9000" id="dynatopgis-0219000">dynatopGIS 0.2.1.9000<a class="anchor" aria-label="anchor" href="#dynatopgis-0219000"></a></h2>
+<h2 class="page-header" data-toc-text="0.2.2" id="dynatopgis-022">dynatopGIS 0.2.2<small>2022-04-13</small><a class="anchor" aria-label="anchor" href="#dynatopgis-022"></a></h2>
 <ul><li>fixed bug in computation of channel area in the model</li>
 <li>fixed bug in reloading meta data when these was a classification</li>
-<li>added runoff attenuation parameters for hillslope HRU in create_model method</li>
+<li>added run-off attenuation parameters for hillslope HRU in create_model method</li>
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.1" id="dynatopgis-021">dynatopGIS 0.2.1<small>2022-01-07</small><a class="anchor" aria-label="anchor" href="#dynatopgis-021"></a></h2>
@@ -94,7 +94,7 @@
 <h2 class="page-header" data-toc-text="0.2.0.9030" id="dynatopgis-0209030-1">dynatopGIS 0.2.0.9030<a class="anchor" aria-label="anchor" href="#dynatopgis-0209030-1"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0-9030-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-9030-1"></a></h3>
-<ul><li>New format for flow linkages in a seperate table</li>
+<ul><li>New format for flow linkages in a separate table</li>
 </ul></div>
 <div class="section level3">
 <h3 id="other-changes-0-2-0-9030">other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-2-0-9030"></a></h3>
@@ -119,7 +119,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="other-changes-0-2-0-9000">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-2-0-9000"></a></h3>
-<ul><li>More efficent implimentation of property computation using few passes of the data</li>
+<ul><li>More efficient implementation of property computation using few passes of the data</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -170,7 +170,7 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-0-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-0-2"></a></h3>
-<ul><li>Model generation - missing sbar added and class of data frame columns altered</li>
+<ul><li>Model generation - missing average gradient property added and class of data frame columns altered</li>
 <li>Linking Rcpp function - alter NAMESPACE so should be included</li>
 </ul></div>
 <div class="section level3">
@@ -196,7 +196,7 @@
 <div class="section level3">
 <h3 id="new-features-0-0-0-9000">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-0-0-9000"></a></h3>
 <ul><li>Change in approach to writing all intermediate files to - produce a record of analysis - allow for future developments with larger size GIS data</li>
-<li>Porting of sink_fill and atb calculations from original topmodel CRAN package to Rcpp</li>
+<li>Porting of sink_fill and atb calculations from original ‘topmodel’ CRAN package to Rcpp</li>
 <li>Improved method of determining river network intersection with DEM from shape files</li>
 <li>Changes to sink filling and atb calculations to recognise burnt in river network and correctly split flow by gradient</li>
 <li>Alterations to output mew style dynamic TOPMODEL object</li>
