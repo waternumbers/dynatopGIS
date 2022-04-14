@@ -5,6 +5,8 @@ graphics.off()
 ## path of the package
 pacPath <- '../'
 devtools::document(pacPath)
+devtools::spell_check(pacPath,use_wordlist=TRUE)
+
 devtools::check(pacPath)
 
 ## check documentation build

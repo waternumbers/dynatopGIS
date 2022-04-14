@@ -46,7 +46,7 @@ dynatopGIS <- R6::R6Class(
         #' @param check logical, should checks be performed [TRUE]
         #' @param verbose printing of checking output [TRUE]
         #'
-        #' @details This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked witht he level of returned information being controlled by \code{verbose}.
+        #' @details This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked with the level of returned information being controlled by \code{verbose}.
         #'
         #' @return A new `dynatopGIS` object
         initialize = function(meta_file, check=TRUE,verbose=TRUE){
@@ -67,7 +67,7 @@ dynatopGIS <- R6::R6Class(
             
             invisible(self)
         },
-        #' @description Get project emta data
+        #' @description Get project meta data
         get_meta = function(){ private$meta },
         #' @description Get current working directory
         #' @details Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
@@ -75,7 +75,7 @@ dynatopGIS <- R6::R6Class(
         #' @description Set current working directory
         #'
         #' @param file_path the path to the new directory to create
-        #' @param create should the driectory be created if it doesn't exist
+        #' @param create should the directory be created if it doesn't exist
         #'
         #' @details Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
         set_working_directory = function(file_path,create=TRUE){
@@ -86,21 +86,21 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Import a dem to the `dynatopGIS` object
         #'
-        #' @param dem a \code{RasterLayer} object or the path to file containing one which is the DEM
+        #' @param dem a \code{raster} layer object or the path to file containing one which is the DEM
         #' @param fill_na  should NA values in dem be filled. See details
         #' @param verbose Should additional progress information be printed
         #'
-        #' @details If not a \code{rasterLayer} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
+        #' @details If not a \code{raster} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
         #'
         #' @return suitable for chaining              
         add_dem = function(dem,fill_na=TRUE,verbose=FALSE){
             private$apply_add_dem(dem,fill_na,verbose)
             invisible(self)
         },
-        #' @description Import channel data from an OGR file to the `dynatopGIS` object
+        #' @description Import channel data to the `dynatopGIS` object
         #'
         #' @param channel a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information
-        #' @param property_names named vector of columns of the spatial data frame to use for channel properties - asee details
+        #' @param property_names named vector of columns of the spatial data frame to use for channel properties - see details
         #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
         #'
         #' @details Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.
@@ -143,7 +143,7 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Get a layer of geographical information or a list of layer names
         #' @param layer_name name of the layer give to the layer
-        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
+        #' @return a `raster` layer of the requested information if layer_name is given else a vector of layer names
         get_layer = function(layer_name=character(0)){
             pos_val <- private$find_layer(TRUE)
             
@@ -165,7 +165,7 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Plot a layer
         #' @param layer_name the name of layer to plot
-        #' @param add_channel shouel the channel be added to the plot
+        #' @param add_channel should the channel be added to the plot
         #' @return a plot
         plot_layer = function(layer_name,add_channel=TRUE){
             lyr <- self$get_layer(layer_name)
@@ -176,13 +176,13 @@ dynatopGIS <- R6::R6Class(
             }
         },
 
-        #' @description The sink filling algorithm of Planchona and Darboux 2001
+        #' @description The sink filling algorithm of Planchona and Darboux (2001)
         #'
         #' @param min_grad Minimum gradient between cell centres
         #' @param max_it maximum number of replacement cycles
         #' @param verbose print out additional diagnostic information
         #' @param hot_start start from filled_dem if it exists
-        #' @details The algorithm implimented is that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf.
+        #' @details The algorithm implemented is that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (<https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf>).
         #'
         sink_fill = function(min_grad = 1e-4,max_it=1e6,verbose=FALSE, hot_start=FALSE){
             private$apply_sink_fill(min_grad,max_it,verbose,hot_start)
@@ -195,7 +195,7 @@ dynatopGIS <- R6::R6Class(
             private$apply_compute_areas()
             invisible(self)
         },
-        #' @description Computes statistics e.g. gradient, log(a/tanb) for raster cells
+        #' @description Computes statistics e.g. gradient, log(upslope area / gradient) for raster cells
         #'
         #' @param min_grad gradient that can be assigned to a pixel if it can't be computed
         #' @param verbose print out additional diagnostic information
@@ -209,7 +209,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @param verbose print out additional diagnostic information
         #'
-        #' @details The algorithm passed through the cells in increaing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow diection with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+        #' @details The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
         compute_flow_lengths = function(verbose=FALSE){
             private$apply_flow_lengths(verbose)
             invisible(self)
@@ -219,7 +219,7 @@ dynatopGIS <- R6::R6Class(
         #' @param base_layer name of the layer to be cut into classes
         #' @param cuts values on which to cut into classes. These should be numeric and define either the number of bands (single value) or breaks between band (multiple values).
         #'
-        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         classify = function(layer_name,base_layer,cuts){
             private$apply_classify(layer_name, base_layer, cuts)
             invisible(self)
@@ -229,7 +229,7 @@ dynatopGIS <- R6::R6Class(
         #' @param pairs a vector of layer names to combine into new classes through unique combinations. Names should correspond to raster layers in the project directory.
         #' @param burns a vector of layer names which are to be burnt on
         #'
-        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are impliment using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         combine_classes = function(layer_name,pairs,burns=NULL){
             private$apply_combine_classes(layer_name,pairs,burns)
             invisible(self)
@@ -248,9 +248,9 @@ dynatopGIS <- R6::R6Class(
         #' @param pet_label Prepended to pet_layer values to give pet series name
         #' @param verbose print more details of progress
         #'
-        #' @details The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta ot the shortest distance within the HRU.
+        #' @details The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta of the shortest distance within the HRU.
         #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
-        #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, overwise an input table for the models gernerated with the value "missing" used in place of the series name.
+        #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
                                 transmissivity=c("exp","bexp","cnst","dexp"),
                                 channel_solver=c("histogram"),
@@ -271,20 +271,9 @@ dynatopGIS <- R6::R6Class(
 
             invisible(self)
         },
-        #' @description Compute HSU fractional inputs
-        #'
-        #' @param hsu_layer layer of the model
-        #' @param input_layer raster of values containing the input class
-        #' @param hsu_label string containing the label to add the values of hsu_layer
-        #' @param input_label string containing the label to add the values of input_layer
-        #'
-        #' @details Fractions are computed for all HSUs (including the channel) using raster::crosstab. It does not accout for unequal cells areas or HSUs which only cover a fraction of a cell
-        input_frac = function(hsu_layer,input_layer,hsu_label="hsu_",input_label=""){
-            stop("This function is depreciated - see the $create_model options for rainfall and PET")
-        },            
         #' @description get the version number
         #' @return a numeric version number
-        #' @details teh version number indicates the version of the algorithms within the object
+        #' @details the version number indicates the version of the algorithms within the object
         get_version = function(){
             private$version
         },
@@ -298,54 +287,10 @@ dynatopGIS <- R6::R6Class(
             }else{
                 stop(layer_name," is not a classification")
             }
-        },
-        
-        #' @description DEPRECIATED Get the model is a form suitable for dynatop
-        #' @return a Dynamic TOPMODE description suitable for the \code{dyantop} package
-        get_model = function(){
-            stop("This function is depreciated - model is written out on generation")
-        },
-        #' @description DEPRECIATED Plot the spatial properties of a model
-        #' @param add_channel should the channel be added to the plot
-        plot_model = function(add_channel=TRUE){
-            stop("This function is depreciated\n",
-                 " - use $plot_layer(<layer_name>) where layer_name is name of the model"
-                 )
-        },
-        #' @description DEPRECIATED Return the index of neighbouring cells
-        #' @param x index of cells for which to find neighbours
-        #' @return a list of indexes of neighbours
-        neighbour = function(x){
-            stop("Function is depreciated")
-        },
-        #' @description DEPECIATED Get a classification layer of geographical information or a list of layer names
-        #' @param layer_name name of the layer give to the layer
-        #' @return a RasterLayer of the requested information if layer_name is given else a vector of layer names
-        get_class = function(layer_name){
-            stop("This function is no longer valid: \n",
-                 " - use $get_layer(<layer_name>) to see output \n",
-                 " - use $geta_class_method(<layer_name>) to see the splits and cuts")
-        },
-        
-        #' @description DEPECIATED Plot a classification layer
-        #' @param layer_name the name of layer to plot
-        #' @param add_channel shouel the channel be added to the plot
-        #' @return a plot
-        plot_class = function(layer_name="final",add_channel=TRUE){
-            warning("This function is no longer valid",
-                    "- use $plot_layer(<layer_name>) to see output")
-            self$plot_layer(layer_name,add_channel)
-        },
-        #' @description DEPRECIATED Get the channel description
-        #' @return an SpatialPolygonDataFrame containing the channels 
-        get_channel = function(){
-            warning("$get_channel() Depreciated use $get_layer('channel')")
-            self$get_layer("channel")
-        }
-               
+        }               
     ),
     private = list(
-        version = "0.2.0.9030",
+        version = "0.2.2",
         wdir=character(0),
         meta_path = character(0),
         meta=list(
@@ -1349,17 +1294,17 @@ dynatopGIS <- R6::R6Class(
             }
             
             
-            ## check all HSUs have valid outflows
+            ## check all HRUs have valid outflows
             nlink <- sapply(model$flow_direction,length)
             if( !any(nlink==0) ){
                 stop("There is no outflow from the system!!")
             }else{
                 idx <- which(nlink==0)
                 if( any(idx %in% model$hillslope$id) ){
-                    stop( "The following Hillslope HSUs have no valid outflows: \n",
+                    stop( "The following Hillslope HRUs have no valid outflows: \n",
                          paste(idx %in% model$hillslope$id, collapse=", "))
                 }
-                cat("The following Channel HSUs are outflows:",
+                cat("The following Channel HRUs are outflows:",
                     paste(idx, collapse=", "),"\n")
             }
             

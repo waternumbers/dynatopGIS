@@ -26,7 +26,7 @@ actions are then applied to generate a model.
 
 The `dynatopGIS` package is written using the object orientated framework
 provided by the `R6` package. This means that some aspects of working with the
-objects may appear ìdiosyncratic for some R users. In using the package as
+objects may appear idiosyncratic for some R users. In using the package as
 outlined in this vignette these problems are largely obscured, except for the
 call structure. However, before adapting the code, or doing more complex analysis
 users should read about `R6` class objects (e.g. in the `R6` package vignettes
@@ -78,7 +78,7 @@ ctch <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
 The basis of the analysis is a rasterised Digital Elevation Model (DEM) of
 the catchment and a vectorised representation of the river network with
 attributes. Currently these can be in any format supported by the ```raster```
-and ```sp``` libraries respectivly.
+and ```sp``` libraries respectively.
 
 However, within the calculations used for sink filling,
 flow routing and topographic index calculations the raster DEM is presumed
@@ -128,7 +128,7 @@ head(sp_lines)
 ```
 
 The main properties are present under appropriate names and a call to
-the `add_channel` method with no options would be successful. However if we want to carry over the addition information in the "indentifier" as "channel_id" a
+the `add_channel` method with no options would be successful. However if we want to carry over the additional information in the "identifier" as "channel_id" a
 named vector giving the variable names to be used could be provided. In this
 case:
 
@@ -255,14 +255,14 @@ ctch$plot_layer('atb')
 
 ## Adding additional layer
 
-Properties may come in addional GIS layers. To demonstrate the addition of an
+Properties may come in additional GIS layers. To demonstrate the addition of an
 additional layer we will extract the filled dem
 
 ```{r ,extract_filled}
 tmp <- ctch$get_layer("filled_dem")
 ```
 
-then seperate it into a layers representing land above and below 500m.
+then separate it into a layers representing land above and below 500m.
 
 ```{r height layer}
 tmp <- raster::reclassify( tmp,
@@ -313,7 +313,7 @@ ctch$plot_layer("band")
 # Classifying into Hydrological Response Units
 
 Methods are provided for the classification of the catchment areas of similar
- hyrological response. The classifications generated in this process are
+ hydrological response. The classifications generated in this process are
  augmented with a further distance based separation when generating a
  `dynatop` model (see following section).
 
@@ -344,7 +344,7 @@ in two ways, which are applied in the order shown
 - *pairing* - where unique combinations of classes create one new class
 - *burning* - where a single class is imposed upon an area
 
-To demonstate a pairing combination consider combining the atb classes
+To demonstrate a pairing combination consider combining the atb classes
 generated above with the classification provided by the distance band
 
 ```{r, atb_20_band}
@@ -412,5 +412,5 @@ The map of HRUs can be plotted as with any layer
 ctch$plot_layer("new_model")
 ```
 
-The values on the map correspond to the ìd column of the hillslope table in
+The values on the map correspond to the `ìd` column of the hillslope table in
 the `dynatop` model.
