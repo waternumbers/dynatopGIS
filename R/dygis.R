@@ -49,40 +49,13 @@ dynatopGIS <- R6::R6Class(
         #' @details This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked with the level of returned information being controlled by \code{verbose}.
         #'
         #' @return A new `dynatopGIS` object
-        initialize = function(meta_file, check=TRUE,verbose=TRUE){
-            ## create directory if it doesn't exist
-            
-            private$meta_path <- meta_file
-            private$wdir <- normalizePath(dirname(meta_file))
-
-            ## if new it is an empty folder so write in meta data
-            is_new <- !file.exists(meta_file)
-            if(is_new){
-                warning("Creating meta file at",meta_file)
-                private$write_meta()
-            }                
-            
-            ## load meta data
-            if(check){ private$check_meta(verbose) }
-            
+        initialize = function(projFile){
+            private$apply_initialize( tools::file_path_sans_ext(projFile) )
             invisible(self)
         },
         #' @description Get project meta data
-        get_meta = function(){ private$meta },
-        #' @description Get current working directory
-        #' @details Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
-        get_working_directory = function(){private$wdir},
-        #' @description Set current working directory
-        #'
-        #' @param file_path the path to the new directory to create
-        #' @param create should the directory be created if it doesn't exist
-        #'
-        #' @details Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
-        set_working_directory = function(file_path,create=TRUE){
-            if(!dir.exists(file_path) & create){ dir.create(file_path,recursive=TRUE) }
-            if(!dir.exists(file_path)){ stop("Directory does not exist") }
-            private$wdir <- file_path
-            invisible(self)
+        get_meta = function(){
+            private$apply_get_meta()
         },
         #' @description Import a dem to the `dynatopGIS` object
         #'
@@ -93,8 +66,10 @@ dynatopGIS <- R6::R6Class(
         #' @details If not a \code{raster} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
         #'
         #' @return suitable for chaining              
-        add_dem = function(dem,fill_na=TRUE,verbose=FALSE){
-            private$apply_add_dem(dem,fill_na,verbose)
+        add_dem = function(dem,fill_na=TRUE){
+            if(!("RasterLayer" %in% class(dem))){ dem <- raster::raster(as.character(dem)) }
+            if(!("RasterLayer" %in% class(dem))){ stop("dem is not a RasterLayer") }
+            private$apply_add_dem(dem,fill_na)
             invisible(self)
         },
         #' @description Import channel data to the `dynatopGIS` object
@@ -106,16 +81,11 @@ dynatopGIS <- R6::R6Class(
         #' @details Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.
         #'
         #' @return suitable for chaining
-        add_channel = function(channel,property_names=c(length="length",
-                                                        startNode="startNode",
-                                                        endNode="endNode",
-                                                        width="width"),
-                               default_width=2){
-            
-            if("channel" %in% names(private$find_layer(TRUE))){
-                stop("The channel exists, start a new project")
-            }
-            private$apply_add_channel(channel,property_names,default_width)
+        add_channel = function(channel){
+            if(!is(channel,"SpatialPolygonsDataFrame")){ channel <- raster::shapefile( as.character(channel) ) }
+            if(!is(channel,"SpatialPolygonsDataFrame")){ stop("channel is not a SpatialPolygonsDataFrame") }
+
+            private$apply_add_channel(channel)
             invisible(self)
         },
         #' @description Add a layer of geographical information
@@ -125,43 +95,31 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @details The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
         #' @return suitable for chaining
-        add_layer = function(layer_name,file_path){
+        add_layer = function(layer,layer_name=names(layer)){
             layer_name <- as.character(layer_name)
-            file_path <- normalizePath(file_path)
-            
-            pos_val <- private$find_layer(TRUE)
-            ## check layer names is acceptable
-            if( layer_name %in% private$find_layer() ){ stop("Layer name is already in use") }
-            if( file_path %in% pos_val ){
-                stop("File already in use as layer", names(pos_val[pos_val==file_path]))
-            }
-
-            private$check_rst(file_path,layer_name)
-            private$meta$layers[[layer_name]] <- list(file=file_path,type="user")
-            private$write_meta()
+            if(!("RasterLayer" %in% class(layer))){ layer <- raster::raster(as.character(layer)) }
+            if(!("RasterLayer" %in% class(layer))){ stop("layer is not a RasterLayer") }
+            private$apply_add_layer(layer,layer_name)
             invisible(self)
         },
         #' @description Get a layer of geographical information or a list of layer names
         #' @param layer_name name of the layer give to the layer
         #' @return a `raster` layer of the requested information if layer_name is given else a vector of layer names
         get_layer = function(layer_name=character(0)){
-            pos_val <- private$find_layer(TRUE)
-            
+
             ## handle case where a list of layers is requested
             if( length(layer_name) == 0 ){
-                return( names(pos_val) )
+                return( names(private$brk) )
             }
             ## check layer name exists
-            layer_name <- match.arg(layer_name,names(pos_val))
+            layer_name <- match.arg(layer_name,names(private$brk))
             
             ## make raster and return
-            fn <- pos_val[layer_name]
             if(layer_name=="channel"){
-                return( raster::shapefile(fn) )
+                return( private$shp )
             }else{
-                return( raster::raster(fn) )
+                return( private$brk[[layer_name]] )
             }
-            
         },
         #' @description Plot a layer
         #' @param layer_name the name of layer to plot
@@ -171,11 +129,9 @@ dynatopGIS <- R6::R6Class(
             lyr <- self$get_layer(layer_name)
             raster::plot( lyr, main = layer_name)
             if( add_channel ){
-                chn <- self$get_layer("channel")
-                raster::plot( chn, add=TRUE )
+                raster::plot(private$shp, add=TRUE )
             }
         },
-
         #' @description The sink filling algorithm of Planchona and Darboux (2001)
         #'
         #' @param min_grad Minimum gradient between cell centres
@@ -186,13 +142,6 @@ dynatopGIS <- R6::R6Class(
         #'
         sink_fill = function(min_grad = 1e-4,max_it=1e6,verbose=FALSE, hot_start=FALSE){
             private$apply_sink_fill(min_grad,max_it,verbose,hot_start)
-            invisible(self)
-        },
-        #' @description Computes area maps and presence of channel in dem pixels
-        #'
-        #' @details The algorithm calculates the land and channel area for each DEM pixel assigning a channel_id to each pixel with a channel area.
-        compute_areas=function(){
-            private$apply_compute_areas()
             invisible(self)
         },
         #' @description Computes statistics e.g. gradient, log(upslope area / gradient) for raster cells
@@ -221,7 +170,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         classify = function(layer_name,base_layer,cuts){
-            private$apply_classify(layer_name, base_layer, cuts)
+            private$apply_classify(as.character(layer_name), as.character(base_layer), cuts)
             invisible(self)
         },
         #' @description Combine any number of classifications based on unique combinations and burns
@@ -231,7 +180,9 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         combine_classes = function(layer_name,pairs,burns=NULL){
-            private$apply_combine_classes(layer_name,pairs,burns)
+            private$apply_combine_classes(as.character(layer_name),
+                                          as.character(pairs),
+                                          as.character(burns))
             invisible(self)
         },
         #' @description Compute a Dynamic TOPMODEL
@@ -290,94 +241,68 @@ dynatopGIS <- R6::R6Class(
         }               
     ),
     private = list(
-        version = "0.2.2",
-        wdir=character(0),
-        meta_path = character(0),
-        meta=list(
-            crs=character(0),
-            extent=numeric(0),
-            resolution=numeric(0),
-            layers= list(
-                dem = list(type="reserved",file=character(0)),
-                channel = list(type="reserved",file=character(0)),
-                filled_dem = list(type="reserved",file=character(0)),
-                land_area = list(type="reserved",file=character(0)),
-                channel_area = list(type="reserved",file=character(0)),
-                channel_id = list(type="reserved",file=character(0)),
-                gradient = list(type="reserved",file=character(0)),
-                upslope_area = list(type="reserved",file=character(0)),
-                #contour_length = list(type="reserved",file=character(0)),
-                atb = list(type="reserved",file=character(0)),
-                band = list(type="reserved",file=character(0)),
-                shortest_flow_length = list(type="reserved",file=character(0)),
-                dominant_flow_length = list(type="reserved",file=character(0)),
-                expected_flow_length = list(type="reserved",file=character(0))
-            )
-        ),
-        make_filename = function(fn,is_shp=FALSE){
-            if(!is_shp){
-                return( file.path(private$wdir,paste0(fn,'.tif')) )
-            }else{
-                return( file.path(private$wdir,paste0(fn,'.shp')) )
-            }
-        },
-        read_meta = function(){
-            #browser()
-            if(!file.exists(private$meta_path)){ stop("Missing metadata file") }
-            meta <- jsonlite::fromJSON(private$meta_path)            
-            if(length(meta$crs)>0){meta$crs <- crs(meta$crs)}
-            if(length(meta$extent)>0){meta$extent <- extent(meta$extent)}
-            private$meta <- meta
-        },
-        write_meta = function(){
-            meta <- private$meta
-            meta$crs <- crs(meta$crs,asText=TRUE)
-            if("Extent" %in% class(meta$extent)){
-                meta$extent <- c(meta$extent@xmin,meta$extent@xmax,meta$extent@ymin,meta$extent@ymax)
-            }
-            writeLines(jsonlite::toJSON(meta,null="null",pretty=TRUE),
-                       file.path(private$meta_path))
-        },
-        find_layer = function(file_name=FALSE){
-            if(file_name){
-                unlist(sapply(private$meta$layers,function(x){as.character(x$file)}))
-            }else{
-                names(private$meta$layers)
-            }
-        },
-        ## check raster layer
-        check_rst = function(fn,nm){
-            rst <- fn
-            if(!("RasterLayer" %in% class(fn))){ rst <- raster::raster(fn) }
-            if(!("RasterLayer" %in% class(rst))){ stop(nm," is not a RasterLayer") }
-            
-            if(!compareCRS(rst,private$meta$crs)){ stop(nm," projection does not match meta data") }
-            if(!(extent(rst)==private$meta$extent)){ stop(nm," extent does not match meta data") }
-            if(!all(res(rst)==private$meta$resolution)){ stop(nm," resolution does not match meta data") }
+        version = "0.3.0",
+        projFiles = character(0),
+        brk = character(0),
+        shp = character(0),
+        method = list(class=list(),combination=list()),
+        reserved_layers = c("dem","channel","filled_dem",
+                            "gradient","upslope_area","atb",
+                            "band","shortest_flow_length","dominant_flow_length","expected_flow_length"),
+        writeTIF = function(){
+            brk <- terra::rast(private$brk)
+            terra::writeRaster(brk,private$projFiles["tif"],overwrite=TRUE)
             NULL
         },
-        ## function to check meta data
-        check_meta = function(verbose){
-            ## browser()
-            private$read_meta()
-            ## TODO
-            warning("No checks on the meta are currently performed")
+        read_method = function(){
+            if(!file.exists(private$projFiles["json"])){
+                warning("No method json file found")
+            }
+            jsonlite::fromJSON(private$meta_path)            
+        },
+        ## check and read the project files
+        apply_initialize = function(projFile){
+            ## compute and label file names
+            fn <- setNames( paste0(projFile,c(".tif",".shp",".json")), c("tif","shp","json"))
+            ## see if files exist
+            fExists <- setNames( file.exists( fn ), c("tif","shp","json"))
+            ## if no files then start a new project
+            if( !any(fExists) ){
+                print( paste("Starting new project at", projFile) )
+                private$projFiles <- fn
+                return(NULL)
+            }
+            ## if there is no raster data file fail
+            if(!fExists["tif"]){ stop("No tif file of raster data") }
+            ## read in netcdf and check
+            brk <- raster::brick( fn["tif"] )
+            if( !all.equal(diff(raster::res(brk)),0) | raster::isLonLat(brk) ){
+                stop("tif file is not valid: Processing currently only works on projected data with a square grid")
+            }
+            if( !("dem" %in% names(brk)) ){ stop("No dem layer in the NetCDF file") }
+            ## read in shape file and check
+            if(fExists["shp"]){
+                shp <- raster::shapefile( fn["shp"] )
+                if(!compareCRS(shp,brk)){ stop("Shape and NetCDF projections do not match") }
+                if( !("channel" %in% names(brk)) ){
+                    stop("No channel layer in the NetCDF file but channel shapefile specified")
+                }
+            }
+            if(fExists["json"]){
+                mth <- jsonlite::fromJSON(private$meta_path)    private$read_method()
+            }
+            
+
+            private$brk <- brk
+            if(fExists["shp"]){ private$shp <- shp }
+            if(fExists["json"]){ private$method <- mth }
+            private$projFiles <- fn
         },
         ## adding dem
-        apply_add_dem = function(dem,fill_na,verbose){
+        apply_add_dem = function(dem,fill_na){
             
-            if("dem" %in% names(private$find_layer(TRUE))){
+            if("dem" %in% names(private$brk) ){
                 stop("The DEM exists, start a new project")
-            }
-
-            if(!("RasterLayer" %in% class(dem))){
-                ## then dem should be a character string pointing to the file
-                dem <- as.character(dem)
-                if(file.exists(as.character(dem))){
-                    dem <- raster::raster(dem)
-                }else{
-                    stop("dem should be either a RasterLayer or the path to a file which can be read as a RasterLayer")   
-                }
             }
             
             ## add to ensure NA on each edge
@@ -399,206 +324,123 @@ dynatopGIS <- R6::R6Class(
                 na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
                 dem[!is.na(na_clumps)] <- -1e6+1 # set to low value to indicate missing
             }
-
-            ## fill meta data
-            if(length(private$meta$crs)==0){ private$meta$crs = crs(dem) }
-            if(length(private$meta$extent)==0){ private$meta$extent <- extent(dem) }
-            if(length(private$meta$resolution)==0){ private$meta$resolution <- res(dem) }
-            private$check_rst(dem,"DEM")
-            
-            fn <- private$make_filename("dem")
-            writeRaster(dem,fn); private$meta$layers[["dem"]]$file <- fn
-            private$write_meta()
+            ## covnert to brick and save
+            dem <- raster::brick(dem); names(dem) <- "dem"
+            private$brk <- dem #raster::brick(private$projFiles["tif"])
+            private$writeTIF()
         },
-
         ## add the channel
-        apply_add_channel = function(sp_object,property_names,default_width){
-           
-            ## read in sp object is a character sting
-            if(is.character(sp_object)){
-                if(file.exists(as.character(sp_object))){
-                    sp_object <- raster::shapefile(sp_object)
-                }else{
-                    stop("sp_object is a character string but the file specified does not exist")
-                }
+        apply_add_channel = function(chn){
+            if( length(private$brk) == 0 ){
+                stop("Project must be initialised with the DEM")
             }
-
-            ## find out about the sp_object
-            if(!is(sp_object,"SpatialLinesDataFrame") && !is(sp_object,"SpatialPolygonsDataFrame")){
-                stop("The channel network is not a spatial lines or polygon data frame object (even when read in)")
-            }
-            is_polygon <- is(sp_object,"SpatialPolygonsDataFrame")
             
-            ## check the names of property_names are valid
-            if( !all( c("length","startNode","endNode") %in% names(property_names)) ){
-                stop("A required property name is not specified in property_names")
+            if( length(private$shp) > 0 ){
+                stop("Channel already added - start a new project")
             }
-
-            ## check if SpatialPolygon object - if not buffer using a width
-            if(!is(sp_object,"SpatialPolygonsDataFrame")){               
-                if(!("width" %in% names(property_names)) & !is_polygon){
-                    warning("Modifying to spatial polygons using default width")
-                    sp_object[['width']] <- default_width ## add width
-                }else{
-                    warning("Modifying to spatial polygons using specified width")
-                }
-                sp_object <- rgeos::gBuffer(sp_object, byid=TRUE, width=sp_object[['width']])
-            }
-
-            ## see if variables refered to in property_names exist
-            if( !all(property_names %in% names(sp_object)) ){
-                stop("A field specified in property_names is not present")
-            }
-
-            ## populate meta data from channel if missing
-            if(length(private$meta$crs)==0){ private$meta$crs = crs(sp_object) }
             
-            ## check projection of the sp_object
-            if( !compareCRS(crs(sp_object),private$meta$crs) ){
-                stop("Projection of channel object does not match")
+            ## check the required field names are present
+            if( !all( c("name","length","area","startNode","endNode") %in% names(chn)) ){
+                stop("A required property name is not specified")
             }
-                        
+            
+            ## check projection of the chn
+            if( !compareCRS(chn,private$brk) ){
+                stop("Projection of channel object does not match that of project")
+            }
+            
             ## check if there is an id feild which will be overwritten
-            if( ("id" %in% names(sp_object)) ){
-                warning("The name id is reserved and will be overwritten",
-                        "Original id values moved to original_id")
-                sp_object[["original_id"]] <- sp_object[["id"]]
+            if( ("id" %in% names(chn)) ){
+                warning("The name id is reserved and will be overwritten")
+            }
 
+            ## ensure required properties are of correct type
+            chn$name <- as.character(chn$name)
+            chn$length <- as.numeric(chn$length)
+            chn$area <- as.numeric(chn$area)
+            chn$startNode <- as.character(chn$startNode)
+            chn$endNode <- as.character(chn$endNode)
+            if( !all(is.finite(chn$length)) ){
+                stop("Some non-finite values of length found!")
             }
-             
-            ## ensure correct columns are in the sp_object by copying to correct name
-            for(ii in names(property_names)){
-                sp_object[[ii]] <- sp_object[[property_names[ii]]]
-            }
-          
-            ## arrange in id in order of flow direction - so lower values at bottom of network
-            unds <- unique(c(sp_object[['startNode']],sp_object[['endNode']])) # unique nodes
-            if(any(is.na(unds)|is.nan(unds)|is.infinite(unds))){ ## TODO was is.infinte("er")??
+            
+            ## arrange in id in order of flow direction - so lowest values at outlets of the network
+            unds <- unique(c(chn$startNode,chn$endNode)) # unique nodes
+            if(any(is.na(unds))){
                 stop("The nodes in startNode and endNode must have unique, non-missing codes")
             }
-            nfrom <- setNames(rep(0,length(unds)),unds)
-            tmp <- table(sp_object[['startNode']])
-            nfrom[names(tmp)] <- tmp
+            ## work out number of links from a node
+            nFrom <- setNames(rep(0,length(unds)),unds)
+            tmp <- table(chn$startNode)
+            nFrom[names(tmp)] <- tmp
             max_id <- 0
-            sp_object[["id"]] <- NA ## set id to NA
-            while( any(nfrom==0) ){
-                idx <- names(nfrom[nfrom==0])
+            chn[["id"]] <- NA ## set id to NA
+            while( any(nFrom==0) ){
+                idx <- names(nFrom[nFrom==0])
                 ## fill if of reaches which are at bottom
-                tmp <- sp_object[['endNode']] %in% idx
-                sp_object[["id"]][tmp] <- max_id + (1:sum(tmp))
+                tmp <- chn$endNode %in% idx
+                chn$id[tmp] <- max_id + (1:sum(tmp))
                 max_id <- max_id + sum(tmp)
-                nfrom[idx] <- -1
+                nFrom[idx] <- -1
                 ## locate next nodes that are at bootom
-                tmp <- table(sp_object[['startNode']][ tmp ])
-                jj <- intersect(names(tmp),names(nfrom))
-                nfrom[jj] <-  nfrom[jj] - tmp[jj]
+                tmp <- table(chn$startNode[ tmp ])
+                jj <- intersect(names(tmp),names(nFrom))
+                nFrom[jj] <-  nFrom[jj] - tmp[jj]
             }
-                      
-            ## convert factors to strings - can probably be depreciated with R >= v4
-            idx <- sapply(sp_object@data, is.factor)
-            sp_object@data[idx] <- lapply(sp_object@data[idx], as.character)
 
-            ## ensure width and length are numeric
-            sp_object$length <- as.numeric(sp_object$length)
-            sp_object$width <- as.numeric(sp_object$width)
-            if(!all(is.finite(sp_object$width) & is.finite(sp_object$length)) ){
-                stop("Some non-finite values of channel length and width found!")
-            }
-            
-            file_name <- private$make_filename("channel",TRUE)
-            raster::shapefile(sp_object,file_name)
-            private$meta$layers[["channel"]]$file <- file_name
-            private$write_meta()
-        },
-
-        ## calculate area maps
-        apply_compute_areas = function(){
-            
-            rq <- c("dem","channel")
-            pos_val <- private$find_layer(TRUE)
-            has_rq <- rq %in% names(pos_val)
-            if(!all(has_rq)){
-                stop("Missing files:\n",paste(rq[!has_rq],sep="\n"))
-            }
-            
-            dem <- raster::raster(pos_val["dem"])
-            chn <- raster::shapefile(pos_val["channel"])
-
-            ## compute land area ignoring channels
-            land_area <- raster::area(dem, na.rm=TRUE)
-            ## compute the areas taken up by the channels
-            ch_area <- raster::area(chn) # areas of river channels
-            
+            ## create a raster of channel id numbers
             ## extract cells index, and fraction of river area in cell
-            ch_cell <- raster::extract(land_area,chn,weights=TRUE,
-                                      cellnumbers=TRUE,na.rm=TRUE)
-
-            
-            ## initialise the final rasters
-            channel_area <- dem; channel_area[!is.na(dem)] <- 0
-            channel_id <- dem*NA
-
-
-            for(ii in 1:length(ch_cell)){
-                ch_cell[[ii]][,"weight"] <- ch_area[ii]*ch_cell[[ii]][,'weight']
-                ch_cell[[ii]] <- cbind(ch_cell[[ii]],cid=chn[["id"]][ii])
-            }
+            chn_rst <- private$brk[["dem"]]
+            chn_rst[] <- NA
+            ch_cell <- raster::extract(chn_rst,chn,weights=TRUE,
+                                       cellnumbers=TRUE,na.rm=TRUE)
+            ch_cell <- lapply(1:length(chn),function(ii){
+                out <- as.data.frame(ch_cell[[ii]][,c("cell","weight")])
+                out$weight <- out$weight * chn$area[ii]
+                out$id <- chn$id[ii]
+                out
+            })
             ch_cell <- do.call(rbind,ch_cell)
-            nm <- colnames(ch_cell)
-            ch_cell <- lapply(split(ch_cell,ch_cell[,"cell"],identity),matrix,ncol=ncol(ch_cell))
-            for(ii in 1:length(ch_cell)){
-                ch_cell[[ii]] <- ch_cell[[ii]][which.max(ch_cell[[ii]][,nm=="weight"]),,drop=FALSE]
-            }
+            ch_cell <- split(ch_cell,ch_cell$cell)
+            ch_cell <- lapply(ch_cell,function(x){x[which.max(x$weight),,drop=FALSE]})
             ch_cell <- do.call(rbind,ch_cell)
-            channel_area[ ch_cell[,nm=="cell"] ] <- pmin(ch_cell[,nm=="value"],
-                                                         ch_cell[,nm=="weight"])
-            channel_id[ ch_cell[,nm=="cell"] ] <- ch_cell[,nm=="cid" ]
-            ## ## Loop and add the chanel id and channel area	
-            ## for(ii in 1:length(ch_cell)){
-            ##     idx <- ch_cell[[ii]][,'cell']
-            ##     la <- ch_cell[[ii]][,'value']
-            ##     ca <- ch_area[ii]*ch_cell[[ii]][,'weight']
-            ##     ca <- pmin(ca,la)
-            ##     jdx <- !is.na(channel_area[idx]) & (ca > channel_area[idx])
-            ##     channel_area[ idx[jdx] ] <- ca[jdx]
-            ##     channel_id[ idx[jdx] ] <- chn[["id"]][ii]
-            ## }
-            
-            ## correct land area
-            land_area <- land_area - channel_area
-            
-            ## write out rasters
-            fn <- private$make_filename("land_area")
-            writeRaster(land_area,fn); private$meta$layers[['land_area']]$file <- fn
-            fn <- private$make_filename("channel_area")
-            writeRaster(channel_area,fn); private$meta$layers[['channel_area']]$file <- fn
-            fn <- private$make_filename("channel_id")
-            writeRaster(channel_id,fn); private$meta$layers[['channel_id']]$file <- fn
-            private$write_meta()
+            chn_rst[ch_cell$cell] <- ch_cell$id
+
+            private$brk[["channel"]] <- chn_rst
+            private$shp <- chn
+            private$writeTIF()
+            raster::shapefile(chn,private$projFiles["shp"])            
         },
-
+        ## Add a layer
+        apply_add_layer=function(layer,layer_name){
+            if( any(layer_name %in% private$reserved_layers) ){
+                stop("Name is reserved")
+            }
+            if(!compareCRS(layer,private$brk)){ stop("Projection does not match project") }
+            if(!all(res(layer)==res(provate$brk))){ stop("Resolution does not match project") }
+            if(!(extent(layer)==extent(private$brk))){
+                ## try buffering it as for dem when read in
+                layer <- extend(layer,c(1,1),NA)
+            }
+            if(!(extent(layer)==extent(private$brk))){ stop("Extent does not match project") }
+            private$brk[layer_name] <- layer
+            private$writeTIF()
+            NULL
+        },
         ## Sink fill
         apply_sink_fill = function(min_grad,max_it,verbose,hot_start){
             
             rq <- ifelse(hot_start,
-                         c("filled_dem","channel_id"),
-                         c("dem","channel_id"))
-            pos_val <- private$find_layer(TRUE)
-            has_rq <- rq %in% names(pos_val)
-            if(!all(has_rq)){
-                stop("Not all required input files have been generated \n",
-                     "Try running compute_areas first")
+                         c("filled_dem","channel"),
+                         c("dem","channel"))
+            if(!all(rq %in% names(private$brk))){
+                stop("Not all required layers are available")
             }
 
-            d <- raster::raster(pos_val[rq[1]])
-            ch <- raster::raster(pos_val["channel_id"])
-
-            rfd <- d ## initialise the output
-
-            ## convert to matrices - much quicker but will fail for large dem's
-            d <- as.matrix(d)
-            ch <- as.matrix(ch)
-
+            d <- ifelse(hot_start,"filled_dem","dem")
+            d <- values( private$brk[[d]], format="matrix" )
+            ch <- values( private$brk[["channel"]], format="matrix" )
+           
             ## values that should be valid
             to_be_valid <- !is.na(d) & is.na(ch)  # all values not NA should have a valid height
             is_valid <- is.finite(ch) & !is.na(d) # TRUE if a channel cell for initialisation
@@ -607,9 +449,10 @@ dynatopGIS <- R6::R6Class(
             to_eval <- d; to_eval[] <- FALSE
 
             ## distance between cell centres
-            dxy <- matrix(sqrt(sum(private$meta$resolution^2)),3,3)
-            dxy[1,2] <- dxy[3,2] <- private$meta$resolution[2]
-            dxy[2,1] <- dxy[2,3] <- private$meta$resolution[1]
+            rs <- raster::res( private$brk )
+            dxy <- matrix(sqrt(sum(rs^2)),3,3)
+            dxy[1,2] <- dxy[3,2] <- rs[2]
+            dxy[2,1] <- dxy[2,3] <- rs[1]
             dxy[2,2] <- 0
             dxy <- min_grad*dxy
             
@@ -667,57 +510,44 @@ dynatopGIS <- R6::R6Class(
                 it <- it+1
             }
 
-            rfd[] <- fd
-            ## write out filled dem
-            fn <- private$make_filename("filled_dem")
-            writeRaster(rfd,fn); private$meta$layers[['filled_dem']]$file <- fn
-            private$write_meta()
+            rfd <- private$brk[["dem"]]; values(rfd) <- fd
+            private$brk[["filled_dem"]] <- rfd
+            private$writeTIF()
             
             if(it>max_it){ stop("Maximum number of iterations reached, sink filling not complete") }
             
         },
-
         ## Function to compute the properties
         apply_compute_properties = function(min_grad,verbose){
 
-            rq <- c("filled_dem","channel_id","land_area")
-            pos_val <- private$find_layer(TRUE)
-            has_rq <- rq %in% names(pos_val)
-            if(!all(has_rq)){
-                stop("Not all required input files have been generated \n",
-                     "Try running compute_areas first and sink_fill first")
+            rq <- c("filled_dem","channel")
+            if(!all( rq %in% names( private$brk) )){
+                stop("Not all required input layers have been generated \n",
+                     "Try running sink_fill first")
             }
             
-            ## load rasters
-            d <- raster::raster(pos_val["filled_dem"])
-            ch <- raster::raster(pos_val["channel_id"])
-            la <- raster::raster(pos_val["land_area"])
-
-            n_to_eval <- cellStats(is.finite(d),sum)
-            out <- d ## template for output
-            
+            ## load raster layer
             ## it is quickest to compute using blocks of dem as a raster
             ## however for small rasters we will just treat as a single block
             ## assumes the raster is padded with NA
-            d <- as.matrix(d)
-            ch <- as.matrix(ch)
-            la <- as.matrix(la)
+            d <- values( private$brk[["filled_dem"]], format="matrix" )
+            ch <- values( private$brk[["channel"]], format="matrix" )
 
+            ## work out order to pass through the cells
             idx <- order(d,decreasing=TRUE,na.last=NA)
-            idx <- idx[ la[idx]>0 ]
-            
             n_to_eval <- length(idx)
             
             ## distances and contour lengths
             ## distance between cell centres
-            dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
-            dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
-            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+            rs <- raster::res( private$brk )
+            dxy <- rep(sqrt(sum(rs^2)),8)
+            dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
+            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
             nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
             
             ## initialise output
-            gr <- cl <- atb <- d*NA
-            upa <- la
+            gr <- upa <- atb <- d*NA
+            upa[is.finite(d)] <- prod(rs) ## initialise upslope area from resolution
 
             it <- 1
             if(verbose){
@@ -729,49 +559,27 @@ dynatopGIS <- R6::R6Class(
             
             
             for(ii in idx){
-                is_channel <- is.finite(ch[ii]) ## if a channel
                 ngh <- ii + delta ## neighbouring cells
-                
                 ## compute gradient
                 grd <- (d[ii]-d[ngh])/dxy
                 
-                ## process depending upon whether it is a channel cell...
-                if( is_channel ){
-                    ## TODO these cells should have atb and cl as well!!!
-                    ## only need to evaluate gradient and atanb
-                    ## cells that drain *into* the one being evaluated
-                    to_use <- is.finite(grd) & (grd < 0) &
-                        !is.finite(ch[ngh])
-                    if(any(to_use)){
-                        ## if upstream cells draining in
-                        gr[ii] <- max(min_grad,-sum(grd[to_use]*dcl[to_use]) / sum(dcl[to_use]))
-                    }else{
-                        ## if no upstream cells set default gradient
-                        gr[ii] <- min_grad
-                    }
-                    #cl[ii] <- dxy[1] # diagonal distance
-                    atb[ii] <- log( upa[ii] / gr[ii] )
+                to_use <- is.finite(grd) & (grd > 0)
+                if(any(to_use)){
+                    gcl <- grd[to_use]*dcl[to_use]
+                    ## gradient
+                    gr[ii] <- max(sum(gcl) / sum(dcl[to_use]),min_grad)
+                    ## topographic index
+                    atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
+                    ## fraction of flow in each direction
+                    frc <- gcl/sum(gcl)
+                    ## propogate area downslope
+                    upa[ ngh[to_use] ]  <- upa[ ngh[to_use] ] + frc*upa[ii]
                 }else{
-                    ## is not a channel - need gradient and to pass area along
-                    to_use <- is.finite(grd) & (grd > 0)
-                    if(any(to_use)){
-                        gcl <- grd[to_use]*dcl[to_use]
-                        ## gradient
-                        gr[ii] <- max(sum(gcl) / sum(dcl[to_use]),min_grad)
-                        ## contour length
-                        #cl[ii] <- sum(dcl[to_use])
-                        ## topographic index
-                        atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
-                        ## fraction of flow in each direction
-                        frc <- gcl/sum(gcl)
-                        ## propogate area downslope
-                        
-                        upa[ ngh[to_use] ]  <- upa[ ngh[to_use] ] + frc*upa[ii]
-                    }else{
+                    if( !is.finite(ch[ii]) ){
                         ## a hillslope cell that drains nowhere - this is an error
                         stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
-                    }    
-                }
+                    }
+                }    
                 
                 ## verbose output here
                 if(it >= next_print){
@@ -782,48 +590,29 @@ dynatopGIS <- R6::R6Class(
                 
                 it <- it+1
             }
-            
-            
 
-            ## write out raster maps
-            fn <- fn <- private$make_filename("gradient")
-            out[] <- gr; writeRaster(out,fn); private$meta$layers[['gradient']]$file <- fn
-            
-            fn <- private$make_filename("upslope_area")
-            out[] <- upa; writeRaster(out,fn); private$meta$layers[['upslope_area']]$file <- fn
-            
-            #fn <- private$make_filename("contour_length")
-            #out[] <- cl; writeRaster(out,fn); private$meta$layers[['contour_length']]$file <- fn
-
-            
-            fn <- private$make_filename("atb")
-            out[] <- atb; writeRaster(out,fn); private$meta$layers[['atb']]$file <- fn
-
-            private$write_meta()
+            ## save raster maps
+            out <- private$brk[["dem"]];
+            values(out) <- gr; private$brk[["gradient"]] <- out
+            values(out) <- upa; private$brk[["upslope_area"]] <- out
+            values(out) <- atb; private$brk[["atb"]] <- out
+            private$writeTIF()          
         },
-
-        ## work out flow lengths
+        ## work out flow lengths to channel
         apply_flow_lengths = function(verbose){
 
-            rq <- c("filled_dem","channel_id","land_area")
-            pos_val <- private$find_layer(TRUE)
-            has_rq <- rq %in% names(pos_val)
-            if(!all(has_rq)){
-                stop("Not all required input files have been generated \n",
-                     "Try running compute_areas first and sink_fill first")
+            rq <- c("filled_dem","channel")
+            if(!all( rq %in% names( private$brk) )){
+                stop("Not all required input layers have been generated \n",
+                     "Try running sink_fill first")
             }
 
-            ## load rasters
-            d <- raster::raster(pos_val["filled_dem"])
-            ch <- raster::raster(pos_val["channel_id"])
-            la <- raster::raster(pos_val["land_area"])
-
-            out <- d
-
-            ## convert to matrix for speed
-            d <- as.matrix(d)
-            ch <- as.matrix(ch)
-            la <- as.matrix(la)
+            ## load raster layer
+            ## it is quickest to compute using blocks of dem as a raster
+            ## however for small rasters we will just treat as a single block
+            ## assumes the raster is padded with NA
+            d <- values( private$brk[["filled_dem"]], format="matrix" )
+            ch <- values( private$brk[["channel"]], format="matrix" )
             
             ## create some distance matrices
             sfl <- d; sfl[] <- NA
@@ -833,9 +622,10 @@ dynatopGIS <- R6::R6Class(
 
             ## distances and contour lengths
             ## distance between cell centres
-            dxy <- rep(sqrt(sum(private$meta$resolution^2)),8)
-            dxy[c(2,7)] <- private$meta$resolution[1]; dxy[c(4,5)] <- private$meta$resolution[2]
-            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(private$meta$resolution)
+            rs <- raster::res( private$brk )
+            dxy <- rep(sqrt(sum(rs^2)),8)
+            dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
+            dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
             nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
             
             ## if we go up in height order then we must have looked at all lower
@@ -843,6 +633,7 @@ dynatopGIS <- R6::R6Class(
             idx <- order(d,na.last=NA)
             
             n_to_eval <- length(idx)
+
             it <- 1
             if(verbose){
                 print_step <- round(n_to_eval/20)
@@ -850,18 +641,12 @@ dynatopGIS <- R6::R6Class(
             }else{
                 next_print <- Inf
             }
+
             for(ii in idx){
                 if(is.finite(ch[ii])){
-                    ## it is a channel
-                    if(la[ii]>0){
-                        ## mixed cell
-                        bnd[ii] <- 1
-                        sfl[ii]  <- dfl[ii] <- efl[ii] <- sqrt(sum(private$meta$resolution^2))/2
-                    }else{
-                        ## just channel
-                        bnd[ii] <- 0
-                        sfl[ii]  <- dfl[ii] <- efl[ii] <- 0
-                    }
+                    ## just channel
+                    bnd[ii] <- 0
+                    sfl[ii]  <- dfl[ii] <- efl[ii] <- 0
                 }else{
                     ## it is not a channel
                     jdx <- ii+delta
@@ -885,49 +670,31 @@ dynatopGIS <- R6::R6Class(
                 it <- it+1
             }
 
-            ## set channel cells to NA
-            idx <- is.finite(ch) & !(la>0)
-            bnd[idx] <- sfl[idx] <- dfl[idx] <- efl[idx] <- NA
-            
-                        
-            ## write out raster files
-            fn <- private$make_filename("band")
-            out[] <- bnd; writeRaster(out,fn); private$meta$layers[['band']]$file <- fn
-            fn <- private$make_filename("shortest_flow_length")
-            out[] <- sfl; writeRaster(out,fn);
-            private$meta$layers[["shortest_flow_length"]]$file <- fn
 
-            fn <- private$make_filename("dominant_flow_length")
-            out[] <- dfl; writeRaster(out,fn);
-            private$meta$layers[['dominant_flow_length']]$file <- fn
-            
-            fn <- private$make_filename("expected_flow_length")
-            out[] <- efl; writeRaster(out,fn);
-            private$meta$layers[['expected_flow_length']]$file <- fn
-
-            private$write_meta()
+            ## save raster maps
+            out <- private$brk[["dem"]];
+            values(out) <- bnd; private$brk[["band"]] <- out
+            values(out) <- sfl; private$brk[["shortest_flow_length"]] <- out
+            values(out) <- dfl; private$brk[["dominant_flow_length"]] <- out
+            values(out) <- efl; private$brk[["expected_flow_length"]] <- out
+            private$writeTIF()
         },
         
         ## split_to_class
         apply_classify = function(layer_name,base_layer,cuts){
 
-            ## check all layers are present
-            layer_name <- as.character(layer_name)
-            base_layer <- as.character(base_layer)
-            pos_val <- private$find_layer(TRUE)
-
             ## check base layer exists
-            if(!(base_layer %in% names(pos_val))){
+            if(!(base_layer %in% names(private$brk))){
                 stop(paste(c("Missing layers:",base_layer,sep="\n")))
             }
 
             ## check layer_name isn't already used
-            if(layer_name %in% names(pos_val)){
+            if(layer_name %in% names(private$brk)){
                 stop("layer_name is already used")
             }
 
             ## load base layer
-            x <- raster::raster(pos_val[base_layer])
+            x <- private$brk[[base_layer]]
 
             ## work out breaks
             brk <- as.numeric(cuts)
@@ -939,37 +706,31 @@ dynatopGIS <- R6::R6Class(
             ## cut the raster
             x <- cut(x,breaks=brk,include.lowest=TRUE)
 
-            ## write out
-            fn <- private$make_filename(layer_name)
-            writeRaster(x,fn)
-            ## add to meta
-            private$meta$layers[[layer_name]] <- list(file=fn,type="classification",
-                                                      method=list(layer=base_layer,
-                                                                  cuts=brk))
-            private$write_meta()
+            private$brk[[layer_name]] <- x
+            private$writeTIF()
+            
+            private$method$class[[layer_name]] <- list(layer=base_layer,
+                                                       cuts=brk)
         },
         ## split_to_class
         apply_combine_classes = function(layer_name,pairs,burns){
 
             ## check all cuts and burns are in possible layers
             rq <- c(pairs,burns)
-            layer_name <- as.character(layer_name)
-            pos_val <- private$find_layer(TRUE)
-
-            has_rq <- rq %in% names(pos_val)
+            has_rq <- rq %in% names(private$brk)
             if(!all(has_rq)){
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
 
             ## check layer_name isn't already used
-            if(layer_name %in% names(pos_val)){
+            if(layer_name %in% names(private$brk)){
                 stop("layer_name is already used")
             }
                 
             ## work out new cuts by cantor_pairing
             init <- TRUE
             for(ii in pairs){
-                x <- raster::raster(pos_val[ii]) ## read in raster
+                x <- private$brk[[ii]]
                 
                 if(init){
                     cp <- x
@@ -980,7 +741,7 @@ dynatopGIS <- R6::R6Class(
                     cp <- cut(cp, c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf))
                 }
             }
-            
+
             ## make table of layer values - should be able to combine with above??
             cpv <- raster::getValues(cp) ## quicker when a vector
             uq <- sort(unique(cp)) ## unique values
@@ -1000,6 +761,7 @@ dynatopGIS <- R6::R6Class(
             if(!all(uqf)){
                 stop("Error in computing combinations")
             }
+            
             ## create data frame
             df <- matrix(NA,length(uq),length(pairs)+length(burns)+1)
             colnames(df) <- c(layer_name,pairs,burns)
@@ -1009,7 +771,6 @@ dynatopGIS <- R6::R6Class(
                 df[,ii] <- x[cuq]
             }
 
-            #browser()
             ## add in burns
             for(ii in burns){
                 x <- raster::raster(pos_val[ii]) ## read in raster
@@ -1029,11 +790,11 @@ dynatopGIS <- R6::R6Class(
                 
             }
 
-            fn <- private$make_filename(layer_name)
-            writeRaster(cp,fn)
-            private$meta$layers[[layer_name]] <- list(file=fn,type="combined_classes",
-                                                      method=as.data.frame(df)) ## need to be df else looses names
-            private$write_meta()
+            out <- private$brk[["dem"]]; values(out) <- cp
+            private$brk[[layer_name]] <- out
+            private$writeTIF()
+            private$method$combination$[[layer_name]] <- df
+            private$writeMethod()
         },
         
         ## create a model  
