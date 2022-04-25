@@ -27,7 +27,6 @@ Planchona
 Rcpp
 sp
 SpatialLinesDataFrame
-SpatialPolygonDataFrame
 SpatialPolygonsDataFrame
 startNode
 topmodel

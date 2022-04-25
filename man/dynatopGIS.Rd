@@ -15,7 +15,7 @@ demo_dir <- tempfile("dygis")
 dir.create(demo_dir)
 
 ## initialise processing
-ctch <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
+ctch <- dynatopGIS$new(file.path(demo_dir,"test"))
 
 ## add digital elevation and channel data
 dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
@@ -24,11 +24,11 @@ ctch$add_dem(dem)
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 package="dynatopGIS", mustWork = TRUE)
 sp_lines <- rgdal::readOGR(channel_file)
-property_names <- c(channel_id="identifier",endNode="endNode",startNode="startNode",length="length")
-ctch$add_channel(sp_lines,property_names)
+property_names <- c(name="identifier",endNode="endNode",startNode="startNode",length="length")
+chn <- convert_channel(sp_lines,property_names)
+ctch$add_channel(chn)
 
 ## compute properties 
-ctch$compute_areas()
 ctch$sink_fill() ## fill sinks in the catchment
 \donttest{
 ctch$compute_properties() # like topograpihc index and contour length
@@ -37,9 +37,9 @@ ctch$compute_flow_lengths()
 ## classify and create a model
 \donttest{
 ctch$classify("atb_20","atb",cuts=20) # classify using the topographic index
-ctch$get_class_method("atb_20") ## see the details of the classification
+ctch$get_method("atb_20") ## see the details of the classification
 ctch$combine_classes("atb_20_band",c("atb_20","band")) ## combine classes
-ctch$create_model("new_model","atb_20_band","band") ## create a model
+ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band","band") ## create a model
 list.files(demo_dir,pattern="new_model*") ## look at the output files for the model
 }
 ## tidy up
@@ -50,22 +50,19 @@ unlink(demo_dir)
 \itemize{
 \item \href{#method-new}{\code{dynatopGIS$new()}}
 \item \href{#method-get_meta}{\code{dynatopGIS$get_meta()}}
-\item \href{#method-get_working_directory}{\code{dynatopGIS$get_working_directory()}}
-\item \href{#method-set_working_directory}{\code{dynatopGIS$set_working_directory()}}
 \item \href{#method-add_dem}{\code{dynatopGIS$add_dem()}}
 \item \href{#method-add_channel}{\code{dynatopGIS$add_channel()}}
 \item \href{#method-add_layer}{\code{dynatopGIS$add_layer()}}
 \item \href{#method-get_layer}{\code{dynatopGIS$get_layer()}}
 \item \href{#method-plot_layer}{\code{dynatopGIS$plot_layer()}}
 \item \href{#method-sink_fill}{\code{dynatopGIS$sink_fill()}}
-\item \href{#method-compute_areas}{\code{dynatopGIS$compute_areas()}}
 \item \href{#method-compute_properties}{\code{dynatopGIS$compute_properties()}}
 \item \href{#method-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
 \item \href{#method-classify}{\code{dynatopGIS$classify()}}
 \item \href{#method-combine_classes}{\code{dynatopGIS$combine_classes()}}
 \item \href{#method-create_model}{\code{dynatopGIS$create_model()}}
 \item \href{#method-get_version}{\code{dynatopGIS$get_version()}}
-\item \href{#method-get_class_method}{\code{dynatopGIS$get_class_method()}}
+\item \href{#method-get_method}{\code{dynatopGIS$get_method()}}
 \item \href{#method-clone}{\code{dynatopGIS$clone()}}
 }
 }
@@ -75,22 +72,18 @@ unlink(demo_dir)
 \subsection{Method \code{new()}}{
 Initialise a project, or reopen an existing project
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$new(meta_file, check = TRUE, verbose = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$new(projFile)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{meta_file}}{filename and path of the meta data file}
-
-\item{\code{check}}{logical, should checks be performed [TRUE]}
-
-\item{\code{verbose}}{printing of checking output [TRUE]}
+\item{\code{projFile}}{basename of data files}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked with the level of returned information being controlled by \code{verbose}.
+This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp,json>}
 }
 
 \subsection{Returns}{
@@ -108,49 +101,12 @@ Get project meta data
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_working_directory"></a>}}
-\if{latex}{\out{\hypertarget{method-get_working_directory}{}}}
-\subsection{Method \code{get_working_directory()}}{
-Get current working directory
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_working_directory()}\if{html}{\out{</div>}}
-}
-
-\subsection{Details}{
-Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-set_working_directory"></a>}}
-\if{latex}{\out{\hypertarget{method-set_working_directory}{}}}
-\subsection{Method \code{set_working_directory()}}{
-Set current working directory
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$set_working_directory(file_path, create = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{file_path}}{the path to the new directory to create}
-
-\item{\code{create}}{should the directory be created if it doesn't exist}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-add_dem"></a>}}
 \if{latex}{\out{\hypertarget{method-add_dem}{}}}
 \subsection{Method \code{add_dem()}}{
 Import a dem to the `dynatopGIS` object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_dem(dem, fill_na = TRUE, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_dem(dem, fill_na = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -178,12 +134,7 @@ suitable for chaining
 \subsection{Method \code{add_channel()}}{
 Import channel data to the `dynatopGIS` object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(
-  channel,
-  property_names = c(length = "length", startNode = "startNode", endNode = "endNode",
-    width = "width"),
-  default_width = 2
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(channel)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -198,7 +149,7 @@ Import channel data to the `dynatopGIS` object
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.
+Takes the representation of the channel network as a SpatialPolygonsDataFrame with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
 }
 
 \subsection{Returns}{
@@ -211,20 +162,20 @@ suitable for chaining
 \subsection{Method \code{add_layer()}}{
 Add a layer of geographical information
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_layer(layer_name, file_path)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_layer(layer, layer_name = names(layer))}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{layer_name}}{name to give to the layer}
+\item{\code{layer}}{the raster layer to add (see details)}
 
-\item{\code{file_path}}{the location of the file containing the new layer}
+\item{\code{layer_name}}{name to give to the layer}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
+The layer should either be a raster layer or a file that can be read by the \code{raster} package. The projection, resolution and extent are checked against the existing project data. Only layer names not already in use (or reserved) are allowed. If successful the layer is added to the project tif file.
 }
 
 \subsection{Returns}{
@@ -302,20 +253,6 @@ The sink filling algorithm of Planchona and Darboux (2001)
 }
 \subsection{Details}{
 The algorithm implemented is that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (<https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf>).
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-compute_areas"></a>}}
-\if{latex}{\out{\hypertarget{method-compute_areas}{}}}
-\subsection{Method \code{compute_areas()}}{
-Computes area maps and presence of channel in dem pixels
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_areas()}\if{html}{\out{</div>}}
-}
-
-\subsection{Details}{
-The algorithm calculates the land and channel area for each DEM pixel assigning a channel_id to each pixel with a channel area.
 }
 
 }
@@ -424,7 +361,6 @@ Compute a Dynamic TOPMODEL
   class_layer,
   dist_layer,
   transmissivity = c("exp", "bexp", "cnst", "dexp"),
-  channel_solver = c("histogram"),
   dist_delta = 0,
   rain_layer = NULL,
   rain_label = character(0),
@@ -445,8 +381,6 @@ Compute a Dynamic TOPMODEL
 
 \item{\code{transmissivity}}{transmissivity profile to use}
 
-\item{\code{channel_solver}}{channel solver to use}
-
 \item{\code{dist_delta}}{used in computing flow linkages see details}
 
 \item{\code{rain_layer}}{the layer defining the rainfall inputs}
@@ -458,6 +392,8 @@ Compute a Dynamic TOPMODEL
 \item{\code{pet_label}}{Prepended to pet_layer values to give pet series name}
 
 \item{\code{verbose}}{print more details of progress}
+
+\item{\code{channel_solver}}{channel solver to use}
 }
 \if{html}{\out{</div>}}
 }
@@ -486,12 +422,12 @@ a numeric version number
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_class_method"></a>}}
-\if{latex}{\out{\hypertarget{method-get_class_method}{}}}
-\subsection{Method \code{get_class_method()}}{
+\if{html}{\out{<a id="method-get_method"></a>}}
+\if{latex}{\out{\hypertarget{method-get_method}{}}}
+\subsection{Method \code{get_method()}}{
 get the cuts and burns used to classify
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_class_method(layer_name)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_method(layer_name = character(0))}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

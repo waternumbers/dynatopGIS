@@ -7,7 +7,7 @@
 #' dir.create(demo_dir)
 #'
 #' ## initialise processing
-#' ctch <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
+#' ctch <- dynatopGIS$new(file.path(demo_dir,"test"))
 #'
 #' ## add digital elevation and channel data
 #' dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
@@ -16,11 +16,11 @@
 #' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 #' package="dynatopGIS", mustWork = TRUE)
 #' sp_lines <- rgdal::readOGR(channel_file)
-#' property_names <- c(channel_id="identifier",endNode="endNode",startNode="startNode",length="length")
-#' ctch$add_channel(sp_lines,property_names)
+#' property_names <- c(name="identifier",endNode="endNode",startNode="startNode",length="length")
+#' chn <- convert_channel(sp_lines,property_names)
+#' ctch$add_channel(chn)
 #'
 #' ## compute properties 
-#' ctch$compute_areas()
 #' ctch$sink_fill() ## fill sinks in the catchment
 #' \donttest{
 #' ctch$compute_properties() # like topograpihc index and contour length
@@ -29,9 +29,9 @@
 #' ## classify and create a model
 #' \donttest{
 #' ctch$classify("atb_20","atb",cuts=20) # classify using the topographic index
-#' ctch$get_class_method("atb_20") ## see the details of the classification
+#' ctch$get_method("atb_20") ## see the details of the classification
 #' ctch$combine_classes("atb_20_band",c("atb_20","band")) ## combine classes
-#' ctch$create_model("new_model","atb_20_band","band") ## create a model
+#' ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band","band") ## create a model
 #' list.files(demo_dir,pattern="new_model*") ## look at the output files for the model
 #' }
 #' ## tidy up
@@ -42,11 +42,9 @@ dynatopGIS <- R6::R6Class(
     public = list(
         #' @description Initialise a project, or reopen an existing project
         #'
-        #' @param meta_file filename and path of the meta data file
-        #' @param check logical, should checks be performed [TRUE]
-        #' @param verbose printing of checking output [TRUE]
+        #' @param projFile basename of data files
         #'
-        #' @details This loads the meta data file found at \code{meta_path}, or creates it with a warning if no file is present. It \code{check} is \code{TRUE} then the meta data file contents are checked with the level of returned information being controlled by \code{verbose}.
+        #' @details This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp,json>}
         #'
         #' @return A new `dynatopGIS` object
         initialize = function(projFile){
@@ -78,7 +76,7 @@ dynatopGIS <- R6::R6Class(
         #' @param property_names named vector of columns of the spatial data frame to use for channel properties - see details
         #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
         #'
-        #' @details Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the \code{property_names} vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.
+        #' @details Takes the representation of the channel network as a SpatialPolygonsDataFrame with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
         #'
         #' @return suitable for chaining
         add_channel = function(channel){
@@ -90,10 +88,10 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Add a layer of geographical information
         #'
+        #' @param layer the raster layer to add (see details)
         #' @param layer_name name to give to the layer
-        #' @param file_path the location of the file containing the new layer
         #'
-        #' @details The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
+        #' @details The layer should either be a raster layer or a file that can be read by the \code{raster} package. The projection, resolution and extent are checked against the existing project data. Only layer names not already in use (or reserved) are allowed. If successful the layer is added to the project tif file.
         #' @return suitable for chaining
         add_layer = function(layer,layer_name=names(layer)){
             layer_name <- as.character(layer_name)

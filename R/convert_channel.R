@@ -1,4 +1,19 @@
-
+#' Function for assisting in the conversion of object to be suitable channel inputs to a dynatopGIS object
+#'
+#' @description Converts SpatialLinesDataFrame or SpatialPolygonsDataFrame to the correct format of SpatialPolygonsDataFrame for dynatopGIS.
+#' @param sp_object a SpatialLinesDataFrame or SpatialPolygonsDataFrame object or a file which can read by raster::shapefile to create one
+#' @param property_names a named vector of containing the columns of existing data properties required in the final SpatialPolygonsDataFrame
+#' @param default_width the width in m to be used for buffering lines to produce polygons
+#'
+#' @details If the property_names vector contains a width this is used for buffering lines to produce polygons, otherwise the default_width value is used.
+#' 
+#' @examples
+#' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
+#' package="dynatopGIS", mustWork = TRUE)
+#' sp_lines <- rgdal::readOGR(channel_file)
+#' property_names <- c(name="identifier",endNode="endNode",startNode="startNode",length="length")
+#' chn <- convert_channel(sp_lines,property_names)
+#' @export
 convert_channel <- function(sp_object,property_names=c(name = "DRN_ID",
                                                        length = "length",
                                                        startNode = "startNode",
