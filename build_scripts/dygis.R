@@ -11,7 +11,7 @@
 #'
 #' ## add digital elevation and channel data
 #' dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
-#' dem <- terra::rast(dem_file)
+#' dem <- raster::raster(dem_file)
 #' ctch$add_dem(dem)
 #' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 #' package="dynatopGIS", mustWork = TRUE)
@@ -42,13 +42,13 @@ dynatopGIS <- R6::R6Class(
     public = list(
         #' @description Initialise a project, or reopen an existing project
         #'
-        #' @param projectFolder folder for data files
+        #' @param projFile basename of data files
         #'
-        #' @details This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp>}
+        #' @details This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp,json>}
         #'
         #' @return A new `dynatopGIS` object
-        initialize = function(projectFolder){
-            private$apply_initialize( projectFolder )
+        initialize = function(projFile){
+            private$apply_initialize( tools::file_path_sans_ext(projFile) )
             invisible(self)
         },
         #' @description Get project meta data
@@ -65,21 +65,23 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @return suitable for chaining              
         add_dem = function(dem,fill_na=TRUE){
-            if(!("SpatRaster" %in% class(dem))){ dem <- terra::rast(as.character(dem)) }
-            if(!("SpatRaster" %in% class(dem))){ stop("dem is not a SpatRaster") }
+            if(!("RasterLayer" %in% class(dem))){ dem <- raster::raster(as.character(dem)) }
+            if(!("RasterLayer" %in% class(dem))){ stop("dem is not a RasterLayer") }
             private$apply_add_dem(dem,fill_na)
             invisible(self)
         },
         #' @description Import channel data to the `dynatopGIS` object
         #'
         #' @param channel a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information
+        #' @param property_names named vector of columns of the spatial data frame to use for channel properties - see details
+        #' @param default_width default width of a channel if not specified in property_names. Defaults to 2 metres.
         #'
         #' @details Takes the representation of the channel network as a SpatialPolygonsDataFrame with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
         #'
         #' @return suitable for chaining
         add_channel = function(channel){
-            if(!is(channel,"SpatVector")){ channel <- terra::vect( as.character(channel) ) }
-            if(!is(channel,"SpatVector")){ stop("channel is not a SpatialPolygonsDataFrame") }
+            if(!is(channel,"SpatialPolygonsDataFrame")){ channel <- raster::shapefile( as.character(channel) ) }
+            if(!is(channel,"SpatialPolygonsDataFrame")){ stop("channel is not a SpatialPolygonsDataFrame") }
 
             private$apply_add_channel(channel)
             invisible(self)
@@ -93,9 +95,8 @@ dynatopGIS <- R6::R6Class(
         #' @return suitable for chaining
         add_layer = function(layer,layer_name=names(layer)){
             layer_name <- as.character(layer_name)
-            if(!("SpatRaster" %in% class(layer))){ layer <- terra::rast(as.character(layer)) }
-            if(!("SpatRaster" %in% class(layer))){ stop("layer is not a SpatRaster") }
-            if( length(layer_name) != terra::nlyr(layer) ){ stop("Length of names does not match number fo layers") }
+            if(!("RasterLayer" %in% class(layer))){ layer <- raster::raster(as.character(layer)) }
+            if(!("RasterLayer" %in% class(layer))){ stop("layer is not a RasterLayer") }
             private$apply_add_layer(layer,layer_name)
             invisible(self)
         },
@@ -106,7 +107,7 @@ dynatopGIS <- R6::R6Class(
 
             ## handle case where a list of layers is requested
             if( length(layer_name) == 0 ){
-                return( data.frame(layer = names(private$brk), source=terra::sources(private$brk)) )
+                return( names(private$brk) )
             }
             ## check layer name exists
             layer_name <- match.arg(layer_name,names(private$brk))
@@ -226,9 +227,7 @@ dynatopGIS <- R6::R6Class(
         #' @param layer_name the name of layer whose classification method is returned
         #' @return a list with two elements, cuts and burns
         get_method = function(layer_name=character(0)){
-            stop("TODO - not working")
             if(length(layer_name)==0){
- 
                 return( private$layers )
             }
             layer_name <- match.arg(layer_name,names(private$layers))
@@ -237,105 +236,99 @@ dynatopGIS <- R6::R6Class(
     ),
     private = list(
         version = "0.3.0",
-        projectFolder = character(0),
+        projFiles = character(0),
         brk = character(0),
         shp = character(0),
+        layers = list(),
         reserved_layers = c("dem","channel","filled_dem",
                             "gradient","upslope_area","atb",
                             "band","shortest_flow_length",
                             "dominant_flow_length","expected_flow_length"),
+        writeTIF = function(){
+            brk <- terra::rast(private$brk)
+            terra::writeRaster(brk,private$projFiles["tif"],overwrite=TRUE)
+            NULL
+        },
+        writeJSON = function(){
+            writeLines( jsonlite::toJSON(private$layers), private$projFiles["json"] )
+        },
         readJSON = function(fn){
-            
             if(!file.exists(fn)){
-                return(NULL) #warning("No method json file found")
+                warning("No method json file found")
             }
             jsonlite::fromJSON(fn)
         },
         ## check and read the project files
-        apply_initialize = function(projectFolder){
-            ## see if folder exists
-            if( !dir.exists(projectFolder) ){
-                print( "Creating new folder" )
-                dir.create(projectFolder, showWarnings = TRUE, recursive = TRUE)
+        apply_initialize = function(projFile){
+            ## compute and label file names
+            fn <- setNames( paste0(projFile,c(".tif",".shp",".json")), c("tif","shp","json"))
+            ## see if files exist
+            fExists <- setNames( file.exists( fn ), c("tif","shp","json"))
+            ## if no files then start a new project
+            if( !any(fExists) ){
+                print( paste("Starting new project at", projFile) )
+                private$projFiles <- fn
+                return(NULL)
             }
-
-            ## read in raster data
-            rstNames <- list.files(projectFolder, pattern=".tif$",full.names=TRUE)
-            if(length(rstNames) == 0){
-                brk <- chn <- NULL
-                print( paste("Starting new project at", projectFolder) )
-            }else{
-                print( paste("Reading existing project at", projectFolder) )
-                brk <- terra::rast(list.files(projectFolder, pattern=".tif$",full.names=TRUE))
-
-                if( !all.equal(diff(terra::res(brk)),0) | terra::is.lonlat(brk) ){
-                    stop("Raster data not valid: Processing currently only works on projected data with a square grid")
-                }
-                if( !("dem" %in% names(brk)) ){ stop("No dem layer in Raster data") }
-                ## read in shape file and check
-                if( file.exists( file.path(projectFolder,"channel.shp")) ){
-                    chn <- terra::vect( file.path(projectFolder,"channel.shp") )
-                
-                    if(  terra::crs(brk, proj=TRUE) != terra::crs(chn, proj=TRUE) ){
-                        stop("Shape and Raster projections do not match")
-                    }
-                    if( !("channel" %in% names(brk)) ){
-                        stop("No channel layer in the raster file but channel shapefile specified")
-                    }
- 
-                }else{
-                    chn <- NULL
-                     if( ("channel" %in% names(brk)) ){
-                        stop("Channel layer in the raster file but channel shapefile missing")
-                     }
+            ## if there is no raster data file fail
+            if(!fExists["tif"]){ stop("No tif file of raster data") }
+            ## read in netcdf and check
+            brk <- raster::brick( fn["tif"] )
+            if( !all.equal(diff(raster::res(brk)),0) | raster::isLonLat(brk) ){
+                stop("tif file is not valid: Processing currently only works on projected data with a square grid")
+            }
+            if( !("dem" %in% names(brk)) ){ stop("No dem layer in the NetCDF file") }
+            ## read in shape file and check
+            if(fExists["shp"]){
+                shp <- raster::shapefile( fn["shp"] )
+                if(!compareCRS(shp,brk)){ stop("Shape and NetCDF projections do not match") }
+                if( !("channel" %in% names(brk)) ){
+                    stop("No channel layer in the NetCDF file but channel shapefile specified")
                 }
             }
+            if(fExists["json"]){
+                mth <- private$readJSON(fn["json"])
+            }
+            
 
-            private$projectFolder <- projectFolder
             private$brk <- brk
-            private$shp <- chn
+            if(fExists["shp"]){ private$shp <- shp }
+            if(fExists["json"]){ private$layers <- mth }
+            private$projFiles <- fn
         },
         ## adding dem
         apply_add_dem = function(dem,fill_na){
-           
+            
             if("dem" %in% names(private$brk) ){
                 stop("The DEM exists, start a new project")
             }
             
             ## add to ensure NA on each edge
-            dem <- terra::extend(dem,c(1,1)) # ,NA)
+            dem <- extend(dem,c(1,1),NA)
             ## check the projection is OK
-            if( !all.equal(diff(terra::res(dem)),0) | terra::is.lonlat(dem) ){
+            if( !all.equal(diff(raster::res(dem)),0) | raster::isLonLat(dem) ){
                 stop("Processing currently only works on projected dem's with a square grid")
             }
             
             ## fill dem so only NA values are on boundaries
             if(fill_na){
                 ## so all catchment dem value a number
-                na_clumps <- terra::patches(is.na(dem), directions=8, zeroAsNA=TRUE)
-                edge_values <- unique( c(
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=nrow(na_clumps), col=1, ncols=1, na.rm=TRUE) ),
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=nrow(na_clumps), col=ncol(na_clumps), ncols=1, na.rm=TRUE) ),
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=1, col=1, ncols=ncol(na_clumps), na.rm=TRUE) ),
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=nrow(na_clumps),nrows=1, col=1, ncols=ncol(na_clumps), na.rm=TRUE) )
-                ))
-                na_clumps <- terra::subst(na_clumps, edge_values, NA) ## clean out edge values since these are not sinks
-                sink_values <- terra::unique(na_clumps)$patches
-                if(length(sink_values)>0){
-                    na_clumps <- terra::subst(na_clumps, unique(na_clumps)$patches, 1 - 1e6) ## clean out edge values since these are not sinks
-                }
-                dem <- terra::cover(dem,na_clumps) # replace
+                na_clumps <- raster::clump(is.na(dem)) # clumps of na values
+                edge_values <- setdiff( unique(c(na_clumps[1,],
+                                                 na_clumps[nrow(na_clumps),],
+                                                 na_clumps[,1],
+                                                 na_clumps[,ncol(na_clumps)])),
+                                       NA) #those clumps on the edge to be ignored
+                na_clumps[na_clumps%in%edge_values] <- NA # set to NA to ignore
+                dem[!is.na(na_clumps)] <- -1e6+1 # set to low value to indicate missing
             }
-            ## save
-            names(dem) <- "dem"
-            demFile <- file.path(private$projectFolder,"dem.tif")
-            terra::writeRaster(dem, demFile)
-            private$brk <- terra::rast(demFile)
-            
+            ## covnert to brick and save
+            dem <- raster::brick(dem); names(dem) <- "dem"
+            private$brk <- dem #raster::brick(private$projFiles["tif"])
+            private$writeTIF()
         },
         ## add the channel
         apply_add_channel = function(chn){
-            
             if( length(private$brk) == 0 ){
                 stop("Project must be initialised with the DEM")
             }
@@ -350,7 +343,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## check projection of the chn
-            if( terra::crs(private$brk, proj=TRUE) != terra::crs(chn, proj=TRUE) ){
+            if( !compareCRS(chn,private$brk) ){
                 stop("Projection of channel object does not match that of project")
             }
             
@@ -374,12 +367,12 @@ dynatopGIS <- R6::R6Class(
             if(any(is.na(unds))){
                 stop("The nodes in startNode and endNode must have unique, non-missing codes")
             }
-            ## work out number of links from a node - TODO this is slow.........
+            ## work out number of links from a node
             nFrom <- setNames(rep(0,length(unds)),unds)
             tmp <- table(chn$startNode)
             nFrom[names(tmp)] <- tmp
             max_id <- 0
-            chn$id <- as.numeric(NA) ## set id to NA
+            chn[["id"]] <- NA ## set id to NA
             while( any(nFrom==0) ){
                 idx <- names(nFrom[nFrom==0])
                 ## fill if of reaches which are at bottom
@@ -392,40 +385,46 @@ dynatopGIS <- R6::R6Class(
                 jj <- intersect(names(tmp),names(nFrom))
                 nFrom[jj] <-  nFrom[jj] - tmp[jj]
             }
-            
+
             ## create a raster of channel id numbers
-            chn_rst <- terra::rasterize(chn,private$brk[["dem"]],field = "id",touches=TRUE)
-            names(chn_rst) <- "channel"
-            
-            shpFile <- file.path(private$projectFolder,"channel.shp")
-            rstFile <- file.path(private$projectFolder,"channel.tif")
-            terra::writeVector(chn, shpFile)
-            terra::writeRaster(chn_rst,rstFile, names = "channel")
-            
-            private$brk[["channel"]] <- terra::rast(rstFile)
-            private$shp <- terra::vect(shpFile)
+            ## extract cells index, and fraction of river area in cell
+            chn_rst <- private$brk[["dem"]]
+            chn_rst[] <- NA
+            ch_cell <- raster::extract(chn_rst,chn,weights=TRUE,
+                                       cellnumbers=TRUE,na.rm=TRUE)
+            ch_cell <- lapply(1:length(chn),function(ii){
+                out <- as.data.frame(ch_cell[[ii]][,c("cell","weight")])
+                out$weight <- out$weight * chn$area[ii]
+                out$id <- chn$id[ii]
+                out
+            })
+            ch_cell <- do.call(rbind,ch_cell)
+            ch_cell <- split(ch_cell,ch_cell$cell)
+            ch_cell <- lapply(ch_cell,function(x){x[which.max(x$weight),,drop=FALSE]})
+            ch_cell <- do.call(rbind,ch_cell)
+            chn_rst[ch_cell$cell] <- ch_cell$id
+
+            private$brk[["channel"]] <- chn_rst
+            private$shp <- chn
+            private$writeTIF()
+            raster::shapefile(chn,private$projFiles["shp"])            
         },
         ## Add a layer
         apply_add_layer=function(layer,layer_name){
-            
             if( any(layer_name %in% private$reserved_layers) ){
                 stop("Name is reserved")
             }
-            if( any(layer_name %in% names(private$brk)) ){
-                stop("Name is already used")
-            }
-            if( !terra::compareGeom(layer,private$brk,stopOnError=FALSE) ){
+            if(!compareCRS(layer,private$brk)){ stop("Projection does not match project") }
+            if(!all(res(layer)==res(private$brk))){ stop("Resolution does not match project") }
+            if(!(extent(layer)==extent(private$brk))){
                 ## try buffering it as for dem when read in
-                layer <- terra::extend(layer,c(1,1))
+                layer <- extend(layer,c(1,1),NA)
             }
-            if( !terra::compareGeom(layer,private$brk,stopOnError=FALSE) ){
-                stop("New layer does not match resolution, extent or projection of project")
-            }
-            names(layer) <- layer_name
-            rstFile <- file.path(private$projectFolder,paste0(layer_name[1],".tif"))
-            terra::writeRaster(layer, rstFile)
-            private$brk[[layer_name]] <- terra::rast( rstFile )
-         },
+            if(!(extent(layer)==extent(private$brk))){ stop("Extent does not match project") }
+            private$brk[[layer_name]] <- layer
+            private$writeTIF()
+            NULL
+        },
         ## Sink fill
         apply_sink_fill = function(min_grad,max_it,verbose,hot_start){
             
@@ -437,8 +436,8 @@ dynatopGIS <- R6::R6Class(
             }
 
             d <- ifelse(hot_start,"filled_dem","dem")
-            d <- terra::as.matrix( private$brk[[d]] ,wide=TRUE) ##, mat=TRUE)
-            ch <-terra::as.matrix( private$brk[["channel"]] , wide=TRUE )
+            d <- values( private$brk[[d]], format="matrix" )
+            ch <- values( private$brk[["channel"]], format="matrix" )
            
             ## values that should be valid
             to_be_valid <- !is.na(d) & is.na(ch)  # all values not NA should have a valid height
@@ -448,7 +447,7 @@ dynatopGIS <- R6::R6Class(
             to_eval <- d; to_eval[] <- FALSE
 
             ## distance between cell centres
-            rs <- terra::res( private$brk )
+            rs <- raster::res( private$brk )
             dxy <- matrix(sqrt(sum(rs^2)),3,3)
             dxy[1,2] <- dxy[3,2] <- rs[2]
             dxy[2,1] <- dxy[2,3] <- rs[1]
@@ -510,13 +509,11 @@ dynatopGIS <- R6::R6Class(
                 
             }
 
+            rfd <- private$brk[["dem"]]; values(rfd) <- fd
+            private$brk[["filled_dem"]] <- rfd
             
-            rfd <- terra::rast( private$brk[["dem"]], names="filled_dem", vals=fd )
-            rstFile <- file.path(private$projectFolder,"filled_dem.tif")
-            terra::writeRaster(rfd, rstFile)
-            private$brk[["filled_dem"]] <- terra::rast(rstFile)
+            private$writeTIF()
             
-           
             if(it>max_it){ stop("Maximum number of iterations reached, sink filling not complete") }
             
         },
@@ -533,9 +530,8 @@ dynatopGIS <- R6::R6Class(
             ## it is quickest to compute using blocks of dem as a raster
             ## however for small rasters we will just treat as a single block
             ## assumes the raster is padded with NA
-            
-            d <- terra::as.matrix( private$brk[["filled_dem"]] , wide=TRUE)
-            ch <- terra::as.matrix( private$brk[["channel"]] , wide=TRUE)
+            d <- values( private$brk[["filled_dem"]], format="matrix" )
+            ch <- values( private$brk[["channel"]], format="matrix" )
 
             ## work out order to pass through the cells
             idx <- order(d,decreasing=TRUE,na.last=NA)
@@ -543,7 +539,7 @@ dynatopGIS <- R6::R6Class(
             
             ## distances and contour lengths
             ## distance between cell centres
-            rs <- terra::res( private$brk )
+            rs <- raster::res( private$brk )
             dxy <- rep(sqrt(sum(rs^2)),8)
             dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
@@ -596,18 +592,11 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## save raster maps
-            out <- terra::rast( private$brk[["dem"]], names="gradient", vals=gr )
-            rstFile <- file.path(private$projectFolder,"gradient.tif")
-            terra::writeRaster(out, rstFile); private$brk[["gradient"]] <- terra::rast(rstFile)
-
-            out <- terra::rast( private$brk[["dem"]], names="upslope_area", vals=upa )
-            rstFile <- file.path(private$projectFolder,"upslope_area.tif")
-            terra::writeRaster(out, rstFile); private$brk[["upsloipe_area"]] <- terra::rast(rstFile)
-
-            out <- terra::rast( private$brk[["dem"]], names="atb", vals=atb )
-            rstFile <- file.path(private$projectFolder,"atb.tif")
-            terra::writeRaster(out, rstFile); private$brk[["atb"]] <- terra::rast(rstFile)
-
+            out <- private$brk[["dem"]];
+            values(out) <- gr; private$brk[["gradient"]] <- out
+            values(out) <- upa; private$brk[["upslope_area"]] <- out
+            values(out) <- atb; private$brk[["atb"]] <- out
+            private$writeTIF()          
         },
         ## work out flow lengths to channel
         apply_flow_lengths = function(verbose){
@@ -622,8 +611,8 @@ dynatopGIS <- R6::R6Class(
             ## it is quickest to compute using blocks of dem as a raster
             ## however for small rasters we will just treat as a single block
             ## assumes the raster is padded with NA
-            d <- terra::as.matrix( private$brk[["filled_dem"]], wide=TRUE )
-            ch <- terra::as.matrix( private$brk[["channel"]],  wide=TRUE )
+            d <- values( private$brk[["filled_dem"]], format="matrix" )
+            ch <- values( private$brk[["channel"]], format="matrix" )
             
             ## create some distance matrices
             sfl <- d; sfl[] <- NA
@@ -633,7 +622,7 @@ dynatopGIS <- R6::R6Class(
 
             ## distances and contour lengths
             ## distance between cell centres
-            rs <- terra::res( private$brk )
+            rs <- raster::res( private$brk )
             dxy <- rep(sqrt(sum(rs^2)),8)
             dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
@@ -683,27 +672,17 @@ dynatopGIS <- R6::R6Class(
 
 
             ## save raster maps
-            out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd )
-            rstFile <- file.path(private$projectFolder,"band.tif")
-            terra::writeRaster(out, rstFile); private$brk[["band"]] <- terra::rast(rstFile)
-
-            out <- terra::rast( private$brk[["dem"]], names="shortest_flow_length", vals=sfl )
-            rstFile <- file.path(private$projectFolder,"shortest_flow_length.tif")
-            terra::writeRaster(out, rstFile); private$brk[["shortest_flow_length"]] <- terra::rast(rstFile)
-
-            out <- terra::rast( private$brk[["dem"]], names="dominant_flow_length", vals=dfl )
-            rstFile <- file.path(private$projectFolder,"dominant_flow_length.tif")
-            terra::writeRaster(out, rstFile); private$brk[["dominant_flow_length"]] <- terra::rast(rstFile)
-
-            out <- terra::rast( private$brk[["dem"]], names="expected_flow_length", vals=efl )
-            rstFile <- file.path(private$projectFolder,"expected_flow_length.tif")
-            terra::writeRaster(out, rstFile); private$brk[["expected_flow_length"]] <- terra::rast(rstFile)
-
+            out <- private$brk[["dem"]];
+            values(out) <- bnd; private$brk[["band"]] <- out
+            values(out) <- sfl; private$brk[["shortest_flow_length"]] <- out
+            values(out) <- dfl; private$brk[["dominant_flow_length"]] <- out
+            values(out) <- efl; private$brk[["expected_flow_length"]] <- out
+            private$writeTIF()
         },
         
         ## split_to_class
         apply_classify = function(layer_name,base_layer,cuts){
-            
+
             ## check base layer exists
             if(!(base_layer %in% names(private$brk))){
                 stop(paste(c("Missing layers:",base_layer,sep="\n")))
@@ -714,25 +693,27 @@ dynatopGIS <- R6::R6Class(
                 stop("layer_name is already used")
             }
 
-            ## TODO - check layer_name isn;t reserved
-            
             ## load base layer and mask out channel
-            x <-  terra::mask( private$brk[[base_layer]], private$brk[["channel"]], inverse=TRUE)
+            x <-  mask( private$brk[[base_layer]], private$brk[["channel"]], inverse=TRUE)
 
             ## work out breaks
             brk <- as.numeric(cuts)
             if( length(brk)==1 | is.na(brk) ){
                 ## this defines brks in the same way as cut would otherwise
-                rng <- as.numeric( terra::global(x, fun="range",na.rm=TRUE) )
+                rng <- cellStats(x,range)
                 brk <- seq(rng[1],rng[2],length=brk+1)
             }
             ## cut the raster
-            outFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
-            private$brk[[ layer_name ]] <- terra::classify(x,rcl=brk,include.lowest=TRUE,
-                                 filename= outFile, names=layer_name)
+            x <- cut(x,breaks=brk,include.lowest=TRUE)
 
-            out <- list(type="classification", layer=base_layer, cuts=brk)
-            writeLines( jsonlite::toJSON(out), file.path(private$projectFolder,paste0(layer_name,".json")) )
+            private$brk[[layer_name]] <- x
+            private$writeTIF()
+            
+            private$layers[[layer_name]] <- list(
+                type="classification",
+                layer=base_layer,
+                cuts=brk)
+            private$writeJSON()
         },
         ## split_to_class
         apply_combine_classes = function(layer_name,pairs,burns){
@@ -753,40 +734,39 @@ dynatopGIS <- R6::R6Class(
             init <- TRUE
             for(ii in pairs){
                 ## x <- private$brk[[ii]]
-                x <-  terra::mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
+                x <-  mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
                 if(init){
                     cp <- x
                     init <- FALSE
                 }else{
                     cp <- 0.5*(cp+x)*(cp+x+1)+x
-                    uq <- sort(terra::unique(cp)[[1]])
-                    cp <- terra::classify(cp, c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf),include.lowest=TRUE)
+                    uq <- sort(unique(cp))
+                    cp <- cut(cp, c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf))
                 }
             }
 
             ## put all the burns into a single raster
             brn <- cp; brn[] <- NA
             for(ii in burns){
-                x <-  terra::mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
+                x <-  mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
                 if(is.null(brn)){
                     brn <- x
                 }else{
-                    brn <- terra::cover(x,brn)
+                    brn <- cover(x,brn)
                 }
             }
             ## add burns to pairs
-            cp <- terra::cover(brn,cp)
-            uq <- sort(terra::unique(cp)[[1]])
+            cp <- cover(brn,cp)
+            uq <- sort(unique(cp))
             cts <- c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf)
-            cp <- terra::classify(cp,cts)
-            if(length(burns)>0){ brn <- terra::classify(brn,cts) }
+            cp <- cut(cp,cts)
+            if(length(burns)>0){ brn <- cut(brn,cts) }
             
-            cp <- cp + 1 ## classify returns numeric values starting at 0
             
             ## make table of layer values - should be able to combine with above??
-            cpv <- terra::as.matrix(cp, wide=TRUE) ## quicker when a vector
-            uq <- sort(terra::unique(cp)[[1]]) ## unique values
-            uqb <- terra::unique(brn)[[1]] ## unique burn values
+            cpv <- raster::getValues(cp) ## quicker when a vector
+            uq <- sort(unique(cp)) ## unique values
+            uqb <- unique(brn) ## unique burn values
             
             cuq <- rep(NA,length(uq)) ##index of unique values
             for(ii in which(is.finite(cpv))){
@@ -797,11 +777,11 @@ dynatopGIS <- R6::R6Class(
             if(!all(is.finite(cuq))){
                 stop("Error in computing combinations")
             }
-
+            
             ## create data frame
             df <- data.frame(uq); names(df) <- layer_name
             for(ii in pairs){
-                df[[ii]] <- terra::as.matrix(private$brk[[ii]],wide=TRUE)[cuq] ## read in raster
+                df[[ii]] <- private$brk[[ii]][cuq] ## read in raster
             }
             df$burns <- df[[layer_name]] %in% uqb
             
@@ -825,19 +805,12 @@ dynatopGIS <- R6::R6Class(
             ##     df <- rbind(df,y)
                 
             ## }
-            outFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
-            private$brk[[ layer_name ]] <- terra::writeRaster( cp, outFile, names=layer_name)
             
-            out <- list(type="combination",
-                        groups=df)
-            writeLines( jsonlite::toJSON(out), file.path(private$projectFolder,paste0(layer_name,".json")) )
-
- 
-            ## private$brk[[layer_name]] <- cp
-            ## private$writeTIF()
-            ## private$layers[[layer_name]] <- list(type="combination",
-            ##                                      groups=df)
-            ## private$writeJSON()
+            private$brk[[layer_name]] <- cp
+            private$writeTIF()
+            private$layers[[layer_name]] <- list(type="combination",
+                                                 groups=df)
+            private$writeJSON()
         },
         
         ## create a model  

@@ -2,9 +2,9 @@
 
 export(convert_channel)
 export(dynatopGIS)
-import(raster)
 importFrom(R6,R6Class)
 importFrom(jsonlite,fromJSON)
 importFrom(jsonlite,toJSON)
 importFrom(methods,is)
 importFrom(rgeos,gBuffer)
+importFrom(terra,rast)

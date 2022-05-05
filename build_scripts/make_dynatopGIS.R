@@ -21,7 +21,7 @@ buildFile <- devtools::build(pacPath)
 install.packages(buildFile)
 drat::insertPackage(buildFile,dratPath)
 
-## mac and windows
+## mac and windowsRR
 rhub::validate_email() # for first time that session
 pkgName <- sub('\\.tar.gz$', '', basename(buildFile)) 
 ## rhub::platforms()[,1] # lists platforms

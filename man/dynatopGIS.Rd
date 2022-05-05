@@ -19,7 +19,7 @@ ctch <- dynatopGIS$new(file.path(demo_dir,"test"))
 
 ## add digital elevation and channel data
 dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
-dem <- raster::raster(dem_file)
+dem <- terra::rast(dem_file)
 ctch$add_dem(dem)
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 package="dynatopGIS", mustWork = TRUE)
@@ -72,18 +72,18 @@ unlink(demo_dir)
 \subsection{Method \code{new()}}{
 Initialise a project, or reopen an existing project
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$new(projFile)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$new(projectFolder)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{projFile}}{basename of data files}
+\item{\code{projectFolder}}{folder for data files}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp,json>}
+This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp>}
 }
 
 \subsection{Returns}{
@@ -141,10 +141,6 @@ Import channel data to the `dynatopGIS` object
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{channel}}{a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information}
-
-\item{\code{property_names}}{named vector of columns of the spatial data frame to use for channel properties - see details}
-
-\item{\code{default_width}}{default width of a channel if not specified in property_names. Defaults to 2 metres.}
 }
 \if{html}{\out{</div>}}
 }

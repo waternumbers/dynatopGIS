@@ -4,7 +4,7 @@
 #'
 #' @name dynatopGIS
 #' @docType package
-#' @import raster
+#' @importFrom terra rast
 #' @importFrom rgeos gBuffer
 #' @importFrom jsonlite fromJSON toJSON
 #' @importFrom R6 R6Class
