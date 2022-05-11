@@ -602,7 +602,7 @@ dynatopGIS <- R6::R6Class(
 
             out <- terra::rast( private$brk[["dem"]], names="upslope_area", vals=upa )
             rstFile <- file.path(private$projectFolder,"upslope_area.tif")
-            terra::writeRaster(out, rstFile); private$brk[["upsloipe_area"]] <- terra::rast(rstFile)
+            terra::writeRaster(out, rstFile); private$brk[["upslope_area"]] <- terra::rast(rstFile)
 
             out <- terra::rast( private$brk[["dem"]], names="atb", vals=atb )
             rstFile <- file.path(private$projectFolder,"atb.tif")
@@ -853,9 +853,15 @@ dynatopGIS <- R6::R6Class(
             if(!all(has_rq)){
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
-            if(!(class_lyr %in% names(private$layers) )){
-                stop(class_lyr, " is not a classification")
+
+            jsonFile <- paste0(tools::file_path_sans_ext(terra::sources(private$brk[[class_lyr]])),".json")
+            if( !file.exists(jsonFile) ){
+                stop("No json file giving basis of the classifications")
             }
+            
+            ## if(!(class_lyr %in% names(private$layers) )){
+            ##     stop(class_lyr, " is not a classification")
+            ## }
 
             model <- list()
             
@@ -865,13 +871,14 @@ dynatopGIS <- R6::R6Class(
 
             if(verbose){ cat("Initialising model","\n") }
             ## start model data frame and add minimum distance
-            model$hru <- private$layers[[class_lyr]]$groups
-            min_dst <- zonal(dst,cls,min) # minimum distance for each classification
-            idx <- match(model$hru[[class_lyr]],min_dst[,"zone"])
+            model$hru <- jsonlite::fromJSON(jsonFile)$groups
+            
+            min_dst <- terra::zonal(dst,cls,min) # minimum distance for each classification
+            idx <- match(model$hru[[class_lyr]],min_dst[[class_lyr]])
             names(model$hru) <- paste0("cls_",names(model$hru))
-            model$hru$min_dst <- min_dst[idx, "value"]
+            model$hru$min_dst <- min_dst[idx, dist_lyr]
             ##browser()
-            model$hru$zone <- min_dst[idx, "zone"]
+            ##model$hru$zone <- min_dst[idx, "zone"]
             if(!all(is.finite(model$hru$min_dst))){
                 stop("Unable to compute a finite minimum distance for all HRUs")
             }
@@ -879,35 +886,51 @@ dynatopGIS <- R6::R6Class(
             ## add id and change classification map to match
             model$hru <- model$hru[order(model$hru$min_dst,decreasing=TRUE),] # longest distance in first row
             model$hru$id <- (nrow(model$hru):1) + max(private$shp$id) ## ensure id is greater then number of channels
-            map <- raster::subs(cls,model$hru,by="zone",which="id")
+            map <- terra::subst(cls,from=model$hru[[paste0("cls_",class_lyr)]],to=model$hru$id)
 
             ## add the channel data
             model$hru <- merge(model$hru,private$shp[,c("id","name","length")],by="id",all=TRUE)
             model$hru$is_channel <- model$hru$id <= max(private$shp$id)
             model$hru$min_dst[model$hru$is_channel] <- 0
-            map <- cover(private$brk[["channel"]], map)
+            map <- terra::cover(private$brk[["channel"]], map)
 
+            ## add the options controlling lateral flow calculations
+            model$hru$q_sf <- "constant_velocity"
+            model$hru$q_sz <- transmissivity
 
             
+                      
+            ## add parameters
+            fqsf <- function(x){
+                list(opt = x,
+                     par = switch(x,
+                                  "constant_velocity" = list(r_sfmax = Inf, v_sf = 0.1),
+                                  "constant_velocity_raf" = list(r_sfmax = Inf, v_sf = 0.1,s_raf=100,t_raf=10*60*60),
+                                  stop("Unrecognised surface option")
+                                  )
+                     )
+            }
             
-            ## add tranmissivity dependent parameters
-            par <- switch(transmissivity,
-                          "exp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
-                                    ln_t0 = -2, c_sz = NA, m = 0.04, D= NA, m_2 = NA, omega = NA,
-                                    s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0.0, t_raf=Inf),
-                          "bexp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
-                                     ln_t0 = -2, c_sz = NA, m = 0.04, D=5, m_2 = NA, omega = NA,
-                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0, t_raf=Inf),
-                          "dexp" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
-                                     ln_t0 = -2, c_sz = NA, m = 0.04, D= NA, m_2 = 0.0002, omega = 0.5,
-                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0, t_raf=Inf),
-                          "cnst" = c(r_sfmax = Inf, c_sf = 0.1, s_rzmax = 0.05, t_d = 7200,
-                                     ln_t0 = NA, c_sz = 0.01, m = NA, D= 10, m_2 = NA, omega = NA,
-                                     s_rz0 = 0.75, r_uz_sz0 = 1e-6, s_raf=0.0, t_raf=Inf),
-                          stop("Unrecognised tranmissivity")
-                          )
-            model$hru$opt = transmissivity
-            model$hru$par <- rep(list(par),nrow(model$hru))
+            fqsz <- function(x){
+                list(opt = x,
+                     par = switch(x,
+                                  "exp" = list( ln_t0 = -2, m = 0.04 ),
+                                  "bexp" = list( ln_t0 = -2, m = 0.04, D=5 ),
+                                  "dexp" = list( ln_t0 = -2, m = 0.04, m_2 = 0.0002, omega = 0.5 ),
+                                  "cnst" = list( v_sz = 0.01, D= 10 ),
+                                  stop("Unrecognised tranmissivity")
+                                  )
+                     )
+            }
+            
+            model$hru$q_sf <- lapply( model$hru$q_sf,fqsf )
+            model$hru$q_sz <- lapply( model$hru$q_sz,fqsz )
+            model$hru$s_rzmax <- 0.05
+            model$hrus_rz0 <- 0.75
+            model$hru$t_d <- 7200
+            model$hru$r_uz_sz0 <- 1e-6
+            
+            ##model$hru$par <- Map(c, sf_par, rz_uz_par, sz_par)
 
             
             ## work out the properties
@@ -920,15 +943,15 @@ dynatopGIS <- R6::R6Class(
             
             ## it is quickest to compute using blocks of a raster
             ## however for small rasters we will just treat as a single block
-            d <- values( private$brk[["filled_dem"]] , format="matrix" )
-            mp <- values( map , format="matrix")
-            dst <- values( dst , format="matrix")
-            gr <- values( private$brk[["gradient"]] , format="matrix")
-            atb <- values( private$brk[["atb"]] , format="matrix")
+            d <- terra::as.matrix( private$brk[["filled_dem"]] , wide=TRUE )
+            mp <- terra::as.matrix( map  , wide=TRUE )
+            dst <- terra::as.matrix( dst  , wide=TRUE )
+            gr <- terra::as.matrix( private$brk[["gradient"]]  , wide=TRUE )
+            atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
 
             ## distances and contour lengths
             ## distance between cell centres
-            rs <- raster::res( private$brk )
+            rs <- terra::res( private$brk )
             dxy <- rep(sqrt(sum(rs^2)),8)
             dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
@@ -936,8 +959,7 @@ dynatopGIS <- R6::R6Class(
  
             ## initialise new variables
             model$hru$area <- model$hru$width <- model$hru$atb_bar <- model$hru$s_bar <- as.numeric(0)
-            model$hru$width[model$hru$is_channel] <- NA
-
+            
             flux <- rep( list(numeric(0)), nrow(model$hru))
             
             ## work out order to pass through the cells
@@ -945,13 +967,13 @@ dynatopGIS <- R6::R6Class(
             n_to_eval <- c(length(idx),0,length(idx)/10)
 
             for(ii in idx){
-                #print(ii)
+                
                 id <- mp[ii] ## id
                 model$hru$area[id] <- model$hru$area[id] + 1
                 model$hru$atb_bar[id] <- model$hru$atb_bar[id] + atb[ii]
                 model$hru$s_bar[id] <- model$hru$s_bar[id] + gr[ii]
-
-                if( dst[ii] <= (model$hru$min_dst[id] + delta_dist) ){
+                
+                if( model$hru$is_channel[id]  |  (dst[ii] <= (model$hru$min_dst[id] + delta_dist)) ){
                     
                     ## look for flow direction      
                     ngh <- ii + delta ## neighbouring cells
@@ -1042,8 +1064,8 @@ dynatopGIS <- R6::R6Class(
             ## Add point inflow table
             ## ##################################
             ## blank point inflow table
-            if(verbose){ cat("Adding a blank point_inflow table","\n") }
-            model$input_flux<- data.frame(
+            if(verbose){ cat("Adding a blank inflow table","\n") }
+            model$inflow_table <- data.frame(
                 name = character(0),
                 id = integer(0),
                 state = character(0),
@@ -1060,6 +1082,7 @@ dynatopGIS <- R6::R6Class(
                     id = model$hru$id,
                     frc = as.numeric(1) )
             }else{
+                browser()
                 tmp <- crosstab(map,private$brk[[rain_lyr]],long=TRUE)
                 names(tmp[[ii]]) <- c("id","name","cnt")                
                 tmp <- tmp[order(tmp$id),]
@@ -1095,13 +1118,12 @@ dynatopGIS <- R6::R6Class(
             ## ############################
             ## save model
             
-            brk <- raster::brick(map); names(brk) <- "hru"
-            brk[["class"]] <- private$brk[[class_lyr]]
-            brk[["channel"]] <- private$brk[["channel"]]
+            names(map) <- "hru"
+            map[["class"]] <- private$brk[[class_lyr]]
+            map[["channel"]] <- private$brk[["channel"]]
             if( !is.null(pet_lyr) ){ brk[["pet"]] <- private$brk[[pet_lyr]] }
             if( !is.null(rain_lyr) ){ brk[["precip"]] <- private$brk[[rain_lyr]] }
-            brk <- terra::rast(brk)
-            terra::writeRaster(brk,paste0(layer_name,".tif"),overwrite=TRUE)
+            terra::writeRaster(map,paste0(layer_name,".tif"),overwrite=TRUE)
             saveRDS(model,paste0(layer_name,".rds"))
         }        
     )
