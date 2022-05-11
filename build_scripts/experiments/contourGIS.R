@@ -1,47 +1,28 @@
 ## test code for channel based sequences
 rm(list=ls())
-private <- list()
-private$brk <- terra::rast(c("/home/smithpj1/Documents/local_share/eden/model/filled_dem.tif",
-                      "/home/smithpj1/Documents/local_share/eden/model/channel.tif"))
 
+rst <- terra::rast(c("/home/smithpj1/Documents/local_share/eden/model/filled_dem.tif",
+                     "/home/smithpj1/Documents/local_share/eden/model/channel.tif"))
 
-
-rq <- c("filled_dem","channel")
-if(!all( rq %in% names( private$brk) )){
-    stop("Not all required input layers have been generated \n",
-         "Try running sink_fill first")
-}
-
-
-d <- terra::as.matrix( private$brk[["filled_dem"]], wide=TRUE )
-ch <- terra::as.matrix( private$brk[["channel"]],  wide=TRUE )
-
-cntr <- terra::as.contour(private$brk[["filled_dem"]], maxcells=terra::ncell(d))
-
-cntr_rst <- terra::rasterize(cntr,private$brk[["filled_dem"]],field = "level",touches=TRUE)
-
-ctr <- terra::as.matrix( cntr_rst, wide=TRUE)
-
-
-
-## assign to grp by dominant flow
 ## distances and contour lengths
 ## distance between cell centres
-rs <- terra::res( private$brk )
+rs <- terra::res( rst )
 dxy <- rep(sqrt(sum(rs^2)),8)
 dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
 dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
-nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+nr <- nrow(rst); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
 
 
+## contour the dem
+tmp <- terra::as.contour(rst[["filled_dem"]], maxcells=terra::ncell(rst[["filled_dem"]]), levels=seq(8,1000,by=10))
+rst[["cntr"]] <- terra::rasterize(tmp,rst,field = "level",touches=TRUE)
 
+## remove contour cells whose dominant flow path is to cells on the same level
+ctr <- terra::as.matrix( rst[["cntr"]], wide=TRUE)
+d <- terra::as.matrix( rst[["filled_dem"]], wide=TRUE)
 
-
-
-## simplify ctr so that no contour cell has a dominant flow path to another
 idx <- which(is.finite(ctr))
 for(ii in idx){
-    ## it is not already in a group
     jdx <- ii+delta
     gcl <- (d[jdx]-d[ii])*dcl/dxy
     kdx <- which.min(gcl)
@@ -49,167 +30,72 @@ for(ii in idx){
         ctr[ii] <- NA
     }
 }
+rst[["cntr"]] <- ctr
+
+## compute level bands by splitting topography
+
+## single pass grouping... top to bottom
+## - if NA
+##   - if higher cell then take from one with largest flow direction
+##   - if not start a new group
+## - work out d/s cell
+##   - if d/s cell river do nothing
+##   - if d/s cell in different level start a new group
+##   - if d/s cell aleady has a group then merge group numbers
+
+## compute properties for each unit - determin classes of other bit by modal value
+
+grp <- d*NA
+
+idx <- order(d,decreasing=TRUE,na.last=NA)
+
+for(ii in idx){
+    
 
 
-## initialise th grouping
+## work out cell that is d/s using dominant flow direction
+dfd <- d*NA
+ch <- terra::as.matrix( rst[["channel"]], wide=TRUE)
+
+idx <- order(d,na.last=NA)
+
+for(ii in idx){
+    if( is.finite(ch[ii]) ){
+        dfd[ii] <- ii
+    }else{
+        
+        ## it is not already in a group
+        jdx <- ii+delta
+        gcl <- (d[jdx]-d[ii])*dcl/dxy
+        kdx <- which.min(gcl)
+        dfd[ii] <- jdx[kdx]
+    }
+}
+
+rst[["dfd"]] <- dfd
+
+## work out group
 idx <- which(is.finite(ctr))
-grp <- ctr*NA
+grp <- d*NA
 grp[idx] <- (1:length(idx)) + max(ch,na.rm=TRUE)
-
 idx <- which(is.finite(ch))
 grp[idx] <- ch[idx]
 
-
-## if we go up in height order then we must have looked at all lower
-## cells first
 idx <- order(d,na.last=NA)
-            
-n_to_eval <- length(idx)
-verbose=TRUE
-it <- 1
-if(verbose){
-    print_step <- round(n_to_eval/20)
-    next_print <- print_step
-}else{
-    next_print <- Inf
-}
-
 for(ii in idx){
-    if(is.finite(grp[ii])){ next }
-
-    ## it is not already in a group
-    jdx <- ii+delta
-    gcl <- (d[jdx]-d[ii])*dcl/dxy
-    kdx <- which.min(gcl)
-    grp[ii] <- grp[ jdx[kdx] ]
-    
-    ## is_lower <- is.finite(gcl) & gcl<0
-    ## kdx <- jdx[is_lower]
-    ##                 bnd[ii] <- max(bnd[kdx])+1
-    ##                 sfl[ii] <- min(sfl[kdx]+dxy[is_lower])
-    ##                 efl[ii] <- sum((efl[kdx]+dxy[is_lower])*gcl[is_lower])/sum(gcl[is_lower])
-    ##                 kdx <- which.min(gcl)
-    ##                 dfl[ii] <- dfl[jdx[kdx]]+dxy[kdx]
-    ##             }
-
-    ## verbose output here
-    if(it >= next_print){
-        cat(round(100*it / n_to_eval,1),
-            "% complete","\n")
-        next_print <- next_print+print_step
-    }
-    
-    it <- it+1
-}
-
-
-## going up leaves "hanging" groups which don;t meet the upper contour which need merging
-
-## cells first
-idx <- order(d,na.last=NA)
+    if( is.finite(grp[ii]) ){ next }
             
-n_to_eval <- length(idx)
-verbose=TRUE
-it <- 1
-if(verbose){
-    print_step <- round(n_to_eval/20)
-    next_print <- print_step
-}else{
-    next_print <- Inf
+    grp[ii] <- grp[ dfd[ii] ]
 }
+rst[["grp"]] <- grp
 
-for(ii in idx){
-    if(is.finite(grp[ii])){ next }
-
-    ## it is not already in a group
-    jdx <- ii+delta
-    gcl <- (d[jdx]-d[ii])*dcl/dxy
-    kdx <- which.min(gcl)
-    grp[ii] <- grp[ jdx[kdx] ]
-    
-    ## is_lower <- is.finite(gcl) & gcl<0
-    ## kdx <- jdx[is_lower]
-    ##                 bnd[ii] <- max(bnd[kdx])+1
-    ##                 sfl[ii] <- min(sfl[kdx]+dxy[is_lower])
-    ##                 efl[ii] <- sum((efl[kdx]+dxy[is_lower])*gcl[is_lower])/sum(gcl[is_lower])
-    ##                 kdx <- which.min(gcl)
-    ##                 dfl[ii] <- dfl[jdx[kdx]]+dxy[kdx]
-    ##             }
-
-    ## verbose output here
-    if(it >= next_print){
-        cat(round(100*it / n_to_eval,1),
-            "% complete","\n")
-        next_print <- next_print+print_step
-    }
-    
-    it <- it+1
-}
+## make a table to populate in the next bit
+tbl <- data.frame(grp=sort(unique(as.vector(grp))),
+                  isSource = FALSE,
+                  isConnected = FALSE)
+tbl$isChannel <- tbl$grp <= max(ch,na.rm=TRUE)
 
 
-out <- terra::rast( private$brk[["filled_dem"]], names="sequence", vals=grp )
+## work out groups that are drained into from a contour line
 
-
-tmp <- table(ch)
-quantile(tmp)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## ## create some distance matrices
-## sq <- d*NA
-
-## ## distances and contour lengths
-## ## distance between cell centres
-## rs <- terra::res( private$brk )
-## dxy <- rep(sqrt(sum(rs^2)),8)
-## dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
-## dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
-## nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
-
-## cnt <- 1
-## for(jj in sort(unique(as.vector(ch)))){ ## loop river segments
-##     idx <- which(ch==jj) ## areas in that channel
-##     sq[idx] <- cnt
-##     idx <- unique(as.vector(sapply(idx, function(i){i + delta})))
-
-##     it <- 1
-##     while(length(idx)>0){
-##         #print(paste(it,length(idx)))
-##         ii <- idx[1]
-##         ## if it is a channel remove and don't look
-##         if(is.finite(ch[ii]) | is.na(d[ii]) | is.finite(sq[ii])){
-##             idx <- idx[-1]
-##             next
-##         }
-##         ## find neighbours
-##         jdx <- ii+delta
-##         gcl <- (d[jdx]-d[ii])*dcl/dxy
-##         is_lower <- is.finite(gcl) & gcl<0
-##         kdx <- jdx[is_lower]
-##         tmp <- max(sq[kdx])+1
-##         if( !is.na(tmp) ){
-##             sq[ii] <- tmp
-##             cnt <- max(cnt,tmp) + 1
-##             idx <- unique( c(idx[-1], jdx[!is_lower]) )
-##         }else{
-##             idx <- idx[-1]
-##         }
-##         it <- it+1
-##     }
-##     print(paste(jj, range(sq,na.rm=TRUE)))
-## }
-
-## out <- terra::rast( private$brk[["filled_dem"]], names="sequence", vals=sq )
+idx <- which(is.finite(ctr))

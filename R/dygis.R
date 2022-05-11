@@ -106,6 +106,7 @@ dynatopGIS <- R6::R6Class(
 
             ## handle case where a list of layers is requested
             if( length(layer_name) == 0 ){
+                
                 return( data.frame(layer = names(private$brk), source=terra::sources(private$brk)) )
             }
             ## check layer name exists
