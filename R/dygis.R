@@ -631,6 +631,7 @@ dynatopGIS <- R6::R6Class(
             dfl <- d; dfl[] <- NA
             efl <- d; efl[] <- NA
             bnd <- d; bnd[] <- NA
+            bnd_inc_chn <- d*NA
 
             ## distances and contour lengths
             ## distance between cell centres
@@ -639,6 +640,22 @@ dynatopGIS <- R6::R6Class(
             dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
             nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+
+            ## compute channel bands
+            private$shp$band <- as.integer(NA)
+            eN <- private$shp$endNode
+            sN <- private$shp$startNode
+            cbnd <- private$shp$band
+            idx <- private$shp$id==1
+            cnt <- 1
+            while( any(idx) ){
+                print(cnt)
+                cbnd[idx] <- cnt
+                idx <- eN %in% sN[idx]
+                cnt <- cnt+1
+            }
+            private$shp$band <- cbnd
+
             
             ## if we go up in height order then we must have looked at all lower
             ## cells first
@@ -659,6 +676,7 @@ dynatopGIS <- R6::R6Class(
                     ## just channel
                     bnd[ii] <- 0
                     sfl[ii]  <- dfl[ii] <- efl[ii] <- 0
+                    bnd_inc_chn[ii] <- cbnd[ ch[ii] ]
                 }else{
                     ## it is not a channel
                     jdx <- ii+delta
@@ -666,6 +684,7 @@ dynatopGIS <- R6::R6Class(
                     is_lower <- is.finite(gcl) & gcl<0
                     kdx <- jdx[is_lower]
                     bnd[ii] <- max(bnd[kdx])+1
+                    bnd_inc_chn[ii] <- max(bnd_inc_chn[kdx])+1
                     sfl[ii] <- min(sfl[kdx]+dxy[is_lower])
                     efl[ii] <- sum((efl[kdx]+dxy[is_lower])*gcl[is_lower])/sum(gcl[is_lower])
                     kdx <- which.min(gcl)
@@ -687,6 +706,10 @@ dynatopGIS <- R6::R6Class(
             out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd )
             rstFile <- file.path(private$projectFolder,"band.tif")
             terra::writeRaster(out, rstFile); private$brk[["band"]] <- terra::rast(rstFile)
+
+            out <- terra::rast( private$brk[["dem"]], names="band_inc_chn", vals=bnd_inc_chn)
+            rstFile <- file.path(private$projectFolder,"band_inc_chn.tif")
+            terra::writeRaster(out, rstFile); private$brk[["band_inc_chn"]] <- terra::rast(rstFile)
 
             out <- terra::rast( private$brk[["dem"]], names="shortest_flow_length", vals=sfl )
             rstFile <- file.path(private$projectFolder,"shortest_flow_length.tif")
