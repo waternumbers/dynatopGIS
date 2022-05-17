@@ -3,10 +3,10 @@ rm(list=ls())
 graphics.off()
 
 devtools::load_all("../")
-unlink( list.files(".",pattern="^demo"))
+unlink( list.files("./demo",full.names=TRUE) )
 
 
-demo_file <- "demo.nc"
+demo_file <- "./demo"
 
 ctch <- dynatopGIS$new(demo_file)
 dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
@@ -19,7 +19,10 @@ chn <- convert_channel(channel_file,c(name="identifier",
                                       endNode="endNode",
                                       startNode="startNode",
                                       length="length"))
-ctch$add_channel(chn)
+fnm <- paste0(tempfile(),".shp")
+raster::shapefile(chn,fnm)
+
+ctch$add_channel(fnm)
 ctch$get_layer()
 
 ctch$sink_fill()
@@ -32,7 +35,7 @@ ctch$compute_flow_lengths()
 ctch$get_layer()
 
 tmp <- ctch$get_layer("filled_dem")
-tmp <- raster::reclassify( tmp,
+tmp <- terra::classify( tmp,
                           matrix(c(0,500,NA,
                                    500,1000,-999),
                                  byrow=TRUE))
@@ -49,7 +52,7 @@ ctch$get_layer()
 
 ctch$get_method("atb_20")
 
-ctch$combine_classes("atb_20_band",c("atb_20","band"))
+ctch$combine_classes("atb_20_band",c("atb_20","band_inc_chn"))
 ctch$get_method("atb_20_band")
 
 ctch$combine_classes("atb_20_band_500",pairs=c("atb_20_band"),burns="greater_500")
@@ -57,7 +60,15 @@ head(ctch$get_method("atb_20_band_500")$groups)
 ctch$plot_layer("atb_20_band_500")
 
 
-ctch$create_model("new_model","atb_20_band","band",verbose=TRUE)
+
+
+rm(list=ls())
+graphics.off()
+devtools::load_all("../")
+demo_file <- "./demo"
+ctch <- dynatopGIS$new(demo_file)
+
+ctch$create_model("./demo/model_1","atb_20_band","band_inc_chn",verbose=TRUE)
 
 
 ctch$create_model("new_model2","atb_20_band_500","band",verbose=TRUE)

@@ -201,19 +201,22 @@ dynatopGIS <- R6::R6Class(
         #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
-                                transmissivity = c("exp","bexp","cnst","dexp"),
+                                sf_opt = c("cnst"),
+                                sz_opt = c("exp","bexp","cnst","dexp"),
                                 dist_delta=0,
                                 rain_layer=NULL,rain_label=character(0),
                                 pet_layer=NULL,pet_label=character(0),
                                 verbose=FALSE){
+            
             ## check valid transmissivity and channel_solver
-            transmissivity <- match.arg(transmissivity)
+            sf_opt<- match.arg(sf_opt)
+            sz_opt <- match.arg(sz_opt)
             
             private$apply_create_model(class_layer, dist_layer,dist_delta,
                                        rain_layer, rain_label,
                                        pet_layer, pet_label,
                                        layer_name,verbose,
-                                       transmissivity)
+                                       sf_opt, sz_opt)
 
             invisible(self)
         },
@@ -868,8 +871,9 @@ dynatopGIS <- R6::R6Class(
         apply_create_model = function(class_lyr,dist_lyr,delta_dist,
                                       rain_lyr,rainfall_label,
                                       pet_lyr,pet_label,layer_name,verbose,
-                                      transmissivity){
-
+                                      sf_opt,
+                                      sz_opt){
+            
             rq <- c("atb","gradient","filled_dem","channel",
                     class_lyr,dist_lyr,
                     rain_lyr,pet_lyr)
@@ -910,26 +914,33 @@ dynatopGIS <- R6::R6Class(
             ## add id and change classification map to match
             model$hru <- model$hru[order(model$hru$min_dst,decreasing=TRUE),] # longest distance in first row
             model$hru$id <- (nrow(model$hru):1) + max(private$shp$id) ## ensure id is greater then number of channels
-            map <- terra::subst(cls,from=model$hru[[paste0("cls_",class_lyr)]],to=model$hru$id)
-
+            idx <- is.finite( model$hru[[paste0("cls_",class_lyr)]] )
+            frm <- model$hru[[paste0("cls_",class_lyr)]][idx]
+            tw <- model$hru$id[idx]
+            
+            ## map <- terra::subst(cls,from=frm,to=data.frame( frm=frm,to=tw)) ## this doesn't work as expected...
+            x <- terra::values(cls,mat=FALSE) #x <- as.vector( terra::as.matrix(cls) )
+            x <- c(tw,x)[match(x, c(frm,x))]
+            map <- cls; names(map) <- "class"
+            map[["hru"]] <- x
+            
+            #browser()
+            
             ## add the channel data
             model$hru <- merge(model$hru,private$shp[,c("id","name","length")],by="id",all=TRUE)
             model$hru$is_channel <- model$hru$id <= max(private$shp$id)
             model$hru$min_dst[model$hru$is_channel] <- 0
-            map <- terra::cover(private$brk[["channel"]], map)
+            map[["hru"]] <- terra::cover(private$brk[["channel"]], map[["hru"]])
 
             ## add the options controlling lateral flow calculations
-            model$hru$q_sf <- "constant_velocity"
-            model$hru$q_sz <- transmissivity
-
+            model$hru$sf <- sf_opt
+            model$hru$sz <- sz_opt
             
-                      
             ## add parameters
             fqsf <- function(x){
                 list(opt = x,
                      par = switch(x,
-                                  "constant_velocity" = list(r_sfmax = Inf, v_sf = 0.1),
-                                  "constant_velocity_raf" = list(r_sfmax = Inf, v_sf = 0.1,s_raf=100,t_raf=10*60*60),
+                                  "cnst" = list(r_sfmax = Inf, v_sf = 0.1,s_raf=100,t_raf=10*60*60),
                                   stop("Unrecognised surface option")
                                   )
                      )
@@ -938,19 +949,19 @@ dynatopGIS <- R6::R6Class(
             fqsz <- function(x){
                 list(opt = x,
                      par = switch(x,
-                                  "exp" = list( ln_t0 = -2, m = 0.04 ),
-                                  "bexp" = list( ln_t0 = -2, m = 0.04, D=5 ),
-                                  "dexp" = list( ln_t0 = -2, m = 0.04, m_2 = 0.0002, omega = 0.5 ),
-                                  "cnst" = list( v_sz = 0.01, D= 10 ),
+                                  "exp" = list( t_0 = 0.135, m = 0.04 ),
+                                  "bexp" = list( t_0 = 0.135, m = 0.04, D=5 ),
+                                  "dexp" = list( t_0 = 0.135, m1 = 0.04, m2 = 0.0002, omega = 0.5 ),
+                                  "cnst" = list( v_sz = 0.01, D = 10 ),
                                   stop("Unrecognised tranmissivity")
                                   )
                      )
             }
             
-            model$hru$q_sf <- lapply( model$hru$q_sf,fqsf )
-            model$hru$q_sz <- lapply( model$hru$q_sz,fqsz )
+            model$hru$sf <- lapply( model$hru$sf,fqsf )
+            model$hru$sz <- lapply( model$hru$sz,fqsz )
             model$hru$s_rzmax <- 0.05
-            model$hrus_rz0 <- 0.75
+            model$hru$s_rz0 <- 0.75
             model$hru$t_d <- 7200
             model$hru$r_uz_sz0 <- 1e-6
             
@@ -968,7 +979,7 @@ dynatopGIS <- R6::R6Class(
             ## it is quickest to compute using blocks of a raster
             ## however for small rasters we will just treat as a single block
             d <- terra::as.matrix( private$brk[["filled_dem"]] , wide=TRUE )
-            mp <- terra::as.matrix( map  , wide=TRUE )
+            mp <- terra::as.matrix( map[["hru"]]  , wide=TRUE )
             dst <- terra::as.matrix( dst  , wide=TRUE )
             gr <- terra::as.matrix( private$brk[["gradient"]]  , wide=TRUE )
             atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
@@ -1009,7 +1020,7 @@ dynatopGIS <- R6::R6Class(
                     
                     if( any(to_use) ){
                         nghid <- paste(nghid[to_use])
-                        tmp <- nghid[!nghid %in% names(flux[[id]])]
+                        tmp <- nghid[!(nghid %in% names(flux[[id]]))]
                         if(length(tmp)>0){
                             flux[[id]][ tmp ] <- 0
                         }
@@ -1030,6 +1041,7 @@ dynatopGIS <- R6::R6Class(
             model$hru$atb_bar <- model$hru$atb_bar / model$hru$area
             model$hru$area <- model$hru$area * prod(rs)
 
+            
             ## check fluxes are valid and convert to form sz_flux
             nlink <- sapply(flux,length)
             idx <- which(nlink==0)
@@ -1039,13 +1051,13 @@ dynatopGIS <- R6::R6Class(
             }
             for(ii in 1:length(flux)){
                 if(nlink[ii]>0){
-                    flux[[ii]] <- data.frame(from = as.integer(ii),
-                                             to = as.integer(names(flux[[ii]])),
-                                             frc = flux[[ii]]/sum(flux[[ii]]))
+                    flux[[ii]] <- list( id = as.integer(names(flux[[ii]])),
+                                       frc = flux[[ii]]/sum(flux[[ii]]))
+                }else{
+                    flux[[ii]] <- list( id = integer(0), frc = numeric(0) )
                 }
             }
-            
-            model$sz_flow_direction <- do.call(rbind,flux)
+            model$sz_flow_direction <- flux
 
             ## alter channel flux for surface
             if(verbose){ cat("Creating channel flow directions","\n") }
@@ -1053,11 +1065,10 @@ dynatopGIS <- R6::R6Class(
             for(ii in private$shp$id){
                 idx <- model$channel$startNode == model$channel$endNode[ii]
                 if(any(idx)){
-                    flux[[ii]] <- data.frame(from = as.integer(ii),
-                                             to = as.integer( private$shp$id[idx] ),
-                                             frc = rep(1/sum(idx),sum(idx)))
+                    flux[[ii]] <- list(id = as.integer( private$shp$id[idx] ),
+                                       frc = rep(1/sum(idx),sum(idx)))
                 }else{
-                    flux[[ii]] <- NULL
+                    flux[[ii]] <- list( id = integer(0), frc = numeric(0) )
                 }
 
                 
@@ -1071,82 +1082,68 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## create surface flux table
-            model$sf_flow_direction <- do.call(rbind,flux)
+            model$hru$sf_flow_direction <- flux
 
             ## ############################################
             ## Add outlet at all outlets from river network
             ## ############################################
-            idx <- model$hru$id[ !(model$hru$id %in% model$sf_flow_direction$from) ]
-            model$output_flux<- data.frame(id = idx, flux = "q_sf", frc = 1)
-            model$time_series <- data.frame(
-                name = paste("channel",idx,sep="_"),
-                id = idx,
-                flux = "q_sf"
-            )
+            idx <- sapply(model$hru$sf_flow_direction,function(x){length(x$id)==0})
+            model$output_flux<- data.frame(name = paste0("q_sf_",model$hru$id[idx]),
+                                           id = model$hru$id[idx], flux = "q_sf", frc = 1)
             
-            ## ##################################
-            ## Add point inflow table
-            ## ##################################
-            ## blank point inflow table
-            if(verbose){ cat("Adding a blank inflow table","\n") }
-            model$inflow_table <- data.frame(
-                name = character(0),
-                id = integer(0),
-                state = character(0),
-                frc = numeric(0)
-            )
+            ## ## ##################################
+            ## ## Add point inflow table
+            ## ## ##################################
+            ## ## blank point inflow table
+            ## if(verbose){ cat("Adding a blank inflow table","\n") }
+            ## model$inflow_table <- data.frame(
+            ##     name = character(0),
+            ##     id = integer(0),
+            ##     state = character(0),
+            ##     frc = numeric(0)
+            ## )
             
             ## ##################################
             ## Compute precip weights
             ## ##################################
             if(verbose){ cat("Computing rainfall weights","\n") }
             if( is.null(rain_lyr) ){
-                model$precip_input <- data.frame(
-                    name = "precip",
-                    id = model$hru$id,
-                    frc = as.numeric(1) )
+                model$hru$precip <- rep( list(list(name="precip",frc=1)),nrow(model$hru))
             }else{
-                browser()
-                tmp <- crosstab(map,private$brk[[rain_lyr]],long=TRUE)
-                names(tmp[[ii]]) <- c("id","name","cnt")                
-                tmp <- tmp[order(tmp$id),]
-                tmp$id <- as.integer(tmp$id)
+                ## TODO check`
+                map[["precip"]] <- private$brk[[rain_lyr]]
+                tmp <- terra::crosstab(map[[c("hru","precip")]],long=TRUE)
+                names(tmp) <- c("id","name","cnt")
                 tmp$name <- paste0(rainfall_label,tmp$name)
-                ## tmp is ordered by id so the following returns correct order
-                tmp$frc <- unlist(tapply(tmp$cnt,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
-                ## set
-                model$precip_input <- tmp[,c("id","name","frc")]
+                tmp <- split(tmp,tmp$id)
+                tmp <- lapply(tmp,function(x){list(name=x$name, frc = x$cnt / sum(x$cnt))})
+                model$hru$precip <- rep( list(list(name="",frc=numeric(0))),nrow(model$hru))
+                model$hru$precip[ as.integer(names(tmp)) ] <- tmp
             }
             
             ## #################################
-            ## Comnpute PET weights
+            ## Compute PET weights
             ## #################################
             if(verbose){ cat("Computing the pet weights","\n") }
             if( is.null(pet_lyr) ){
-                model$pet_input <- data.frame(
-                    name = "pet",
-                    id =  model$hru$id,
-                    frc = as.numeric(1) )
+                model$hru$pet <- rep( list(list(name="pet",frc=1)),nrow(model$hru))
             }else{
-                tmp <- crosstab(map,private$brk[[pet_lyr]],long=TRUE)
-                names(tmp[[ii]]) <- c("id","name","cnt")                
-                tmp <- tmp[order(tmp$id),]
-                tmp$id <- as.integer(tmp$id)
+                ## TOD check with precip
+                map[["pet"]] <- private$brk[[pet_lyr]]
+                tmp <- terra::crosstab(map[[c("hru","pet")]],long=TRUE)
+                names(tmp) <- c("id","name","cnt")
                 tmp$name <- paste0(pet_label,tmp$name)
-                ## tmp is ordered by id so the following returns correct order
-                tmp$frc <- unlist(tapply(tmp$cnt,tmp$id,FUN=function(x){x/sum(x)}),use.names=FALSE)
-                ## set
-                model$pet_input <- tmp[,c("id","name","frc")]
+                tmp <- split(tmp,tmp$id)
+                tmp <- lapply(tmp,function(x){list(name=x$name, frc = x$cnt / sum(x$cnt))})
+                model$hru$pet <- rep( list(list(name="",frc=numeric(0))),nrow(model$hru))
+                model$hru$pet[ as.integer(names(tmp)) ] <- tmp
             }
             
             ## ############################
             ## save model
-            
-            names(map) <- "hru"
-            map[["class"]] <- private$brk[[class_lyr]]
             map[["channel"]] <- private$brk[["channel"]]
-            if( !is.null(pet_lyr) ){ brk[["pet"]] <- private$brk[[pet_lyr]] }
-            if( !is.null(rain_lyr) ){ brk[["precip"]] <- private$brk[[rain_lyr]] }
+            if( !is.null(pet_lyr) ){ map[["pet"]] <- private$brk[[pet_lyr]] }
+            if( !is.null(rain_lyr) ){ map[["precip"]] <- private$brk[[rain_lyr]] }
             terra::writeRaster(map,paste0(layer_name,".tif"),overwrite=TRUE)
             saveRDS(model,paste0(layer_name,".rds"))
         }        
