@@ -818,7 +818,7 @@ dynatopGIS <- R6::R6Class(
                                       rain_lyr,rainfall_label,
                                       pet_lyr,pet_label,layer_name,verbose,
                                       transmissivity){
-
+            browser()
             rq <- c("atb","gradient","filled_dem","channel",
                     class_lyr,dist_lyr,
                     rain_lyr,pet_lyr)
@@ -916,7 +916,7 @@ dynatopGIS <- R6::R6Class(
             ## work out order to pass through the cells
             idx <- which(is.finite(mp))
             n_to_eval <- c(length(idx),0,length(idx)/10)
-
+            browser()
             for(ii in idx){
                 #print(ii)
                 id <- mp[ii] ## id

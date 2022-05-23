@@ -1,0 +1,12 @@
+dynatopGIS
+
+3) Update vignette
+
+4) check map output with precip and pet
+
+6) check dependancies
+
+7) finalise and document new band method (replace old?)
+
+9) Check model generation with rainfall and pet maps
+

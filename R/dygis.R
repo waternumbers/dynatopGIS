@@ -51,10 +51,6 @@ dynatopGIS <- R6::R6Class(
             private$apply_initialize( projectFolder )
             invisible(self)
         },
-        #' @description Get project meta data
-        get_meta = function(){
-            private$apply_get_meta()
-        },
         #' @description Import a dem to the `dynatopGIS` object
         #'
         #' @param dem a \code{raster} layer object or the path to file containing one which is the DEM
@@ -79,7 +75,7 @@ dynatopGIS <- R6::R6Class(
         #' @return suitable for chaining
         add_channel = function(channel){
             if(!is(channel,"SpatVector")){ channel <- terra::vect( as.character(channel) ) }
-            if(!is(channel,"SpatVector")){ stop("channel is not a SpatialPolygonsDataFrame") }
+            if(!is(channel,"SpatVector")){ stop("channel is not a SpatVector object") }
 
             private$apply_add_channel(channel)
             invisible(self)
@@ -125,9 +121,9 @@ dynatopGIS <- R6::R6Class(
         #' @return a plot
         plot_layer = function(layer_name,add_channel=TRUE){
             lyr <- self$get_layer(layer_name)
-            raster::plot( lyr, main = layer_name)
-            if( add_channel ){
-                raster::plot(private$shp, add=TRUE )
+            terra::plot( lyr, main = layer_name)
+            if( add_channel & length(private$shp) > 0){
+                terra::plot(private$shp, add=TRUE )
             }
         },
         #' @description The sink filling algorithm of Planchona and Darboux (2001)
@@ -201,11 +197,11 @@ dynatopGIS <- R6::R6Class(
         #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
-                                sf_opt = c("cnst"),
+                                sf_opt = c("cnst","storDis","dfr"),
                                 sz_opt = c("exp","bexp","cnst","dexp"),
                                 dist_delta=0,
-                                rain_layer=NULL,rain_label=character(0),
-                                pet_layer=NULL,pet_label=character(0),
+                                rain_layer=NULL, rain_label=character(0),
+                                pet_layer=NULL, pet_label=character(0),
                                 verbose=FALSE){
             
             ## check valid transmissivity and channel_solver
@@ -229,14 +225,16 @@ dynatopGIS <- R6::R6Class(
         #' @description get the cuts and burns used to classify
         #' @param layer_name the name of layer whose classification method is returned
         #' @return a list with two elements, cuts and burns
-        get_method = function(layer_name=character(0)){
-            stop("TODO - not working")
-            if(length(layer_name)==0){
- 
-                return( private$layers )
+        get_method = function(layer_name){
+            ## check layer name exists
+            layer_name <- match.arg(layer_name,names(private$brk))
+            
+            jsonFile <- paste0(tools::file_path_sans_ext(terra::sources(private$brk[[layer_name]])),".json")
+            if( !file.exists(jsonFile) ){
+                stop("No json file giving basis of the classifications")
             }
-            layer_name <- match.arg(layer_name,names(private$layers))
-            return( private$layers[[layer_name]] )
+
+            return( jsonlite::fromJSON( jsonFile ) )
         }               
     ),
     private = list(
@@ -318,15 +316,15 @@ dynatopGIS <- R6::R6Class(
                 ## so all catchment dem value a number
                 na_clumps <- terra::patches(is.na(dem), directions=8, zeroAsNA=TRUE)
                 edge_values <- unique( c(
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=nrow(na_clumps), col=1, ncols=1, na.rm=TRUE) ),
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=nrow(na_clumps), col=ncol(na_clumps), ncols=1, na.rm=TRUE) ),
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=1, col=1, ncols=ncol(na_clumps), na.rm=TRUE) ),
-                    unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=nrow(na_clumps),nrows=1, col=1, ncols=ncol(na_clumps), na.rm=TRUE) )
+                    terra::unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=nrow(na_clumps), col=1, ncols=1, na.rm=TRUE) ),
+                    terra::unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=nrow(na_clumps), col=ncol(na_clumps), ncols=1, na.rm=TRUE) ),
+                    terra::unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=1,nrows=1, col=1, ncols=ncol(na_clumps), na.rm=TRUE) ),
+                    terra::unique( terra::values(na_clumps, mat=TRUE, dataframe=FALSE, row=nrow(na_clumps),nrows=1, col=1, ncols=ncol(na_clumps), na.rm=TRUE) )
                 ))
                 na_clumps <- terra::subst(na_clumps, edge_values, NA) ## clean out edge values since these are not sinks
-                sink_values <- terra::unique(na_clumps)$patches
+                sink_values <- terra::unique(na_clumps,na.rm=TRUE)$patches
                 if(length(sink_values)>0){
-                    na_clumps <- terra::subst(na_clumps, unique(na_clumps)$patches, 1 - 1e6) ## clean out edge values since these are not sinks
+                    na_clumps <- terra::subst(na_clumps, sink_values, 1 - 1e6) ## clean out edge values since these are not sinks
                 }
                 dem <- terra::cover(dem,na_clumps) # replace
             }
@@ -373,31 +371,42 @@ dynatopGIS <- R6::R6Class(
                 stop("Some non-finite values of length found!")
             }
             
-            ## arrange in id in order of flow direction - so lowest values at outlets of the network
-            unds <- unique(c(chn$startNode,chn$endNode)) # unique nodes
-            if(any(is.na(unds))){
-                stop("The nodes in startNode and endNode must have unique, non-missing codes")
+            ## arrange id in order of flow direction - so lowest values at outlets of the network
+            chn$id <- as.integer(0)
+            idx <- !(chn$endNode %in% chn$startNode) ## outlets are channel lengths whose outlet does not join another channel
+            while(sum(idx)>0){
+                chn$id[idx] <- max(chn$id) + 1:sum(idx)
+                idx <- chn$endNode %in% chn$startNode[idx]
             }
-            ## work out number of links from a node - TODO this is slow.........
-            nFrom <- setNames(rep(0,length(unds)),unds)
-            tmp <- table(chn$startNode)
-            nFrom[names(tmp)] <- tmp
-            max_id <- 0
-            chn$id <- as.numeric(NA) ## set id to NA
-            while( any(nFrom==0) ){
-                idx <- names(nFrom[nFrom==0])
-                ## fill if of reaches which are at bottom
-                tmp <- chn$endNode %in% idx
-                chn$id[tmp] <- max_id + (1:sum(tmp))
-                max_id <- max_id + sum(tmp)
-                nFrom[idx] <- -1
-                ## locate next nodes that are at bootom
-                tmp <- table(chn$startNode[ tmp ])
-                jj <- intersect(names(tmp),names(nFrom))
-                nFrom[jj] <-  nFrom[jj] - tmp[jj]
-            }
+            if( !(all(chn$id>0))){ stop("error ingesting channel") }
+            chn <- chn[ order(chn$id),]
+            chn$id <- as.integer( 1:nrow(chn) )
+            
+            ## unds <- unique(c(chn$startNode,chn$endNode)) # unique nodes
+            ## if(any(is.na(unds))){
+            ##     stop("The nodes in startNode and endNode must have unique, non-missing codes")
+            ## }
+            ## ## work out number of links from a node - TODO this is slow.........
+            ## nFrom <- setNames(rep(0,length(unds)),unds)
+            ## tmp <- table(chn$startNode)
+            ## nFrom[names(tmp)] <- tmp
+            ## max_id <- 0
+            ## chn$id <- as.numeric(NA) ## set id to NA
+            ## while( any(nFrom==0) ){
+            ##     idx <- names(nFrom[nFrom==0])
+            ##     ## fill if of reaches which are at bottom
+            ##     tmp <- chn$endNode %in% idx
+            ##     chn$id[tmp] <- max_id + (1:sum(tmp))
+            ##     max_id <- max_id + sum(tmp)
+            ##     nFrom[idx] <- -1
+            ##     ## locate next nodes that are at bootom
+            ##     tmp <- table(chn$startNode[ tmp ])
+            ##     jj <- intersect(names(tmp),names(nFrom))
+            ##     nFrom[jj] <-  nFrom[jj] - tmp[jj]
+            ## }
             
             ## create a raster of channel id numbers
+            ## possibly sort so do biggest area first???
             chn_rst <- terra::rasterize(chn,private$brk[["dem"]],field = "id",touches=TRUE)
             names(chn_rst) <- "channel"
             
@@ -586,6 +595,10 @@ dynatopGIS <- R6::R6Class(
                     if( !is.finite(ch[ii]) ){
                         ## a hillslope cell that drains nowhere - this is an error
                         stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
+                    }else{
+                        ## channel cell that is a sink - use min_grad
+                        gr[ii] <- min_grad
+                        atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
                     }
                 }    
                 
@@ -652,7 +665,6 @@ dynatopGIS <- R6::R6Class(
             idx <- private$shp$id==1
             cnt <- 1
             while( any(idx) ){
-                print(cnt)
                 cbnd[idx] <- cnt
                 idx <- eN %in% sN[idx]
                 cnt <- cnt+1
@@ -795,21 +807,17 @@ dynatopGIS <- R6::R6Class(
             brn <- cp; brn[] <- NA
             for(ii in burns){
                 x <-  terra::mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
-                if(is.null(brn)){
-                    brn <- x
-                }else{
-                    brn <- terra::cover(x,brn)
-                }
+                brn <- terra::cover(x,brn)
             }
             ## add burns to pairs
             cp <- terra::cover(brn,cp)
             uq <- sort(terra::unique(cp)[[1]])
             cts <- c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf)
-            cp <- terra::classify(cp,cts)
-            if(length(burns)>0){ brn <- terra::classify(brn,cts) }
+            cp <- terra::classify(cp,cts) + 1 ## classify returns numeric values starting at 0
+            if(length(burns)>0){ brn <- terra::classify(brn,cts) +1 }
             
-            cp <- cp + 1 ## classify returns numeric values starting at 0
             
+            ## TODO - replace with zone taking modal value
             ## make table of layer values - should be able to combine with above??
             cpv <- terra::as.matrix(cp, wide=TRUE) ## quicker when a vector
             uq <- sort(terra::unique(cp)[[1]]) ## unique values
@@ -918,7 +926,7 @@ dynatopGIS <- R6::R6Class(
             frm <- model$hru[[paste0("cls_",class_lyr)]][idx]
             tw <- model$hru$id[idx]
             
-            ## map <- terra::subst(cls,from=frm,to=data.frame( frm=frm,to=tw)) ## this doesn't work as expected...
+            ## map <- terra::subst(cls,from=frm,to=data.frame( frm=frm,to=tw)) ## this doesn't work as expected in CRAN release - fixed upstream
             x <- terra::values(cls,mat=FALSE) #x <- as.vector( terra::as.matrix(cls) )
             x <- c(tw,x)[match(x, c(frm,x))]
             map <- cls; names(map) <- "class"
@@ -928,6 +936,7 @@ dynatopGIS <- R6::R6Class(
             
             ## add the channel data
             model$hru <- merge(model$hru,private$shp[,c("id","name","length")],by="id",all=TRUE)
+            model$hru$id <- as.integer(model$hru$id)
             model$hru$is_channel <- model$hru$id <= max(private$shp$id)
             model$hru$min_dst[model$hru$is_channel] <- 0
             map[["hru"]] <- terra::cover(private$brk[["channel"]], map[["hru"]])
@@ -938,28 +947,31 @@ dynatopGIS <- R6::R6Class(
             
             ## add parameters
             fqsf <- function(x){
-                list(opt = x,
-                     par = switch(x,
-                                  "cnst" = list(r_sfmax = Inf, v_sf = 0.1,s_raf=100,t_raf=10*60*60),
-                                  stop("Unrecognised surface option")
-                                  )
+                list(type = x,
+                     param = switch(x,
+                                    "cnst" = c(v_sf = 0.1,s_raf=100,t_raf=10*60*60),
+                                    "storDis" = list(storage=c(0.0,3000.0),discharge=c(0.0, 100)),
+                                    "dfr" = c(width=5, slp= 0.01, n = 0.035),
+                                    stop("Unrecognised surface option")
+                                    )
                      )
             }
             
             fqsz <- function(x){
-                list(opt = x,
-                     par = switch(x,
-                                  "exp" = list( t_0 = 0.135, m = 0.04 ),
-                                  "bexp" = list( t_0 = 0.135, m = 0.04, D=5 ),
-                                  "dexp" = list( t_0 = 0.135, m1 = 0.04, m2 = 0.0002, omega = 0.5 ),
-                                  "cnst" = list( v_sz = 0.01, D = 10 ),
-                                  stop("Unrecognised tranmissivity")
-                                  )
+                list(type = x,
+                     param = switch(x,
+                                    "exp" = c( t_0 = 0.135, m = 0.04 ),
+                                    "bexp" = c( t_0 = 0.135, m = 0.04, D=5 ),
+                                    "dexp" = c( t_0 = 0.135, m1 = 0.04, m2 = 0.0002, omega = 0.5 ),
+                                    "cnst" = c( v_sz = 0.01, D = 10 ),
+                                    stop("Unrecognised tranmissivity")
+                                    )
                      )
             }
             
             model$hru$sf <- lapply( model$hru$sf,fqsf )
             model$hru$sz <- lapply( model$hru$sz,fqsz )
+            model$hru$r_sfmax <- Inf
             model$hru$s_rzmax <- 0.05
             model$hru$s_rz0 <- 0.75
             model$hru$t_d <- 7200
@@ -1040,7 +1052,7 @@ dynatopGIS <- R6::R6Class(
             model$hru$s_bar <- model$hru$s_bar / model$hru$area
             model$hru$atb_bar <- model$hru$atb_bar / model$hru$area
             model$hru$area <- model$hru$area * prod(rs)
-
+            idx <- is.na(model$hru$length); model$hru$length[idx] <- model$hru$area[idx] / model$hru$width[idx] ## length for non channel HRUs
             
             ## check fluxes are valid and convert to form sz_flux
             nlink <- sapply(flux,length)
@@ -1057,13 +1069,13 @@ dynatopGIS <- R6::R6Class(
                     flux[[ii]] <- list( id = integer(0), frc = numeric(0) )
                 }
             }
-            model$sz_flow_direction <- flux
+            model$hru$sz_flow_direction <- flux
 
             ## alter channel flux for surface
             if(verbose){ cat("Creating channel flow directions","\n") }
             n_to_eval <- c(length(private$shp$id),0,length(private$shp$id)/10)
             for(ii in private$shp$id){
-                idx <- model$channel$startNode == model$channel$endNode[ii]
+                idx <- private$shp$startNode == private$shp$endNode[ii]
                 if(any(idx)){
                     flux[[ii]] <- list(id = as.integer( private$shp$id[idx] ),
                                        frc = rep(1/sum(idx),sum(idx)))
@@ -1089,7 +1101,7 @@ dynatopGIS <- R6::R6Class(
             ## ############################################
             idx <- sapply(model$hru$sf_flow_direction,function(x){length(x$id)==0})
             model$output_flux<- data.frame(name = paste0("q_sf_",model$hru$id[idx]),
-                                           id = model$hru$id[idx], flux = "q_sf", frc = 1)
+                                           id = as.integer( model$hru$id[idx] ), flux = "q_sf", frc = 1)
             
             ## ## ##################################
             ## ## Add point inflow table
@@ -1144,7 +1156,8 @@ dynatopGIS <- R6::R6Class(
             map[["channel"]] <- private$brk[["channel"]]
             if( !is.null(pet_lyr) ){ map[["pet"]] <- private$brk[[pet_lyr]] }
             if( !is.null(rain_lyr) ){ map[["precip"]] <- private$brk[[rain_lyr]] }
-            terra::writeRaster(map,paste0(layer_name,".tif"),overwrite=TRUE)
+            model$map <- paste0(layer_name,".tif")
+            terra::writeRaster(map,model$map,overwrite=TRUE)
             saveRDS(model,paste0(layer_name,".rds"))
         }        
     )
