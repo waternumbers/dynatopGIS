@@ -372,41 +372,32 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## arrange id in order of flow direction - so lowest values at outlets of the network
-            chn$id <- as.integer(0)
-            idx <- !(chn$endNode %in% chn$startNode) ## outlets are channel lengths whose outlet does not join another channel
+            ## This is much quicker as a vector is not constantly accessing via the vect object
+            id <- rep(as.integer(0),nrow(chn))
+            sN <- chn$startNode
+            eN <- chn$endNode
+            it <- 1
+            idx <- !(eN %in%sN) ## outlets are channel lengths whose outlet does not join another channel
+            it <- 1
             while(sum(idx)>0){
-                chn$id[idx] <- max(chn$id) + 1:sum(idx)
-                idx <- chn$endNode %in% chn$startNode[idx]
+                id[idx] <- max(id) + 1:sum(idx)
+                idx <- eN %in% sN[idx]
             }
+            chn$id <- id
+            ## chn$id <- as.integer(0)
+            ## idx <- !(chn$endNode %in% chn$startNode) ## outlets are channel lengths whose outlet does not join another channel
+            ## it <- 1
+            ## while(sum(idx)>0){
+            ##     print(paste(it, sum(idx))); it <- it + 1
+            ##     chn$id[idx] <- max(chn$id) + 1:sum(idx)
+            ##     idx <- chn$endNode %in% chn$startNode[idx]
+            ## }
             if( !(all(chn$id>0))){ stop("error ingesting channel") }
             chn <- chn[ order(chn$id),]
             chn$id <- as.integer( 1:nrow(chn) )
-            
-            ## unds <- unique(c(chn$startNode,chn$endNode)) # unique nodes
-            ## if(any(is.na(unds))){
-            ##     stop("The nodes in startNode and endNode must have unique, non-missing codes")
-            ## }
-            ## ## work out number of links from a node - TODO this is slow.........
-            ## nFrom <- setNames(rep(0,length(unds)),unds)
-            ## tmp <- table(chn$startNode)
-            ## nFrom[names(tmp)] <- tmp
-            ## max_id <- 0
-            ## chn$id <- as.numeric(NA) ## set id to NA
-            ## while( any(nFrom==0) ){
-            ##     idx <- names(nFrom[nFrom==0])
-            ##     ## fill if of reaches which are at bottom
-            ##     tmp <- chn$endNode %in% idx
-            ##     chn$id[tmp] <- max_id + (1:sum(tmp))
-            ##     max_id <- max_id + sum(tmp)
-            ##     nFrom[idx] <- -1
-            ##     ## locate next nodes that are at bootom
-            ##     tmp <- table(chn$startNode[ tmp ])
-            ##     jj <- intersect(names(tmp),names(nFrom))
-            ##     nFrom[jj] <-  nFrom[jj] - tmp[jj]
-            ## }
-            
+                        
             ## create a raster of channel id numbers
-            ## possibly sort so do biggest area first???
+            ## TODO - possibly sort so do biggest area first???
             chn_rst <- terra::rasterize(chn,private$brk[["dem"]],field = "id",touches=TRUE)
             names(chn_rst) <- "channel"
             
@@ -935,7 +926,7 @@ dynatopGIS <- R6::R6Class(
             #browser()
             
             ## add the channel data
-            model$hru <- merge(model$hru,private$shp[,c("id","name","length")],by="id",all=TRUE)
+            model$hru <- merge(model$hru,private$shp[,c("id","name","startNode","endNode","length")],by="id",all=TRUE)
             model$hru$id <- as.integer(model$hru$id)
             model$hru$is_channel <- model$hru$id <= max(private$shp$id)
             model$hru$min_dst[model$hru$is_channel] <- 0
@@ -949,7 +940,7 @@ dynatopGIS <- R6::R6Class(
             fqsf <- function(x){
                 list(type = x,
                      param = switch(x,
-                                    "cnst" = c(v_sf = 0.1,s_raf=100,t_raf=10*60*60),
+                                    "cnst" = c(v_sf = 0.1,s_raf=0,t_raf=10*60*60),
                                     "storDis" = list(storage=c(0.0,3000.0),discharge=c(0.0, 100)),
                                     "dfr" = c(width=5, slp= 0.01, n = 0.035),
                                     stop("Unrecognised surface option")
@@ -1011,7 +1002,7 @@ dynatopGIS <- R6::R6Class(
             
             ## work out order to pass through the cells
             idx <- which(is.finite(mp))
-            n_to_eval <- c(length(idx),0,length(idx)/10)
+            n_to_eval <- c(length(idx),0,length(idx)/20)
 
             for(ii in idx){
                 
@@ -1040,12 +1031,12 @@ dynatopGIS <- R6::R6Class(
                         model$hru$width[id] <- model$hru$width[id] + sum(dcl[to_use])
                     }
                 }
-
+                
                 n_to_eval[2] <- n_to_eval[2] + 1
                 if( verbose & (n_to_eval[2] > n_to_eval[3]) ){
                     cat(round(100*n_to_eval[3] / n_to_eval[1],1),
                         "% complete","\n")
-                    n_to_eval[3] <- n_to_eval[3] + n_to_eval[1]/10
+                    n_to_eval[3] <- n_to_eval[3] + n_to_eval[1]/20
                 }
                 
             }
@@ -1070,15 +1061,16 @@ dynatopGIS <- R6::R6Class(
                 }
             }
             model$hru$sz_flow_direction <- flux
-
+            
             ## alter channel flux for surface
             if(verbose){ cat("Creating channel flow directions","\n") }
-            n_to_eval <- c(length(private$shp$id),0,length(private$shp$id)/10)
-            for(ii in private$shp$id){
-                idx <- private$shp$startNode == private$shp$endNode[ii]
-                if(any(idx)){
-                    flux[[ii]] <- list(id = as.integer( private$shp$id[idx] ),
-                                       frc = rep(1/sum(idx),sum(idx)))
+            idx <- which(model$hru$is_channel)
+            n_to_eval <- c(length(idx),0,length(idx)/20)
+            for(ii in idx){
+                jdx <- idx[ model$hru$startNode[idx]  == model$hru$endNode[ii] ]
+                if(length(jdx)>0){
+                    flux[[ii]] <- list(id = as.integer( jdx ),
+                                       frc = rep(1/length(jdx),length(jdx)))
                 }else{
                     flux[[ii]] <- list( id = integer(0), frc = numeric(0) )
                 }
@@ -1088,7 +1080,7 @@ dynatopGIS <- R6::R6Class(
                 if( verbose & (n_to_eval[2] > n_to_eval[3]) ){
                     cat(round(100*n_to_eval[3] / n_to_eval[1],1),
                         "% complete","\n")
-                    n_to_eval[3] <- n_to_eval[3] + n_to_eval[1]/10
+                    n_to_eval[3] <- n_to_eval[3] + n_to_eval[1]/20
                 }
 
             }
@@ -1122,7 +1114,6 @@ dynatopGIS <- R6::R6Class(
             if( is.null(rain_lyr) ){
                 model$hru$precip <- rep( list(list(name="precip",frc=1)),nrow(model$hru))
             }else{
-                ## TODO check`
                 map[["precip"]] <- private$brk[[rain_lyr]]
                 tmp <- terra::crosstab(map[[c("hru","precip")]],long=TRUE)
                 names(tmp) <- c("id","name","cnt")
@@ -1140,7 +1131,6 @@ dynatopGIS <- R6::R6Class(
             if( is.null(pet_lyr) ){
                 model$hru$pet <- rep( list(list(name="pet",frc=1)),nrow(model$hru))
             }else{
-                ## TOD check with precip
                 map[["pet"]] <- private$brk[[pet_lyr]]
                 tmp <- terra::crosstab(map[[c("hru","pet")]],long=TRUE)
                 names(tmp) <- c("id","name","cnt")

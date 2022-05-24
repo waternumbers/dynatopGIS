@@ -2,7 +2,7 @@ dynatopGIS
 
 3) Update vignette
 
-4) check map output with precip and pet
+4) check map output with precip and pet - seems OK
 
 6) check dependancies
 
@@ -10,3 +10,6 @@ dynatopGIS
 
 9) Check model generation with rainfall and pet maps
 
+10)Still NA in s_bar (look at eden model)
+
+11) set prcp/pet name to character(0) for HRU of no area
