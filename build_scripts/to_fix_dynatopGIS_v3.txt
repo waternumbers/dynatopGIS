@@ -13,3 +13,5 @@ dynatopGIS
 10)Still NA in s_bar (look at eden model)
 
 11) set prcp/pet name to character(0) for HRU of no area
+
+12) remove frc from output_flux table
