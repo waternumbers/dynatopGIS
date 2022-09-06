@@ -1,6 +1,6 @@
 Package: dynatopGIS
 Title: Algorithms for Helping Build Dynamic TOPMODEL Implementations from Spatial Data
-Version: 0.2.2
+Version: 0.2.3
 Authors@R: 
     person(given = "Paul",
            family = "Smith",
@@ -14,17 +14,16 @@ LazyData: true
 Imports:
     R6,
 	raster,
-	rgeos,
+	rgdal,
 	methods,
 	jsonlite
 Depends:
 	R (>= 4.0.0)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
 URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Suggests:
-	rgdal,
-	igraph,
+    igraph,
     knitr,
     rmarkdown,
     covr,
