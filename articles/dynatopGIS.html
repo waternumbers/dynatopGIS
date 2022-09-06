@@ -98,10 +98,10 @@
 <p>The dynatopGIS package implements a structured, object orientated, data flow. The steps outlined below create a <code>dynatopGIS</code> catchment object to which actions are then applied to generate a model.</p>
 <p>The <code>dynatopGIS</code> package is written using the object orientated framework provided by the <code>R6</code> package. This means that some aspects of working with the objects may appear idiosyncratic for some R users. In using the package as outlined in this vignette these problems are largely obscured, except for the call structure. However, before adapting the code, or doing more complex analysis users should read about <code>R6</code> class objects (e.g. in the <code>R6</code> package vignettes or in the Advanced R book). One particular gotcha is when copying an object. Using</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">my_new_object</span>  <span class="op">&lt;-</span>  <span class="va">my_object</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">my_new_object</span>  <span class="op">&lt;-</span>  <span class="va">my_object</span></span></code></pre></div>
 <p>creates a pointer, that is altering <code>my_new_object</code> also alters <code>my_object</code>. To create a new independent copy of <code>my_object</code> use</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">my_new_object</span>  <span class="op">&lt;-</span>  <span class="va">my_object</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">my_new_object</span>  <span class="op">&lt;-</span>  <span class="va">my_object</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="getting-started">Getting started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
@@ -110,18 +110,18 @@
 <p>This vignette demonstrates the use of the <code>dynatopGIS</code> package using data from the Swindale catchment in the UK.</p>
 <p>To start first load the library</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://waternumbers.github.io/dynatopGIS/" class="external-link">"dynatopGIS"</a></span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://waternumbers.github.io/dynatopGIS/" class="external-link">"dynatopGIS"</a></span><span class="op">)</span></span></code></pre></div>
 <p>For this vignette we will store the data into a temporary directory</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">demo_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"dygis"</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">demo_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"dygis"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></span></code></pre></div>
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpYCNQJH/</span>
-<span class="co">#&gt; dygis40e91b0abed7/meta.json</span>
-<span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span>
-<span class="co">#&gt; performed</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmplqXBBH/</span></span>
+<span><span class="co">#&gt; dygis445f36aa0d40/meta.json</span></span>
+<span><span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span></span>
+<span><span class="co">#&gt; performed</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="adding-catchment-data">Adding catchment data<a class="anchor" aria-label="anchor" href="#adding-catchment-data"></a>
@@ -130,13 +130,13 @@
 <p>However, within the calculations used for sink filling, flow routing and topographic index calculations the raster DEM is presumed to be projected so that is has square cells such that the difference between the cell centres (in meters) does not alter.</p>
 <p>For Swindale the suitable DEM and channel files can be found using:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
-<span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>Either the DEM or channel files can be added to the project first. In this case we add the DEM with</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>
-<span class="co">#&gt; Loading required namespace: igraph</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Loading required namespace: igraph</span></span></code></pre></div>
 <p><em>Note:</em> An additional row and column of <code>NA</code> is added to each edge of the DEM. All raster layers in the project have the same projection, resolution and extent of the extended DEM.</p>
 <p>Adding river channel data is more complex. The <code>add_channel</code> method requires a <code>SpatialLinesDataFrame</code> or <code>SpatialPolygonsDataFrame</code> as generated by the <code>sp</code> package. Each entry in the data.frame is treated as a length of river channel which requires the following properties</p>
 <ul>
@@ -150,36 +150,36 @@
 <p>Additional properties are currently kept but ignored with two exceptions: - <em>id</em> - this is copied to <code>original_id</code> with a warning since <code>id</code> is used internally - <em>width</em> - if the channel is specified with a line sections then the <em>width</em> property is used to buffer the lines to create channel polygons.</p>
 <p>Since it is possible that these properties are present in a data file under different names the <code>add_channel</code> method allows for renaming. To illustrate this let us examine the river network for Swindale</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">rgdal</span><span class="fu">::</span><span class="fu"><a href="http://rgdal.r-forge.r-project.org/reference/readOGR.html" class="external-link">readOGR</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span>
-<span class="co">#&gt; OGR data source with driver: ESRI Shapefile </span>
-<span class="co">#&gt; Source: "/home/runner/work/_temp/Library/dynatopGIS/extdata/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span>
-<span class="co">#&gt; with 19 features</span>
-<span class="co">#&gt; It has 11 fields</span>
-<span class="co">#&gt; Integer64 fields read as strings:  length</span>
-<span class="co">#&gt; Warning in rgdal::readOGR(channel_file): Z-dimension discarded</span>
-<span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sp_lines</span><span class="op">)</span>
-<span class="co">#&gt; class       : SpatialLinesDataFrame </span>
-<span class="co">#&gt; features    : 6 </span>
-<span class="co">#&gt; extent      : 349884.5, 351675.7, 508614.5, 513074.7  (xmin, xmax, ymin, ymax)</span>
-<span class="co">#&gt; crs         : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs </span>
-<span class="co">#&gt; variables   : 11</span>
-<span class="co">#&gt; names       :         name1,                           identifier,                            startNode,                              endNode,        form,         flow, fictitious, length, name2, sinkdepth,    Shape_Leng </span>
-<span class="co">#&gt; min values  : Hawthorn Gill, 16D0AC09-E0B6-4727-83B8-567E8DE9C533, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, inlandRiver, in direction,      false,     29,    NA,        -1, 29.1895135281 </span>
-<span class="co">#&gt; max values  : Mosedale Beck, ED03FEDD-0F4B-40C7-86E8-6F0EA8BAC182, D968F174-FB80-404A-A4A7-2862CC722482, D649B60C-E631-47FA-971E-CA388DBDDE63, inlandRiver, in direction,      false,    740,    NA,        -1,  739.76377764</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">rgdal</span><span class="fu">::</span><span class="fu"><a href="http://rgdal.r-forge.r-project.org/reference/readOGR.html" class="external-link">readOGR</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span></span>
+<span><span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span></span>
+<span><span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></span>
+<span><span class="co">#&gt; OGR data source with driver: ESRI Shapefile </span></span>
+<span><span class="co">#&gt; Source: "/home/runner/work/_temp/Library/dynatopGIS/extdata/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span></span>
+<span><span class="co">#&gt; with 19 features</span></span>
+<span><span class="co">#&gt; It has 11 fields</span></span>
+<span><span class="co">#&gt; Integer64 fields read as strings:  length</span></span>
+<span><span class="co">#&gt; Warning in rgdal::readOGR(channel_file): Z-dimension discarded</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sp_lines</span><span class="op">)</span></span>
+<span><span class="co">#&gt; class       : SpatialLinesDataFrame </span></span>
+<span><span class="co">#&gt; features    : 6 </span></span>
+<span><span class="co">#&gt; extent      : 349884.5, 351675.7, 508614.5, 513074.7  (xmin, xmax, ymin, ymax)</span></span>
+<span><span class="co">#&gt; crs         : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs </span></span>
+<span><span class="co">#&gt; variables   : 11</span></span>
+<span><span class="co">#&gt; names       :         name1,                           identifier,                            startNode,                              endNode,        form,         flow, fictitious, length, name2, sinkdepth,    Shape_Leng </span></span>
+<span><span class="co">#&gt; min values  : Hawthorn Gill, 16D0AC09-E0B6-4727-83B8-567E8DE9C533, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, 1FDBFCFF-799C-41CF-A2CB-8A56368BD438, inlandRiver, in direction,      false,     29,    NA,        -1, 29.1895135281 </span></span>
+<span><span class="co">#&gt; max values  : Mosedale Beck, ED03FEDD-0F4B-40C7-86E8-6F0EA8BAC182, D968F174-FB80-404A-A4A7-2862CC722482, D649B60C-E631-47FA-971E-CA388DBDDE63, inlandRiver, in direction,      false,    740,    NA,        -1,  739.76377764</span></span></code></pre></div>
 <p>The main properties are present under appropriate names and a call to the <code>add_channel</code> method with no options would be successful. However if we want to carry over the additional information in the “identifier” as “channel_id” a named vector giving the variable names to be used could be provided. In this case:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>channel_id<span class="op">=</span><span class="st">"identifier"</span>,
-                    endNode<span class="op">=</span><span class="st">"endNode"</span>,
-                    startNode<span class="op">=</span><span class="st">"startNode"</span>,
-                    length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>channel_id<span class="op">=</span><span class="st">"identifier"</span>,</span>
+<span>                    endNode<span class="op">=</span><span class="st">"endNode"</span>,</span>
+<span>                    startNode<span class="op">=</span><span class="st">"startNode"</span>,</span>
+<span>                    length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></span></code></pre></div>
 <p>The river network can then be created in the correct format by</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">sp_lines</span>,<span class="va">property_names</span><span class="op">)</span>
-<span class="co">#&gt; Warning in private$apply_add_channel(channel, property_names, default_width):</span>
-<span class="co">#&gt; Modifying to spatial polygons using default width</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">sp_lines</span>,<span class="va">property_names</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in private$apply_add_channel(channel, property_names, default_width):</span></span>
+<span><span class="co">#&gt; Modifying to spatial polygons using default width</span></span></code></pre></div>
 <p>Since the data set for Swindale does not contain a channel width the default width of 2m is used.</p>
 </div>
 <div class="section level2">
@@ -189,41 +189,35 @@
 <p>If multiple river lengths intersect a DEM cell the properties of the channel length with the largest area of intersection are used.</p>
 <p>This computation is done by calling</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_areas</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span>
-<span class="co">#&gt; Warning in .local(x, ...): This function is only useful for Raster* objects with</span>
-<span class="co">#&gt; a longitude/latitude coordinates</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_areas</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning in .local(x, ...): This function is only useful for Raster* objects with</span></span>
+<span><span class="co">#&gt; a longitude/latitude coordinates</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="getting-and-plotting-catchment-information">Getting and plotting catchment information<a class="anchor" aria-label="anchor" href="#getting-and-plotting-catchment-information"></a>
 </h2>
 <p>The <code>dynatopGIS</code> class has methods for returning and plotting the GIS data in the project. The names of all the different GIS layers stored is returned by</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt; [1] "dem"          "channel"      "land_area"    "channel_area" "channel_id"</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "dem"          "channel"      "land_area"    "channel_area" "channel_id"</span></span></code></pre></div>
 <p>These can be plotted (with or without the channel), for example</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"dem"</span>, add_channel<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"dem"</span>, add_channel<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot-1.png" width="700"></p>
 <p>or returned, for example</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"dem"</span><span class="op">)</span>
-<span class="co">#&gt; class      : RasterLayer </span>
-<span class="co">#&gt; dimensions : 163, 124, 20212  (nrow, ncol, ncell)</span>
-<span class="co">#&gt; resolution : 40, 40  (x, y)</span>
-<span class="co">#&gt; extent     : 347734, 352694, 507244, 513764  (xmin, xmax, ymin, ymax)</span>
-<span class="co">#&gt; crs        : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs </span>
-<span class="co">#&gt; source     : dem.tif </span>
-<span class="co">#&gt; names      : dem </span>
-<span class="co">#&gt; values     : 262.8004, 710.7533  (min, max)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"dem"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; class      : RasterLayer </span></span>
+<span><span class="co">#&gt; dimensions : 163, 124, 20212  (nrow, ncol, ncell)</span></span>
+<span><span class="co">#&gt; resolution : 40, 40  (x, y)</span></span>
+<span><span class="co">#&gt; extent     : 347734, 352694, 507244, 513764  (xmin, xmax, ymin, ymax)</span></span>
+<span><span class="co">#&gt; crs        : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs </span></span>
+<span><span class="co">#&gt; source     : dem.tif </span></span>
+<span><span class="co">#&gt; names      : dem </span></span>
+<span><span class="co">#&gt; values     : 262.8004, 710.7533  (min, max)</span></span></code></pre></div>
 <p>All layers are returned as <code>RasterLayer</code> objects with the exception of the <code>channel</code> layer which is returned as a <code>SpatialPolygonsDataFrame</code> object. The complete meta data file can be retrieved with</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_meta</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_meta</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="filling-sinks">Filling sinks<a class="anchor" aria-label="anchor" href="#filling-sinks"></a>
@@ -232,10 +226,10 @@
 <p>The algorithm of implemented in the <code>sink_fill</code> method ensures this is the case. Since the algorithm is iterative the execution time of the function is limited by capping the maximum number of iterations. If this limit is reached without completion the method can call again with the “hot start” option to continue from where it finished.</p>
 <p>For Swindale, where the example DEM is already partially filled the algorithm only alters a small area near the foot of the catchment.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span><span class="op">)</span>
-
-<span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html" class="external-link">plot</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'filled_dem'</span><span class="op">)</span> <span class="op">-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'dem'</span><span class="op">)</span>,
-             main<span class="op">=</span><span class="st">"Changes to height"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/base/plot.html" class="external-link">plot</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'filled_dem'</span><span class="op">)</span> <span class="op">-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'dem'</span><span class="op">)</span>,</span>
+<span>             main<span class="op">=</span><span class="st">"Changes to height"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/sink_fill-1.png" width="700"></p>
 </div>
 <div class="section level2">
@@ -247,36 +241,33 @@
 <p>The local value of the gradient is computed using the average of a subset of between pixel gradients. For a normal ‘hill slope’ cell these are the gradients to downslope pixels weighted by contour length. In the case of pixels which contain river channels the average of the gradients from upslope pixels weighted by contour length us used.</p>
 <p>These properties are computed in an algorithm that passes over the data once in descending height. It is called as follows</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>The plot of the topographic index shows a pattern of increasing values closer to the river channels</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">## plot of topographic index (log(a/tan b))</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">'atb'</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co">## plot of topographic index (log(a/tan b))</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">'atb'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot_atb-1.png" width="700"></p>
 <div class="section level3">
 <h3 id="adding-additional-layer">Adding additional layer<a class="anchor" aria-label="anchor" href="#adding-additional-layer"></a>
 </h3>
 <p>Properties may come in additional GIS layers. To demonstrate the addition of an additional layer we will extract the filled dem</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span></span></code></pre></div>
 <p>then separate it into a layers representing land above and below 500m.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/reclassify.html" class="external-link">reclassify</a></span><span class="op">(</span> <span class="va">tmp</span>,
-                          <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span>,<span class="cn">NA</span>,
-                                   <span class="fl">500</span>,<span class="fl">1000</span>,<span class="op">-</span><span class="fl">999</span><span class="op">)</span>,
-                                 byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/reclassify.html" class="external-link">reclassify</a></span><span class="op">(</span> <span class="va">tmp</span>,</span>
+<span>                          <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span>,<span class="cn">NA</span>,</span>
+<span>                                   <span class="fl">500</span>,<span class="fl">1000</span>,<span class="op">-</span><span class="fl">999</span><span class="op">)</span>,</span>
+<span>                                 byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The resulting raster object can now be written to a file</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">tmp</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/writeRaster.html" class="external-link">writeRaster</a></span><span class="op">(</span><span class="va">tmp</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>which is added to the meta data with</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="st">"greater_500"</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt;  [1] "dem"          "channel"      "filled_dem"   "land_area"    "channel_area"</span>
-<span class="co">#&gt;  [6] "channel_id"   "gradient"     "upslope_area" "atb"          "greater_500"</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="st">"greater_500"</span>,<span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"greater_500.tif"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "dem"          "channel"      "filled_dem"   "land_area"    "channel_area"</span></span>
+<span><span class="co">#&gt;  [6] "channel_id"   "gradient"     "upslope_area" "atb"          "greater_500"</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -295,19 +286,16 @@
 </ul>
 <p>The computation is initiated with</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>The additional layers can be examined as expected</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span>
-<span class="co">#&gt;  [1] "dem"                  "channel"              "filled_dem"          </span>
-<span class="co">#&gt;  [4] "land_area"            "channel_area"         "channel_id"          </span>
-<span class="co">#&gt;  [7] "gradient"             "upslope_area"         "atb"                 </span>
-<span class="co">#&gt; [10] "band"                 "shortest_flow_length" "dominant_flow_length"</span>
-<span class="co">#&gt; [13] "expected_flow_length" "greater_500"</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"band"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;  [1] "dem"                  "channel"              "filled_dem"          </span></span>
+<span><span class="co">#&gt;  [4] "land_area"            "channel_area"         "channel_id"          </span></span>
+<span><span class="co">#&gt;  [7] "gradient"             "upslope_area"         "atb"                 </span></span>
+<span><span class="co">#&gt; [10] "band"                 "shortest_flow_length" "dominant_flow_length"</span></span>
+<span><span class="co">#&gt; [13] "expected_flow_length" "greater_500"</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"band"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/flow_length_plot-1.png" width="700"></p>
 </div>
 <div class="section level2">
@@ -319,22 +307,19 @@
 <p>The <code>classify</code> method of a <code>dynatopGIS</code> allows a landscape property to be <em>cut</em> into classes.</p>
 <p>For example to cut the topographic index for Swindale into 21 classes:</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"atb"</span>,cuts<span class="op">=</span><span class="fl">20</span><span class="op">)</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"atb"</span>,cuts<span class="op">=</span><span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_split-1.png" width="700"></p>
 <p>Providing a single value to the cuts argument determines the number of classes. The values used to cut the variable can be extracted from the meta data with</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span>
-<span class="co">#&gt; $layer</span>
-<span class="co">#&gt; [1] "atb"</span>
-<span class="co">#&gt; </span>
-<span class="co">#&gt; $cuts</span>
-<span class="co">#&gt;  [1]  8.636124  9.265628  9.895133 10.524637 11.154142 11.783646 12.413151</span>
-<span class="co">#&gt;  [8] 13.042655 13.672160 14.301664 14.931169 15.560673 16.190178 16.819682</span>
-<span class="co">#&gt; [15] 17.449187 18.078691 18.708195 19.337700 19.967204 20.596709 21.226213</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; $layer</span></span>
+<span><span class="co">#&gt; [1] "atb"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $cuts</span></span>
+<span><span class="co">#&gt;  [1]  8.636124  9.265628  9.895133 10.524637 11.154142 11.783646 12.413151</span></span>
+<span><span class="co">#&gt;  [8] 13.042655 13.672160 14.301664 14.931169 15.560673 16.190178 16.819682</span></span>
+<span><span class="co">#&gt; [15] 17.449187 18.078691 18.708195 19.337700 19.967204 20.596709 21.226213</span></span></code></pre></div>
 <p>The <code>combine_classes</code> method of a <code>dynatopGIS</code> allows classes to be combined in two ways, which are applied in the order shown</p>
 <ul>
 <li>
@@ -344,30 +329,24 @@
 </ul>
 <p>To demonstrate a pairing combination consider combining the atb classes generated above with the classification provided by the distance band</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_20_band-1.png" width="700"></p>
 <p>Additionally the land greater then 500 in altitude can be burnt in with</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band_500"</span>,pairs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span>,burns<span class="op">=</span><span class="st">"greater_500"</span><span class="op">)</span>
-<span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band_500"</span>,pairs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span>,burns<span class="op">=</span><span class="st">"greater_500"</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_20_band_burn-1.png" width="700"></p>
 <p>The each class in the combined classification the values of the classes used in the computations can be returned</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span> <span class="op">)</span>
-<span class="co">#&gt;   atb_20_band_500 atb_20 band greater_500</span>
-<span class="co">#&gt; 1               1      1    1          NA</span>
-<span class="co">#&gt; 2               2      2    1          NA</span>
-<span class="co">#&gt; 3               3      3    1          NA</span>
-<span class="co">#&gt; 4               4      4    1          NA</span>
-<span class="co">#&gt; 5               5      5    1          NA</span>
-<span class="co">#&gt; 6               6      4    2          NA</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span> <span class="op">)</span></span>
+<span><span class="co">#&gt;   atb_20_band_500 atb_20 band greater_500</span></span>
+<span><span class="co">#&gt; 1               1      1    1          NA</span></span>
+<span><span class="co">#&gt; 2               2      2    1          NA</span></span>
+<span><span class="co">#&gt; 3               3      3    1          NA</span></span>
+<span><span class="co">#&gt; 4               4      4    1          NA</span></span>
+<span><span class="co">#&gt; 5               5      5    1          NA</span></span>
+<span><span class="co">#&gt; 6               6      4    2          NA</span></span></code></pre></div>
 <p>Note that by giving the area to be burnt in a negative value when it was generated above we have ensured that the values do not clash with those generated by the cuts which (except potentially when a cut is NA) will always be positive.</p>
 </div>
 <div class="section level2">
@@ -378,22 +357,16 @@
 <p>Even if a distance layer is not used in the classification one must be given to the <code>create_model</code> method, so the resulting HRUs can be ordered.</p>
 <p>For example, in the case of the division of Swindale by topographic index into 21 classes and the bands directly the resulting model can be generated by</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="st">"new_model"</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span>
-<span class="co">#&gt; The following Channel HRUs are outflows: 1</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="st">"new_model"</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; The following Channel HRUs are outflows: 1</span></span></code></pre></div>
 <p>Looking at the files within the <code>demo_dir</code> folder</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span>
-<span class="co">#&gt; [1] "new_model.rds" "new_model.tif"</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "new_model.rds" "new_model.tif"</span></span></code></pre></div>
 <p>shows that an addition raster map of the HRUs has been created in <code>new_model.tif</code> along with a file <code>new_model.rds</code> containing a model suitable for <code>dynatop</code></p>
 <p>The map of HRUs can be plotted as with any layer</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"new_model"</span><span class="op">)</span>
-<span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span>
-<span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span>
-<span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"new_model"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot_model-1.png" width="700"></p>
 <p>The values on the map correspond to the <code>ìd</code> column of the hillslope table in the <code>dynatop</code> model.</p>
 </div>
@@ -416,7 +389,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer>
