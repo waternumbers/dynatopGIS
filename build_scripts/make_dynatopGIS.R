@@ -54,7 +54,7 @@ pacPath <- '.'# ##/dynatopGIS'
 devtools::load_all(pacPath)
 #library("dynatopGIS")
 dem <- raster::raster(system.file("extdata", "SwindaleDTM4mFilled.tif", package="dynatopData"))
-shp <- rgdal::readOGR(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData"))
+shp <- raster::shapefile(system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopData"))
 agg_dem <- raster::aggregate(dem,10)
 
 property_names <- c(channel_id="identifier",

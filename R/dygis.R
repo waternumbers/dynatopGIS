@@ -15,7 +15,7 @@
 #' ctch$add_dem(dem)
 #' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 #' package="dynatopGIS", mustWork = TRUE)
-#' sp_lines <- rgdal::readOGR(channel_file)
+#' sp_lines <- raster::shapefile(channel_file)
 #' property_names <- c(channel_id="identifier",endNode="endNode",startNode="startNode",length="length")
 #' ctch$add_channel(sp_lines,property_names)
 #'
@@ -442,7 +442,7 @@ dynatopGIS <- R6::R6Class(
                 }else{
                     warning("Modifying to spatial polygons using specified width")
                 }
-                sp_object <- rgeos::gBuffer(sp_object, byid=TRUE, width=sp_object[['width']])
+                sp_object <- raster::buffer(sp_object, width=sp_object[['width']], dissolve=FALSE)
             }
 
             ## see if variables refered to in property_names exist
