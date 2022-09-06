@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.2</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.3</span>
       </span>
     </div>
 
@@ -118,8 +118,8 @@
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmplqXBBH/</span></span>
-<span><span class="co">#&gt; dygis445f36aa0d40/meta.json</span></span>
+<span><span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpuLM5lU/</span></span>
+<span><span class="co">#&gt; dygis44b12cb72fa5/meta.json</span></span>
 <span><span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span></span>
 <span><span class="co">#&gt; performed</span></span></code></pre></div>
 </div>
@@ -150,16 +150,8 @@
 <p>Additional properties are currently kept but ignored with two exceptions: - <em>id</em> - this is copied to <code>original_id</code> with a warning since <code>id</code> is used internally - <em>width</em> - if the channel is specified with a line sections then the <em>width</em> property is used to buffer the lines to create channel polygons.</p>
 <p>Since it is possible that these properties are present in a data file under different names the <code>add_channel</code> method allows for renaming. To illustrate this let us examine the river network for Swindale</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">rgdal</span><span class="fu">::</span><span class="fu"><a href="http://rgdal.r-forge.r-project.org/reference/readOGR.html" class="external-link">readOGR</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in OGRSpatialRef(dsn, layer, morphFromESRI = morphFromESRI, dumpSRS =</span></span>
-<span><span class="co">#&gt; dumpSRS, : Discarded datum OSGB_1936 in Proj4 definition: +proj=tmerc +lat_0=49</span></span>
-<span><span class="co">#&gt; +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs</span></span>
-<span><span class="co">#&gt; OGR data source with driver: ESRI Shapefile </span></span>
-<span><span class="co">#&gt; Source: "/home/runner/work/_temp/Library/dynatopGIS/extdata/SwindaleRiverNetwork.shp", layer: "SwindaleRiverNetwork"</span></span>
-<span><span class="co">#&gt; with 19 features</span></span>
-<span><span class="co">#&gt; It has 11 fields</span></span>
-<span><span class="co">#&gt; Integer64 fields read as strings:  length</span></span>
-<span><span class="co">#&gt; Warning in rgdal::readOGR(channel_file): Z-dimension discarded</span></span>
+<code class="sourceCode R"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html" class="external-link">shapefile</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: [vect] Z coordinates ignored</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sp_lines</span><span class="op">)</span></span>
 <span><span class="co">#&gt; class       : SpatialLinesDataFrame </span></span>
 <span><span class="co">#&gt; features    : 6 </span></span>
