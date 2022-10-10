@@ -14,7 +14,6 @@ LazyData: true
 Imports:
     R6,
 	raster,
-	rgdal,
 	methods,
 	jsonlite
 Depends:
@@ -25,8 +24,6 @@ RoxygenNote: 7.2.1
 Suggests:
     igraph,
     knitr,
-    rmarkdown,
-    covr,
-    pkgdown
+    rmarkdown
 VignetteBuilder: knitr
 Language: en-GB
