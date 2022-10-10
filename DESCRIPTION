@@ -13,9 +13,10 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     R6,
-	raster,
-	methods,
-	jsonlite
+    raster,
+    rgdal,
+    methods,
+    jsonlite
 Depends:
 	R (>= 4.0.0)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
