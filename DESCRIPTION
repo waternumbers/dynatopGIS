@@ -14,7 +14,6 @@ LazyData: true
 Imports:
     R6,
     raster,
-    rgdal,
     methods,
     jsonlite
 Depends:
@@ -24,6 +23,7 @@ URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers
 RoxygenNote: 7.2.1
 Suggests:
     igraph,
+    rgdal,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
