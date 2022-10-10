@@ -118,8 +118,8 @@
 <p>and initialise the analysis by creating a new object specifying the location of the meta data file, which will be created if it doesn’t exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/Rtmpx7uwAS/</span></span>
-<span><span class="co">#&gt; dygis413b350720ec/meta.json</span></span>
+<span><span class="co">#&gt; Warning in initialize(...): Creating meta file at/tmp/RtmpgoAvPb/</span></span>
+<span><span class="co">#&gt; dygis42e6479d42a0/meta.json</span></span>
 <span><span class="co">#&gt; Warning in private$check_meta(verbose): No checks on the meta are currently</span></span>
 <span><span class="co">#&gt; performed</span></span></code></pre></div>
 </div>
@@ -205,7 +205,7 @@
 <span><span class="co">#&gt; extent     : 347734, 352694, 507244, 513764  (xmin, xmax, ymin, ymax)</span></span>
 <span><span class="co">#&gt; crs        : +proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs </span></span>
 <span><span class="co">#&gt; source     : dem.tif </span></span>
-<span><span class="co">#&gt; names      : dem </span></span>
+<span><span class="co">#&gt; names      : layer </span></span>
 <span><span class="co">#&gt; values     : 262.8004, 710.7533  (min, max)</span></span></code></pre></div>
 <p>All layers are returned as <code>RasterLayer</code> objects with the exception of the <code>channel</code> layer which is returned as a <code>SpatialPolygonsDataFrame</code> object. The complete meta data file can be retrieved with</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
