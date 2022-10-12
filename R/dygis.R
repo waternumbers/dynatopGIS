@@ -15,7 +15,7 @@
 #' ctch$add_dem(dem)
 #' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 #' package="dynatopGIS", mustWork = TRUE)
-#' sp_lines <- rgdal::readOGR(channel_file)
+#' sp_lines <- terra::vect(channel_file)
 #' property_names <- c(name="identifier",endNode="endNode",startNode="startNode",length="length")
 #' chn <- convert_channel(sp_lines,property_names)
 #' ctch$add_channel(chn)
@@ -184,9 +184,9 @@ dynatopGIS <- R6::R6Class(
         #' @param layer_name name for the new model and layers
         #' @param class_layer the layer defining the topographic classes
         #' @param dist_layer the layer defining the distances to the channel
-        #' @param transmissivity transmissivity profile to use
-        #' @param channel_solver channel solver to use
-        #' @param dist_delta used in computing flow linkages see details        
+        #' @param sf_opt Surface solution to use
+        #' @param sz_opt transmissivity transmissivity profile to use
+        #' @param dist_delta TODO
         #' @param rain_layer the layer defining the rainfall inputs
         #' @param rain_label Prepended to rain_layer values to give rainfall series name        
         #' @param pet_layer the layer defining the pet inputs
@@ -194,7 +194,7 @@ dynatopGIS <- R6::R6Class(
         #' @param verbose print more details of progress
         #'
         #' @details The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta of the shortest distance within the HRU.
-        #' Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
+        #' Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
                                 sf_opt = c("cnst","storDis","dfr"),
@@ -406,7 +406,7 @@ dynatopGIS <- R6::R6Class(
             terra::writeVector(chn, shpFile)
             terra::writeRaster(chn_rst,rstFile, names = "channel")
             
-            private$brk[["channel"]] <- terra::rast(rstFile)
+            private$brk <- c(private$brk, terra::rast(rstFile))
             private$shp <- terra::vect(shpFile)
         },
         ## Add a layer
@@ -426,9 +426,9 @@ dynatopGIS <- R6::R6Class(
                 stop("New layer does not match resolution, extent or projection of project")
             }
             names(layer) <- layer_name
-            rstFile <- file.path(private$projectFolder,paste0(layer_name[1],".tif"))
+            rstFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
             terra::writeRaster(layer, rstFile)
-            private$brk[[layer_name]] <- terra::rast( rstFile )
+            private$brk <- c(private$brk, terra::rast( rstFile ))
          },
         ## Sink fill
         apply_sink_fill = function(min_grad,max_it,verbose,hot_start){
@@ -518,7 +518,12 @@ dynatopGIS <- R6::R6Class(
             rfd <- terra::rast( private$brk[["dem"]], names="filled_dem", vals=fd )
             rstFile <- file.path(private$projectFolder,"filled_dem.tif")
             terra::writeRaster(rfd, rstFile)
-            private$brk[["filled_dem"]] <- terra::rast(rstFile)
+            if(hot_start){
+                private$brk[["filled_dem"]] <- terra::rast(rstFile)
+            }else{
+                private$brk <- c( private$brk, terra::rast(rstFile))
+            }
+            
             
            
             if(it>max_it){ stop("Maximum number of iterations reached, sink filling not complete") }
@@ -606,16 +611,18 @@ dynatopGIS <- R6::R6Class(
             ## save raster maps
             out <- terra::rast( private$brk[["dem"]], names="gradient", vals=gr )
             rstFile <- file.path(private$projectFolder,"gradient.tif")
-            terra::writeRaster(out, rstFile); private$brk[["gradient"]] <- terra::rast(rstFile)
+            terra::writeRaster(out, rstFile);
+            private$brk <- c( private$brk, terra::rast(rstFile))
 
             out <- terra::rast( private$brk[["dem"]], names="upslope_area", vals=upa )
             rstFile <- file.path(private$projectFolder,"upslope_area.tif")
-            terra::writeRaster(out, rstFile); private$brk[["upslope_area"]] <- terra::rast(rstFile)
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
 
             out <- terra::rast( private$brk[["dem"]], names="atb", vals=atb )
             rstFile <- file.path(private$projectFolder,"atb.tif")
-            terra::writeRaster(out, rstFile); private$brk[["atb"]] <- terra::rast(rstFile)
-
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
         },
         ## work out flow lengths to channel
         apply_flow_lengths = function(verbose){
@@ -711,24 +718,28 @@ dynatopGIS <- R6::R6Class(
             ## save raster maps
             out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd )
             rstFile <- file.path(private$projectFolder,"band.tif")
-            terra::writeRaster(out, rstFile); private$brk[["band"]] <- terra::rast(rstFile)
-
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
+            
             out <- terra::rast( private$brk[["dem"]], names="band_inc_chn", vals=bnd_inc_chn)
             rstFile <- file.path(private$projectFolder,"band_inc_chn.tif")
-            terra::writeRaster(out, rstFile); private$brk[["band_inc_chn"]] <- terra::rast(rstFile)
-
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
+            
             out <- terra::rast( private$brk[["dem"]], names="shortest_flow_length", vals=sfl )
             rstFile <- file.path(private$projectFolder,"shortest_flow_length.tif")
-            terra::writeRaster(out, rstFile); private$brk[["shortest_flow_length"]] <- terra::rast(rstFile)
-
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
+            
             out <- terra::rast( private$brk[["dem"]], names="dominant_flow_length", vals=dfl )
             rstFile <- file.path(private$projectFolder,"dominant_flow_length.tif")
-            terra::writeRaster(out, rstFile); private$brk[["dominant_flow_length"]] <- terra::rast(rstFile)
-
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
+            
             out <- terra::rast( private$brk[["dem"]], names="expected_flow_length", vals=efl )
             rstFile <- file.path(private$projectFolder,"expected_flow_length.tif")
-            terra::writeRaster(out, rstFile); private$brk[["expected_flow_length"]] <- terra::rast(rstFile)
-
+            terra::writeRaster(out, rstFile); 
+            private$brk <- c( private$brk, terra::rast(rstFile))
         },
         
         ## split_to_class
@@ -758,8 +769,11 @@ dynatopGIS <- R6::R6Class(
             }
             ## cut the raster
             outFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
-            private$brk[[ layer_name ]] <- terra::classify(x,rcl=brk,include.lowest=TRUE,
-                                 filename= outFile, names=layer_name)
+
+            
+            private$brk <- c( private$brk,
+                             terra::classify(x,rcl=brk,include.lowest=TRUE,
+                                             filename= outFile, names=layer_name))
 
             out <- list(type="classification", layer=base_layer, cuts=brk)
             writeLines( jsonlite::toJSON(out), file.path(private$projectFolder,paste0(layer_name,".json")) )
@@ -852,7 +866,7 @@ dynatopGIS <- R6::R6Class(
                 
             ## }
             outFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
-            private$brk[[ layer_name ]] <- terra::writeRaster( cp, outFile, names=layer_name)
+            private$brk <- c( private$brk, terra::writeRaster( cp, outFile, names=layer_name))
             
             out <- list(type="combination",
                         groups=df)
@@ -899,7 +913,6 @@ dynatopGIS <- R6::R6Class(
             if(verbose){ cat("Initialising model","\n") }
             ## start model data frame and add minimum distance
             model$hru <- jsonlite::fromJSON(jsonFile)$groups
-            
             min_dst <- terra::zonal(dst,cls,min) # minimum distance for each classification
             idx <- match(model$hru[[class_lyr]],min_dst[[class_lyr]])
             names(model$hru) <- paste0("cls_",names(model$hru))
@@ -910,27 +923,36 @@ dynatopGIS <- R6::R6Class(
                 stop("Unable to compute a finite minimum distance for all HRUs")
             }
 
-            ## add id and change classification map to match
+            ## add id and vector giving change in classification map to hru map
             model$hru <- model$hru[order(model$hru$min_dst,decreasing=TRUE),] # longest distance in first row
             model$hru$id <- (nrow(model$hru):1) + max(private$shp$id) ## ensure id is greater then number of channels
             idx <- is.finite( model$hru[[paste0("cls_",class_lyr)]] )
             frm <- model$hru[[paste0("cls_",class_lyr)]][idx]
             tw <- model$hru$id[idx]
-            
-            ## map <- terra::subst(cls,from=frm,to=data.frame( frm=frm,to=tw)) ## this doesn't work as expected in CRAN release - fixed upstream
-            x <- terra::values(cls,mat=FALSE) #x <- as.vector( terra::as.matrix(cls) )
-            x <- c(tw,x)[match(x, c(frm,x))]
-            map <- cls; names(map) <- "class"
-            map[["hru"]] <- x
-            
-            #browser()
-            
             ## add the channel data
             model$hru <- merge(model$hru,private$shp[,c("id","name","startNode","endNode","length")],by="id",all=TRUE)
             model$hru$id <- as.integer(model$hru$id)
             model$hru$is_channel <- model$hru$id <= max(private$shp$id)
             model$hru$min_dst[model$hru$is_channel] <- 0
-            map[["hru"]] <- terra::cover(private$brk[["channel"]], map[["hru"]])
+            ## creta the map
+            map <-  terra::cover( private$brk[["channel"]], terra::subst(cls,from=frm,to=tw))
+            names(map) <- "hru"
+
+            ##data.frame( frm=frm,to=tw)) ## this doesn't work as expected in CRAN release - fixed upstream
+##            x <- terra::values(cls,mat=FALSE) #x <- as.vector( terra::as.matrix(cls) )
+##            x <- c(tw,x)[match(x, c(frm,x))]
+ ##           map <- terra::rast(cls,names="hru",vals=x)
+            
+            #browser()
+            
+            ## add the channel data
+            ## model$hru <- merge(model$hru,private$shp[,c("id","name","startNode","endNode","length")],by="id",all=TRUE)
+            ## model$hru$id <- as.integer(model$hru$id)
+            ## model$hru$is_channel <- model$hru$id <= max(private$shp$id)
+            ## model$hru$min_dst[model$hru$is_channel] <- 0
+
+            
+            ##            mmap <- terra::cover(private$brk[["channel"]],map)
 
             ## add the options controlling lateral flow calculations
             model$hru$sf <- sf_opt

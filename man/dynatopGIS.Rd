@@ -23,7 +23,7 @@ dem <- terra::rast(dem_file)
 ctch$add_dem(dem)
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 package="dynatopGIS", mustWork = TRUE)
-sp_lines <- rgdal::readOGR(channel_file)
+sp_lines <- terra::vect(channel_file)
 property_names <- c(name="identifier",endNode="endNode",startNode="startNode",length="length")
 chn <- convert_channel(sp_lines,property_names)
 ctch$add_channel(chn)
@@ -48,27 +48,26 @@ unlink(demo_dir)
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{dynatopGIS$new()}}
-\item \href{#method-get_meta}{\code{dynatopGIS$get_meta()}}
-\item \href{#method-add_dem}{\code{dynatopGIS$add_dem()}}
-\item \href{#method-add_channel}{\code{dynatopGIS$add_channel()}}
-\item \href{#method-add_layer}{\code{dynatopGIS$add_layer()}}
-\item \href{#method-get_layer}{\code{dynatopGIS$get_layer()}}
-\item \href{#method-plot_layer}{\code{dynatopGIS$plot_layer()}}
-\item \href{#method-sink_fill}{\code{dynatopGIS$sink_fill()}}
-\item \href{#method-compute_properties}{\code{dynatopGIS$compute_properties()}}
-\item \href{#method-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
-\item \href{#method-classify}{\code{dynatopGIS$classify()}}
-\item \href{#method-combine_classes}{\code{dynatopGIS$combine_classes()}}
-\item \href{#method-create_model}{\code{dynatopGIS$create_model()}}
-\item \href{#method-get_version}{\code{dynatopGIS$get_version()}}
-\item \href{#method-get_method}{\code{dynatopGIS$get_method()}}
-\item \href{#method-clone}{\code{dynatopGIS$clone()}}
+\item \href{#method-dynatopGIS-new}{\code{dynatopGIS$new()}}
+\item \href{#method-dynatopGIS-add_dem}{\code{dynatopGIS$add_dem()}}
+\item \href{#method-dynatopGIS-add_channel}{\code{dynatopGIS$add_channel()}}
+\item \href{#method-dynatopGIS-add_layer}{\code{dynatopGIS$add_layer()}}
+\item \href{#method-dynatopGIS-get_layer}{\code{dynatopGIS$get_layer()}}
+\item \href{#method-dynatopGIS-plot_layer}{\code{dynatopGIS$plot_layer()}}
+\item \href{#method-dynatopGIS-sink_fill}{\code{dynatopGIS$sink_fill()}}
+\item \href{#method-dynatopGIS-compute_properties}{\code{dynatopGIS$compute_properties()}}
+\item \href{#method-dynatopGIS-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
+\item \href{#method-dynatopGIS-classify}{\code{dynatopGIS$classify()}}
+\item \href{#method-dynatopGIS-combine_classes}{\code{dynatopGIS$combine_classes()}}
+\item \href{#method-dynatopGIS-create_model}{\code{dynatopGIS$create_model()}}
+\item \href{#method-dynatopGIS-get_version}{\code{dynatopGIS$get_version()}}
+\item \href{#method-dynatopGIS-get_method}{\code{dynatopGIS$get_method()}}
+\item \href{#method-dynatopGIS-clone}{\code{dynatopGIS$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-new"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-new}{}}}
 \subsection{Method \code{new()}}{
 Initialise a project, or reopen an existing project
 \subsection{Usage}{
@@ -91,18 +90,8 @@ A new `dynatopGIS` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_meta"></a>}}
-\if{latex}{\out{\hypertarget{method-get_meta}{}}}
-\subsection{Method \code{get_meta()}}{
-Get project meta data
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_meta()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_dem"></a>}}
-\if{latex}{\out{\hypertarget{method-add_dem}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-add_dem"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-add_dem}{}}}
 \subsection{Method \code{add_dem()}}{
 Import a dem to the `dynatopGIS` object
 \subsection{Usage}{
@@ -129,8 +118,8 @@ suitable for chaining
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_channel"></a>}}
-\if{latex}{\out{\hypertarget{method-add_channel}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-add_channel"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-add_channel}{}}}
 \subsection{Method \code{add_channel()}}{
 Import channel data to the `dynatopGIS` object
 \subsection{Usage}{
@@ -153,8 +142,8 @@ suitable for chaining
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_layer"></a>}}
-\if{latex}{\out{\hypertarget{method-add_layer}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-add_layer"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-add_layer}{}}}
 \subsection{Method \code{add_layer()}}{
 Add a layer of geographical information
 \subsection{Usage}{
@@ -179,8 +168,8 @@ suitable for chaining
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_layer"></a>}}
-\if{latex}{\out{\hypertarget{method-get_layer}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-get_layer"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-get_layer}{}}}
 \subsection{Method \code{get_layer()}}{
 Get a layer of geographical information or a list of layer names
 \subsection{Usage}{
@@ -199,8 +188,8 @@ a `raster` layer of the requested information if layer_name is given else a vect
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plot_layer"></a>}}
-\if{latex}{\out{\hypertarget{method-plot_layer}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-plot_layer"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-plot_layer}{}}}
 \subsection{Method \code{plot_layer()}}{
 Plot a layer
 \subsection{Usage}{
@@ -221,8 +210,8 @@ a plot
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-sink_fill"></a>}}
-\if{latex}{\out{\hypertarget{method-sink_fill}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-sink_fill"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-sink_fill}{}}}
 \subsection{Method \code{sink_fill()}}{
 The sink filling algorithm of Planchona and Darboux (2001)
 \subsection{Usage}{
@@ -253,8 +242,8 @@ The algorithm implemented is that described in Planchona and Darboux, "A fast, s
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-compute_properties"></a>}}
-\if{latex}{\out{\hypertarget{method-compute_properties}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-compute_properties"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-compute_properties}{}}}
 \subsection{Method \code{compute_properties()}}{
 Computes statistics e.g. gradient, log(upslope area / gradient) for raster cells
 \subsection{Usage}{
@@ -276,8 +265,8 @@ The algorithm passed through the cells in decreasing height. Min grad is applied
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-compute_flow_lengths"></a>}}
-\if{latex}{\out{\hypertarget{method-compute_flow_lengths}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-compute_flow_lengths"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-compute_flow_lengths}{}}}
 \subsection{Method \code{compute_flow_lengths()}}{
 Computes flow length for each pixel to the channel
 \subsection{Usage}{
@@ -297,8 +286,8 @@ The algorithm passed through the cells in increasing height. For measures of flo
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-classify"></a>}}
-\if{latex}{\out{\hypertarget{method-classify}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-classify"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-classify}{}}}
 \subsection{Method \code{classify()}}{
 Create a catchment classification based cutting an existing layer into classes
 \subsection{Usage}{
@@ -322,8 +311,8 @@ This applies the given cuts to the supplied landscape layer to produce areal gro
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-combine_classes"></a>}}
-\if{latex}{\out{\hypertarget{method-combine_classes}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-combine_classes"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-combine_classes}{}}}
 \subsection{Method \code{combine_classes()}}{
 Combine any number of classifications based on unique combinations and burns
 \subsection{Usage}{
@@ -347,8 +336,8 @@ This applies the given cuts to the supplied landscape layers to produce areal gr
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-create_model"></a>}}
-\if{latex}{\out{\hypertarget{method-create_model}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-create_model"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-create_model}{}}}
 \subsection{Method \code{create_model()}}{
 Compute a Dynamic TOPMODEL
 \subsection{Usage}{
@@ -356,7 +345,8 @@ Compute a Dynamic TOPMODEL
   layer_name,
   class_layer,
   dist_layer,
-  transmissivity = c("exp", "bexp", "cnst", "dexp"),
+  sf_opt = c("cnst", "storDis", "dfr"),
+  sz_opt = c("exp", "bexp", "cnst", "dexp"),
   dist_delta = 0,
   rain_layer = NULL,
   rain_label = character(0),
@@ -375,9 +365,11 @@ Compute a Dynamic TOPMODEL
 
 \item{\code{dist_layer}}{the layer defining the distances to the channel}
 
-\item{\code{transmissivity}}{transmissivity profile to use}
+\item{\code{sf_opt}}{Surface solution to use}
 
-\item{\code{dist_delta}}{used in computing flow linkages see details}
+\item{\code{sz_opt}}{transmissivity transmissivity profile to use}
+
+\item{\code{dist_delta}}{TODO}
 
 \item{\code{rain_layer}}{the layer defining the rainfall inputs}
 
@@ -388,21 +380,19 @@ Compute a Dynamic TOPMODEL
 \item{\code{pet_label}}{Prepended to pet_layer values to give pet series name}
 
 \item{\code{verbose}}{print more details of progress}
-
-\item{\code{channel_solver}}{channel solver to use}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
 The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta of the shortest distance within the HRU.
-Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
+Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
 The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_version"></a>}}
-\if{latex}{\out{\hypertarget{method-get_version}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-get_version"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-get_version}{}}}
 \subsection{Method \code{get_version()}}{
 get the version number
 \subsection{Usage}{
@@ -418,12 +408,12 @@ a numeric version number
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_method"></a>}}
-\if{latex}{\out{\hypertarget{method-get_method}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-get_method"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-get_method}{}}}
 \subsection{Method \code{get_method()}}{
 get the cuts and burns used to classify
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_method(layer_name = character(0))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$get_method(layer_name)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -438,8 +428,8 @@ a list with two elements, cuts and burns
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-dynatopGIS-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

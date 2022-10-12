@@ -96,7 +96,7 @@ Either the DEM or channel files can be added to the project first. In this
 case we add the DEM with
 
 ```{r, add_dem}
-dem <- raster::raster(dem_file)
+dem <- terra::rast(dem_file)
 ctch$add_dem(dem)
 ```
 
@@ -124,7 +124,7 @@ The `convert_channel` function is designed to help with this.
 To illustrate this let us examine the river network for Swindale
 
 ```{r, channel_current}
-sp_lines <- rgdal::readOGR(channel_file)
+sp_lines <- terra::vect(channel_file)
 head(sp_lines)
 ```
 
@@ -197,8 +197,8 @@ only alters a small area near the foot of the catchment.
 ```{r, sink_fill}
 ctch$sink_fill()
 
-raster::plot( ctch$get_layer('filled_dem') - ctch$get_layer('dem'),
-             main="Changes to height")
+terra::plot( ctch$get_layer('filled_dem') - ctch$get_layer('dem'),
+            main="Changes to height")
 ```
 
 # Computing properties
@@ -249,10 +249,10 @@ tmp <- ctch$get_layer("filled_dem")
 then separate it into a layers representing land above and below 500m.
 
 ```{r height layer}
-tmp <- raster::reclassify( tmp,
+tmp <- terra::classify( tmp,
                           matrix(c(0,500,NA,
                                    500,1000,-999),
-                                 byrow=TRUE))
+                                 ncol=3,byrow=TRUE))
 ```
 
 The resulting raster object can now be added to the project with

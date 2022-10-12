@@ -13,21 +13,16 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     R6,
-	raster,
-	rgeos,
-	methods,
-	jsonlite
+    terra,
+    jsonlite
 Depends:
 	R (>= 4.0.0)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
 URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Suggests:
-	rgdal,
 	igraph,
     knitr,
     rmarkdown,
-    covr,
-    pkgdown
 VignetteBuilder: knitr
 Language: en-GB
