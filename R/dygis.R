@@ -895,6 +895,37 @@ dynatopGIS <- R6::R6Class(
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
 
+            ## make basic template based on sf_opt and sz_opt
+            sf_opt <- "cnstCD"; sz_opt <- "exp"
+            tmp_sf <- switch(sf_opt,
+                             "cnstCD" = list(type = "constCD",
+                                             parameters = c(c_sf = 0.3, "d_sf" = 0.0)),
+                             stop("Unrecognised surface option")
+                             )
+            tmp_sz <- switch(sz_opt,
+                             "exp" = list(type = "exp",
+                                          parameters = c( "t_0" = 0.135, "m" = 0.04, "D" = 5 )),
+                             stop("Unrecognised saturated zone option")
+                             )
+            
+            tmplate <- list(id = integer(0),
+                            states = setNames(as.numeric(rep(NA,6)), c("s_sf","s_rz","s_uz","s_sz","q_sf","q_sz")),
+                            properties = setNames(rep(0,4), c("width","area","gradient","length")),
+                            sf = tmp_sf,
+                            rz = list("orig", parameters = c("s_rzmax" = 0.1)),
+                            uz = list(type="orig", parameters = c("t_d" = 8*60*60)),
+                            sz = tmp_sz,
+                            sf_flow_direction = list(id = integer(0), fraction = numeric(0)),
+                            sz_flow_direction = list(id = integer(0), fraction = numeric(0)),
+                            initialisation = c("s_rz_0" = 0.75, "r_uz_sz_0" = 1e-7),
+                            precip = list(name="precip",frc=1),
+                            pet = list(name="precip",frc=1))
+
+            ## work out from the maps the id values
+
+            
+
+            
             jsonFile <- paste0(tools::file_path_sans_ext(terra::sources(private$brk[[class_lyr]])),".json")
             if( !file.exists(jsonFile) ){
                 stop("No json file giving basis of the classifications")
@@ -903,6 +934,7 @@ dynatopGIS <- R6::R6Class(
             ## if(!(class_lyr %in% names(private$layers) )){
             ##     stop(class_lyr, " is not a classification")
             ## }
+            
 
             model <- list()
             
