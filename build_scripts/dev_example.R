@@ -63,3 +63,5 @@ ctch$plot_layer("atb_20_band_500")
 
 
 ctch$create_model("./demo/test_model","atb_20_band","band_inc_chn",verbose=TRUE)
+
+unlink( list.files("./demo",full.names=TRUE) )

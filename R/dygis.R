@@ -894,7 +894,9 @@ dynatopGIS <- R6::R6Class(
             if(!all(has_rq)){
                 stop(paste(c("Missing layers:",rq[!has_rq],sep="\n")))
             }
-
+            
+            if(verbose){ cat("Setting up HRUs","\n") }
+            
             ## make basic template based on sf_opt and sz_opt
             sf_opt <- "cnstCD"; sz_opt <- "exp"
             tmp_sf <- switch(sf_opt,
@@ -906,11 +908,10 @@ dynatopGIS <- R6::R6Class(
                              "exp" = list(type = "exp",
                                           parameters = c( "t_0" = 0.135, "m" = 0.04, "D" = 5 )),
                              stop("Unrecognised saturated zone option")
-                             )
-            
+                             )          
             tmplate <- list(id = integer(0),
                             states = setNames(as.numeric(rep(NA,6)), c("s_sf","s_rz","s_uz","s_sz","q_sf","q_sz")),
-                            properties = setNames(rep(0,4), c("width","area","gradient","length")),
+                            properties = setNames(rep(0,5), c("width","area","gradient","length","min_dst")),
                             sf = tmp_sf,
                             rz = list("orig", parameters = c("s_rzmax" = 0.1)),
                             uz = list(type="orig", parameters = c("t_d" = 8*60*60)),
@@ -919,124 +920,66 @@ dynatopGIS <- R6::R6Class(
                             sz_flow_direction = list(id = integer(0), fraction = numeric(0)),
                             initialisation = c("s_rz_0" = 0.75, "r_uz_sz_0" = 1e-7),
                             precip = list(name="precip",frc=1),
-                            pet = list(name="precip",frc=1))
+                            pet = list(name="pet",frc=1))
 
-            ## work out from the maps the id values
-
+            ## read in classification and distance layers
+            cls <-  private$brk[[class_lyr]] ## channel values are NA
+            dst <- private$brk[[dist_lyr]] ## !!!!We assume that all channel pixels have a distance that puts them in the correct order!!!!!
+            cls <- cls + max(private$shp$id) ## alter class so greater then river channel id
+            hmap <-  terra::cover( private$brk[["channel"]], cls) ## make map of HRUs - but numbering not yest correct
+            names(hmap) <- "hru"
             
+            ## work out the order of the hrus and add class information
+            tbl <- terra::zonal(dst,hmap,min) # minimum distance for each hillslope classification
+            tbl$min_dst <- tbl[[dist_lyr]]
+            tbl[[dist_lyr]] <- NULL
+   
+            ## add any missing channels
+            for(ii in setdiff(private$shp$id, tbl$hru ){
+                ## at least one channel hru is not represented in the map
+                mnd <- private$shp$id[ private$shp$startNode == private$shp$endNode[ private$shp$id==ii ] ]
+                if( length(mnd)==0 ){ mnd <- 0.5*min( tbl$min_dst ) }
+                else{ mnd <- max( tbl$min_dst[ tbl$hru %in% mnd ]) }
+                mxd <- private$shp$id[ private$shp$endNode == private$shp$startNode[ private$shp$id==ii ] ]
+                if( length(mxd)==0 ){ mxd <- 0.1+max( tbl$min_dst )  }
+                else{ mxd <- min( tbl$min_dst[ tbl$hru %in% mxd ]) }
+                if( mnd >= mxd ){ stop("Whooooahhh - distance error") }
+                tbl <- rbind( tbl, data.frame(hru=ii, min_dst=(mnd+mxd)/2) )
+            }
 
-            
+            ## add class information
             jsonFile <- paste0(tools::file_path_sans_ext(terra::sources(private$brk[[class_lyr]])),".json")
             if( !file.exists(jsonFile) ){
-                stop("No json file giving basis of the classifications")
+                warning("No json file giving basis of the classifications")
+            }else{
+                tmp <- jsonlite::fromJSON(jsonFile)$groups
+                tmp$hru <- tmp[[class_lyr]] + max(private$shp$id)
+                tbl <- merge(tbl, tmp, by="hru", all.x=TRUE)
+            }
+            tbl <- merge(tbl,as.data.frame(private$shp),by.x="hru",by.y="id",all.x=TRUE) ## add channel information
+
+            ## order and renumber
+            tbl <- tbl[ order(tbl$min_dst), ]
+            hmap <- terra::subst(hmap, tbl$hru, 0:(nrow(tbl)-1))
+            tbl$hru <- 0:(nrow(tbl)-1)
+
+            ## make hrus
+            hru <- lapply(1:nrow(tbl), function(ii){
+                tmp <- as.list(tbl[ii,])
+                out <- tmplate
+                out$id <- tmp$hru
+                tmp$hru <- NULL
+                out$class <- tmp
             }
             
-            ## if(!(class_lyr %in% names(private$layers) )){
-            ##     stop(class_lyr, " is not a classification")
-            ## }
-            
-
-            model <- list()
-            
-            ## read in classification and distance layers
-            cls <-  private$brk[[class_lyr]]## channel values are NA
-            dst <- private$brk[[dist_lyr]]
-
-            if(verbose){ cat("Initialising model","\n") }
-            ## start model data frame and add minimum distance
-            model$hru <- jsonlite::fromJSON(jsonFile)$groups
-            min_dst <- terra::zonal(dst,cls,min) # minimum distance for each classification
-            idx <- match(model$hru[[class_lyr]],min_dst[[class_lyr]])
-            names(model$hru) <- paste0("cls_",names(model$hru))
-            model$hru$min_dst <- min_dst[idx, dist_lyr]
-            ##browser()
-            ##model$hru$zone <- min_dst[idx, "zone"]
-            if(!all(is.finite(model$hru$min_dst))){
-                stop("Unable to compute a finite minimum distance for all HRUs")
-            }
-
-            ## add id and vector giving change in classification map to hru map
-            model$hru <- model$hru[order(model$hru$min_dst,decreasing=TRUE),] # longest distance in first row
-            model$hru$id <- (nrow(model$hru):1) + max(private$shp$id) ## ensure id is greater then number of channels
-            idx <- is.finite( model$hru[[paste0("cls_",class_lyr)]] )
-            frm <- model$hru[[paste0("cls_",class_lyr)]][idx]
-            tw <- model$hru$id[idx]
-            ## add the channel data
-            model$hru <- merge(model$hru,private$shp[,c("id","name","startNode","endNode","length")],by="id",all=TRUE)
-            model$hru$id <- as.integer(model$hru$id)
-            model$hru$is_channel <- model$hru$id <= max(private$shp$id)
-            model$hru$min_dst[model$hru$is_channel] <- 0
-            ## creta the map
-            map <-  terra::cover( private$brk[["channel"]], terra::subst(cls,from=frm,to=tw))
-            names(map) <- "hru"
-
-            ##data.frame( frm=frm,to=tw)) ## this doesn't work as expected in CRAN release - fixed upstream
-##            x <- terra::values(cls,mat=FALSE) #x <- as.vector( terra::as.matrix(cls) )
-##            x <- c(tw,x)[match(x, c(frm,x))]
- ##           map <- terra::rast(cls,names="hru",vals=x)
-            
-            #browser()
-            
-            ## add the channel data
-            ## model$hru <- merge(model$hru,private$shp[,c("id","name","startNode","endNode","length")],by="id",all=TRUE)
-            ## model$hru$id <- as.integer(model$hru$id)
-            ## model$hru$is_channel <- model$hru$id <= max(private$shp$id)
-            ## model$hru$min_dst[model$hru$is_channel] <- 0
-
-            
-            ##            mmap <- terra::cover(private$brk[["channel"]],map)
-
-            ## add the options controlling lateral flow calculations
-            model$hru$sf <- sf_opt
-            model$hru$sz <- sz_opt
-            
-            ## add parameters
-            fqsf <- function(x){
-                list(type = x,
-                     param = switch(x,
-                                    "cnst" = c(v_sf = 0.1,s_raf=0,t_raf=10*60*60),
-                                    "storDis" = list(storage=c(0.0,3000.0),discharge=c(0.0, 100)),
-                                    "dfr" = c(width=5, slp= 0.01, n = 0.035),
-                                    stop("Unrecognised surface option")
-                                    )
-                     )
-            }
-            
-            fqsz <- function(x){
-                list(type = x,
-                     param = switch(x,
-                                    "exp" = c( t_0 = 0.135, m = 0.04 ),
-                                    "bexp" = c( t_0 = 0.135, m = 0.04, D=5 ),
-                                    "dexp" = c( t_0 = 0.135, m1 = 0.04, m2 = 0.0002, omega = 0.5 ),
-                                    "cnst" = c( v_sz = 0.01, D = 10 ),
-                                    stop("Unrecognised tranmissivity")
-                                    )
-                     )
-            }
-            
-            model$hru$sf <- lapply( model$hru$sf,fqsf )
-            model$hru$sz <- lapply( model$hru$sz,fqsz )
-            model$hru$r_sfmax <- Inf
-            model$hru$s_rzmax <- 0.05
-            model$hru$s_rz0 <- 0.75
-            model$hru$t_d <- 7200
-            model$hru$r_uz_sz0 <- 1e-6
-            
-            ##model$hru$par <- Map(c, sf_par, rz_uz_par, sz_par)
-
             
             ## work out the properties
             if(verbose){ cat("Computing properties","\n") }
-            ## check sorted
-            model$hru <- model$hru[order(model$hru$id),]
-            if( !all( model$hru$id == 1:nrow(model$hru)) ){
-                stop("id should be sequential from 1")
-            }
-            
+     
             ## it is quickest to compute using blocks of a raster
             ## however for small rasters we will just treat as a single block
             d <- terra::as.matrix( private$brk[["filled_dem"]] , wide=TRUE )
-            mp <- terra::as.matrix( map[["hru"]]  , wide=TRUE )
+            mp <- terra::as.matrix( hmap , wide=TRUE )
             dst <- terra::as.matrix( dst  , wide=TRUE )
             gr <- terra::as.matrix( private$brk[["gradient"]]  , wide=TRUE )
             atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
@@ -1048,10 +991,8 @@ dynatopGIS <- R6::R6Class(
             dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
             nr <- nrow(map); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
- 
-            ## initialise new variables
-            model$hru$area <- model$hru$width <- model$hru$atb_bar <- model$hru$s_bar <- as.numeric(0)
-            
+            cellArea <- prod(rs)
+                
             flux <- rep( list(numeric(0)), nrow(model$hru))
             
             ## work out order to pass through the cells
@@ -1060,12 +1001,12 @@ dynatopGIS <- R6::R6Class(
 
             for(ii in idx){
                 
-                id <- mp[ii] ## id
-                model$hru$area[id] <- model$hru$area[id] + 1
-                model$hru$atb_bar[id] <- model$hru$atb_bar[id] + atb[ii]
-                model$hru$s_bar[id] <- model$hru$s_bar[id] + gr[ii]
+                id <- mp[ii]+1 ## index in the hru list (id +1)
+                hru[[id]]$properties["area"] <- hru[[id]]$properties["area"] + 1
+                hru[[id]]$properties["atb_bar"] <- hru[[id]]$properties["area"] + atb[ii]
+                hru[[id]]$properties["s_bar"] <- hru[[id]]$properties["area"] + gr[ii]
                 
-                if( model$hru$is_channel[id]  |  (dst[ii] <= (model$hru$min_dst[id] + delta_dist)) ){
+                if( hru[[id]]$class$is_channel |  (dst[ii] <= (hru[[id]]$class$min_dst + delta_dist)) ){
                     
                     ## look for flow direction      
                     ngh <- ii + delta ## neighbouring cells
@@ -1077,12 +1018,12 @@ dynatopGIS <- R6::R6Class(
                     
                     if( any(to_use) ){
                         nghid <- paste(nghid[to_use])
-                        tmp <- nghid[!(nghid %in% names(flux[[id]]))]
+                        tmp <- nghid[!(nghid %in% names(hru[[id]]$sz_flow_direction$frac))]
                         if(length(tmp)>0){
-                            flux[[id]][ tmp ] <- 0
+                            hru[[id]]$sz_flow_direction$frac[ tmp ] <- 0
                         }
-                        flux[[id]][ nghid ] <- flux[[id]][ nghid ] + grd[to_use]*dcl[to_use]
-                        model$hru$width[id] <- model$hru$width[id] + sum(dcl[to_use])
+                        hru[[id]]$sz_flow_direction$frac[ nghid ] <- hru[[id]]$sz_flow_direction$frac[ nghid ] + grd[to_use]*dcl[to_use]
+                        hru[[id]]$properties["width"] <- hru[[id]]$properties["width"] + sum(dcl[to_use])
                     }
                 }
                 
@@ -1094,13 +1035,42 @@ dynatopGIS <- R6::R6Class(
                 }
                 
             }
-            model$hru$s_bar <- model$hru$s_bar / model$hru$area
-            model$hru$atb_bar <- model$hru$atb_bar / model$hru$area
-            model$hru$area <- model$hru$area * prod(rs)
-            idx <- is.na(model$hru$length); model$hru$length[idx] <- model$hru$area[idx] / model$hru$width[idx] ## length for non channel HRUs
+
             
+            ## get vector of startNodes
+            sN <- sapply(hru, function(h){h$properties$startNode})
+            nFD <-  sapply(hru, function(h){ length(h$sz_flow_direction$frac) })
+            if( !all( pmax(nchar(sN),nFD) > 0 ) ){
+                stop( "The following HRUs have no valid outflows and are not channels: \n",
+                     paste(which( pmax(nchar(sN),nFD) == 0 ) , collapse=", "))
+            }
+            
+            for(ii in 1:length(hru)){
+                hru[[ii]]$properties["atb_bar"] <- hru[[ii]]$properties["atb_bar"] / hru[[ii]]$properties["area"]
+                hru[[ii]]$properties["s_bar"] <- hru[[ii]]$properties["s_bar"] / hru[[ii]]$properties["area"]
+                hru[[ii]]$properties["area"] <- hru[[ii]]$properties["area"] * cellArea
+                hru[ii]$sz_flow_direction$id <- as.integer(names( hru[ii]$sz_flow_direction$id ) )
+                hru[ii]$sz_flow_direction$frac <- as.numeric( hru[ii]$sz_flow_direction$frac / sum(hru[ii]$sz_flow_direction$frac) )
+
+                if( nchar(hru[[ii]]$class$startNode) > 0 ){
+                    ## then a channel
+                    hru[[ii]]$properties["Dx"] <- hru[[ii]]$class$length
+                    jdx <- which( sN == hru[[ii]]$class$endNode)
+                    if(length(jdx) >0){
+                        hru[ii]$sf_flow_direction$id <- as.integer( jdx - 1 )
+                        hru[ii]$sf_flow_direction$frac <- as.numeric( 1 / length(jdx) )
+                    }
+                }else{
+                    hru[ii]$sf_flow_direction <- hru[ii]$sz_flow_direction
+                    hru[[ii]]$properties["Dx"] <- hru[[ii]]$properties["area"]/hru[[ii]]$properties["width"]
+                }
+            }
+            
+                
+ <- if( length( hru[ii]$sz_flow_direction$frac) == 0 ){ stop(paste("HRU",hru[[ii]]$id,"has no flow directions")) }
+                
             ## check fluxes are valid and convert to form sz_flux
-            nlink <- sapply(flux,length)
+ <- nlink <- sapply(flux,length)
             idx <- which(nlink==0)
             if( any(idx %in% model$hru$id[!model$hru$is_channel]) ){
                     stop( "The following HRUs have no valid outflows and are not channels: \n",
