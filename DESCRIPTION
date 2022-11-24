@@ -13,7 +13,7 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     R6,
-    raster,
+    raster (>= 3.6.3),
     methods,
     jsonlite
 Depends:
