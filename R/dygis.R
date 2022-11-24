@@ -51,7 +51,6 @@ dynatopGIS <- R6::R6Class(
         #' @return A new `dynatopGIS` object
         initialize = function(meta_file, check=TRUE,verbose=TRUE){
             ## create directory if it doesn't exist
-            
             private$meta_path <- meta_file
             private$wdir <- normalizePath(dirname(meta_file))
 
@@ -325,13 +324,16 @@ dynatopGIS <- R6::R6Class(
             #browser()
             if(!file.exists(private$meta_path)){ stop("Missing metadata file") }
             meta <- jsonlite::fromJSON(private$meta_path)            
-            if(length(meta$crs)>0){meta$crs <- crs(meta$crs)}
+            if(length(meta$crs)>0){meta$crs <- sp::CRS(meta$crs)} ##crs(meta$crs)}
             if(length(meta$extent)>0){meta$extent <- extent(meta$extent)}
             private$meta <- meta
         },
         write_meta = function(){
             meta <- private$meta
-            meta$crs <- crs(meta$crs,asText=TRUE)
+            
+            if("CRS" %in% class(meta$crs)){
+                meta$crs <- wkt(meta$crs) ##crs(meta$crs,asText=TRUE)
+            }
             if("Extent" %in% class(meta$extent)){
                 meta$extent <- c(meta$extent@xmin,meta$extent@xmax,meta$extent@ymin,meta$extent@ymax)
             }
@@ -365,7 +367,6 @@ dynatopGIS <- R6::R6Class(
         },
         ## adding dem
         apply_add_dem = function(dem,fill_na,verbose){
-            
             if("dem" %in% names(private$find_layer(TRUE))){
                 stop("The DEM exists, start a new project")
             }
