@@ -11,11 +11,11 @@
 #'
 #' ## add digital elevation and channel data
 #' dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
-#' dem <- raster::raster(dem_file)
+#' dem <- terra::rast(dem_file)
 #' ctch$add_dem(dem)
 #' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 #' package="dynatopGIS", mustWork = TRUE)
-#' sp_lines <- raster::shapefile(channel_file)
+#' sp_lines <- terra::vect(channel_file)
 #' property_names <- c(channel_id="identifier",endNode="endNode",startNode="startNode",length="length")
 #' ctch$add_channel(sp_lines,property_names)
 #'
@@ -89,7 +89,7 @@ dynatopGIS <- R6::R6Class(
         #' @param fill_na  should NA values in dem be filled. See details
         #' @param verbose Should additional progress information be printed
         #'
-        #' @details If not a \code{raster} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
+        #' @details If not a \code{raster} the DEM is read in using the terra package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
         #'
         #' @return suitable for chaining              
         add_dem = function(dem,fill_na=TRUE,verbose=FALSE){
@@ -122,7 +122,7 @@ dynatopGIS <- R6::R6Class(
         #' @param layer_name name to give to the layer
         #' @param file_path the location of the file containing the new layer
         #'
-        #' @details The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
+        #' @details The file given is read by the \code{terra} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
         #' @return suitable for chaining
         add_layer = function(layer_name,file_path){
             layer_name <- as.character(layer_name)
@@ -156,9 +156,9 @@ dynatopGIS <- R6::R6Class(
             ## make raster and return
             fn <- pos_val[layer_name]
             if(layer_name=="channel"){
-                return( raster::shapefile(fn) )
+                return( terra::vect(fn) )
             }else{
-                return( raster::raster(fn) )
+                return( terra::rast(fn) )
             }
             
         },
@@ -168,10 +168,10 @@ dynatopGIS <- R6::R6Class(
         #' @return a plot
         plot_layer = function(layer_name,add_channel=TRUE){
             lyr <- self$get_layer(layer_name)
-            raster::plot( lyr, main = layer_name)
+            terra::plot( lyr, main = layer_name)
             if( add_channel ){
                 chn <- self$get_layer("channel")
-                raster::plot( chn, add=TRUE )
+                terra::plot( chn, add=TRUE )
             }
         },
 
@@ -218,7 +218,7 @@ dynatopGIS <- R6::R6Class(
         #' @param base_layer name of the layer to be cut into classes
         #' @param cuts values on which to cut into classes. These should be numeric and define either the number of bands (single value) or breaks between band (multiple values).
         #'
-        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         classify = function(layer_name,base_layer,cuts){
             private$apply_classify(layer_name, base_layer, cuts)
             invisible(self)
@@ -228,7 +228,7 @@ dynatopGIS <- R6::R6Class(
         #' @param pairs a vector of layer names to combine into new classes through unique combinations. Names should correspond to raster layers in the project directory.
         #' @param burns a vector of layer names which are to be burnt on
         #'
-        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         combine_classes = function(layer_name,pairs,burns=NULL){
             private$apply_combine_classes(layer_name,pairs,burns)
             invisible(self)
@@ -324,16 +324,16 @@ dynatopGIS <- R6::R6Class(
             #browser()
             if(!file.exists(private$meta_path)){ stop("Missing metadata file") }
             meta <- jsonlite::fromJSON(private$meta_path)            
-            if(length(meta$crs)>0){meta$crs <- sp::CRS(meta$crs)} ##crs(meta$crs)}
+            ##if(length(meta$crs)>0){meta$crs <- terra::crs(meta$crs)} ##crs(meta$crs)}
             if(length(meta$extent)>0){meta$extent <- extent(meta$extent)}
             private$meta <- meta
         },
         write_meta = function(){
             meta <- private$meta
             
-            if("CRS" %in% class(meta$crs)){
-                meta$crs <- wkt(meta$crs) ##crs(meta$crs,asText=TRUE)
-            }
+            ## if("CRS" %in% class(meta$crs)){
+            ##     meta$crs <- wkt(meta$crs) ##crs(meta$crs,asText=TRUE)
+            ## }
             if("Extent" %in% class(meta$extent)){
                 meta$extent <- c(meta$extent@xmin,meta$extent@xmax,meta$extent@ymin,meta$extent@ymax)
             }
@@ -350,10 +350,10 @@ dynatopGIS <- R6::R6Class(
         ## check raster layer
         check_rst = function(fn,nm){
             rst <- fn
-            if(!("RasterLayer" %in% class(fn))){ rst <- raster::raster(fn) }
-            if(!("RasterLayer" %in% class(rst))){ stop(nm," is not a RasterLayer") }
+            if(!("SpatRast" %in% class(fn))){ rst <- terra::rast(fn) }
+            if(!("SpatRast" %in% class(rst))){ stop(nm," is not a SpatRast Layer") }
             
-            if(!compareCRS(rst,private$meta$crs)){ stop(nm," projection does not match meta data") }
+            if(terra::crs(rst,proj=TRUE) != private$meta$crs)){ stop(nm," projection does not match meta data") }
             if(!(extent(rst)==private$meta$extent)){ stop(nm," extent does not match meta data") }
             if(!all(res(rst)==private$meta$resolution)){ stop(nm," resolution does not match meta data") }
             NULL
@@ -375,7 +375,7 @@ dynatopGIS <- R6::R6Class(
                 ## then dem should be a character string pointing to the file
                 dem <- as.character(dem)
                 if(file.exists(as.character(dem))){
-                    dem <- raster::raster(dem)
+                    dem <- terra::rast(dem)
                 }else{
                     stop("dem should be either a RasterLayer or the path to a file which can be read as a RasterLayer")   
                 }
@@ -384,14 +384,15 @@ dynatopGIS <- R6::R6Class(
             ## add to ensure NA on each edge
             dem <- extend(dem,c(1,1),NA)
             ## check the projection is OK
-            if( !all.equal(diff(raster::res(dem)),0) | raster::isLonLat(dem) ){
+            if( !all.equal(diff(terra::res(dem)),0) | terra::is.lonlat(dem) ){
                 stop("Processing currently only works on projected dem's with a square grid")
             }
             
             ## fill dem so only NA values are on boundaries
             if(fill_na){
                 ## so all catchment dem value a number
-                na_clumps <- raster::clump(is.na(dem)) # clumps of na values
+                na_clumps <- terra::clump(is.na(dem)) # clumps of na values
+                browser()
                 edge_values <- setdiff( unique(c(na_clumps[1,],
                                                  na_clumps[nrow(na_clumps),],
                                                  na_clumps[,1],
@@ -402,7 +403,7 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## fill meta data
-            if(length(private$meta$crs)==0){ private$meta$crs = crs(dem) }
+            if(length(private$meta$crs)==0){ private$meta$crs = terra::crs(dem,proj=TRUE) }
             if(length(private$meta$extent)==0){ private$meta$extent <- extent(dem) }
             if(length(private$meta$resolution)==0){ private$meta$resolution <- res(dem) }
             private$check_rst(dem,"DEM")
@@ -418,7 +419,7 @@ dynatopGIS <- R6::R6Class(
             ## read in sp object is a character sting
             if(is.character(sp_object)){
                 if(file.exists(as.character(sp_object))){
-                    sp_object <- raster::shapefile(sp_object)
+                    sp_object <- terra::vect(sp_object)
                 }else{
                     stop("sp_object is a character string but the file specified does not exist")
                 }
@@ -443,7 +444,7 @@ dynatopGIS <- R6::R6Class(
                 }else{
                     warning("Modifying to spatial polygons using specified width")
                 }
-                sp_object <- raster::buffer(sp_object, width=sp_object[['width']], dissolve=FALSE)
+                sp_object <- terra::buffer(sp_object, width=sp_object[['width']], dissolve=FALSE)
             }
 
             ## see if variables refered to in property_names exist
@@ -452,10 +453,11 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## populate meta data from channel if missing
-            if(length(private$meta$crs)==0){ private$meta$crs = crs(sp_object) }
+            if(length(private$meta$crs)==0){
+                private$meta$crs = terra::crs(sp_object,proj=TRUE) }
             
             ## check projection of the sp_object
-            if( !compareCRS(crs(sp_object),private$meta$crs) ){
+            if( !( terra::crs(sp_object,obj=TRUE)==private$meta$crs ) ){
                 stop("Projection of channel object does not match")
             }
                         
@@ -507,7 +509,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             file_name <- private$make_filename("channel",TRUE)
-            raster::shapefile(sp_object,file_name)
+            terra::vect(sp_object,file_name)
             private$meta$layers[["channel"]]$file <- file_name
             private$write_meta()
         },
@@ -522,16 +524,16 @@ dynatopGIS <- R6::R6Class(
                 stop("Missing files:\n",paste(rq[!has_rq],sep="\n"))
             }
             
-            dem <- raster::raster(pos_val["dem"])
-            chn <- raster::shapefile(pos_val["channel"])
+            dem <- terra::rast(pos_val["dem"])
+            chn <- terra::vect(pos_val["channel"])
 
             ## compute land area ignoring channels
-            land_area <- raster::area(dem, na.rm=TRUE)
+            land_area <- terra::area(dem, na.rm=TRUE)
             ## compute the areas taken up by the channels
-            ch_area <- raster::area(chn) # areas of river channels
+            ch_area <- terra::area(chn) # areas of river channels
             
             ## extract cells index, and fraction of river area in cell
-            ch_cell <- raster::extract(land_area,chn,weights=TRUE,
+            ch_cell <- terra::extract(land_area,chn,weights=TRUE,
                                       cellnumbers=TRUE,na.rm=TRUE)
 
             
@@ -591,8 +593,8 @@ dynatopGIS <- R6::R6Class(
                      "Try running compute_areas first")
             }
 
-            d <- raster::raster(pos_val[rq[1]])
-            ch <- raster::raster(pos_val["channel_id"])
+            d <- terra::rast(pos_val[rq[1]])
+            ch <- terra::rast(pos_val["channel_id"])
 
             rfd <- d ## initialise the output
 
@@ -690,9 +692,9 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## load rasters
-            d <- raster::raster(pos_val["filled_dem"])
-            ch <- raster::raster(pos_val["channel_id"])
-            la <- raster::raster(pos_val["land_area"])
+            d <- terra::rast(pos_val["filled_dem"])
+            ch <- terra::rast(pos_val["channel_id"])
+            la <- terra::rast(pos_val["land_area"])
 
             n_to_eval <- cellStats(is.finite(d),sum)
             out <- d ## template for output
@@ -815,9 +817,9 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## load rasters
-            d <- raster::raster(pos_val["filled_dem"])
-            ch <- raster::raster(pos_val["channel_id"])
-            la <- raster::raster(pos_val["land_area"])
+            d <- terra::rast(pos_val["filled_dem"])
+            ch <- terra::rast(pos_val["channel_id"])
+            la <- terra::rast(pos_val["land_area"])
 
             out <- d
 
@@ -928,7 +930,7 @@ dynatopGIS <- R6::R6Class(
             }
 
             ## load base layer
-            x <- raster::raster(pos_val[base_layer])
+            x <- terra::rast(pos_val[base_layer])
 
             ## work out breaks
             brk <- as.numeric(cuts)
@@ -970,7 +972,7 @@ dynatopGIS <- R6::R6Class(
             ## work out new cuts by cantor_pairing
             init <- TRUE
             for(ii in pairs){
-                x <- raster::raster(pos_val[ii]) ## read in raster
+                x <- terra::rast(pos_val[ii]) ## read in raster
                 
                 if(init){
                     cp <- x
@@ -983,7 +985,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## make table of layer values - should be able to combine with above??
-            cpv <- raster::getValues(cp) ## quicker when a vector
+            cpv <- terra::getValues(cp) ## quicker when a vector
             uq <- sort(unique(cp)) ## unique values
             cuq <- rep(NA,length(uq)) ##index of unique values
             uqf <- rep(FALSE,length(uq)) ## flag for search
@@ -1006,14 +1008,14 @@ dynatopGIS <- R6::R6Class(
             colnames(df) <- c(layer_name,pairs,burns)
             df[,layer_name] <- uq
             for(ii in pairs){
-                x <- raster::raster(pos_val[ii]) ## read in raster
+                x <- terra::rast(pos_val[ii]) ## read in raster
                 df[,ii] <- x[cuq]
             }
 
             #browser()
             ## add in burns
             for(ii in burns){
-                x <- raster::raster(pos_val[ii]) ## read in raster
+                x <- terra::rast(pos_val[ii]) ## read in raster
                 idx <- Which(is.finite(x))
                 cp[idx] <- x[idx]
 
@@ -1070,9 +1072,9 @@ dynatopGIS <- R6::R6Class(
             ## Create the channel table
             if(verbose){ cat("Creating Channel table","\n") }
             ## load data
-            channel_id <- raster::raster(pos_val["channel_id"])
-            channel_area <- raster::raster(pos_val["channel_area"])
-            chn <- raster::shapefile(pos_val["channel"])
+            channel_id <- terra::rast(pos_val["channel_id"])
+            channel_area <- terra::rast(pos_val["channel_area"])
+            chn <- terra::vect(pos_val["channel"])
             par <- switch(channel_solver,
                           "histogram" = c(v_ch = 1),
                           stop("Unrecognised channel_solver")
@@ -1082,7 +1084,7 @@ dynatopGIS <- R6::R6Class(
             model$channel$id <- as.integer(model$channel$id)
             ## model$channel$v_ch <- "v_ch_default"
             model$channel[["area"]] <- 0
-            tmp <- raster::zonal(channel_area,channel_id,sum)
+            tmp <- terra::zonal(channel_area,channel_id,sum)
             model$channel[["area"]][match(tmp[,"zone"],model$channel[["id"]])] <- tmp[,"value"] ## some areas will be zero
             for(ii in names(par)){
                 model$channel[[ii]] <- as.numeric(par[ii])
@@ -1093,10 +1095,10 @@ dynatopGIS <- R6::R6Class(
 
             if(verbose){ cat("Computing hillslope HRU ID values","\n") }
             ## read in classification used for HRUs and distance
-            cls <- raster::raster(pos_val[class_lyr])
-            dst <- raster::raster(pos_val[dist_lyr])
+            cls <- terra::rast(pos_val[class_lyr])
+            dst <- terra::rast(pos_val[dist_lyr])
             ## compute minimum distance for each HRU and add new id
-            min_dst <- raster::zonal(dst,cls,min) # minimum distance for each classification
+            min_dst <- terra::zonal(dst,cls,min) # minimum distance for each classification
             if(!all(is.finite(min_dst)) | !all(unique(cls)%in%min_dst[,"zone"])){
                 stop("Unable to compute a finite minimum distance for all HRUs")
             }
@@ -1105,7 +1107,7 @@ dynatopGIS <- R6::R6Class(
 
             ## create new map of HRUs with correct id and remove cls
             fn <- private$make_filename(layer_name)
-            hsu <- raster::subs(cls, as.data.frame(min_dst[,c("zone","id")]),
+            hsu <- terra::subs(cls, as.data.frame(min_dst[,c("zone","id")]),
                                 subsWithNA=TRUE, filename=fn, overwrite=TRUE)
             private$meta$layers[[layer_name]] <- list(file=fn,type="model",
                                                       method=list(class=class_lyr,
@@ -1135,15 +1137,15 @@ dynatopGIS <- R6::R6Class(
             ## create hillslope table
             if(verbose){ cat("Creating hillslope table","\n") }
             
-            la <- raster::raster(pos_val["land_area"])
-            gr <- raster::raster(pos_val["gradient"])
-            atb <- raster::raster(pos_val["atb"])
+            la <- terra::rast(pos_val["land_area"])
+            gr <- terra::rast(pos_val["gradient"])
+            atb <- terra::rast(pos_val["atb"])
             
             model$hillslope <- data.frame(
                 id = as.integer(min_dst[,"id"]),
-                area = raster::zonal(la,hsu,sum)[,"value"],
-                atb_bar = raster::zonal(la*atb,hsu,sum)[,"value"],
-                s_bar = raster::zonal(la*gr,hsu,sum)[,"value"],
+                area = terra::zonal(la,hsu,sum)[,"value"],
+                atb_bar = terra::zonal(la*atb,hsu,sum)[,"value"],
+                s_bar = terra::zonal(la*gr,hsu,sum)[,"value"],
                 min_dst = min_dst[,"value"],
                 width = as.numeric(NA),
                 s_sf = as.numeric(NA),
@@ -1222,7 +1224,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             hsu <- as.matrix(hsu)
-            dem <- as.matrix(raster::raster(pos_val["filled_dem"]))
+            dem <- as.matrix(terra::rast(pos_val["filled_dem"]))
             la <- as.matrix(la)
             channel_id <- as.matrix(channel_id)
             dst <- as.matrix(dst)
@@ -1268,7 +1270,7 @@ dynatopGIS <- R6::R6Class(
                     }
                 }
                 
-                ## make into a data frame
+                ## make into a data Frame
                 idx <- fd>0
                 model$flow_direction[[id]] <- data.frame(
                     to = as.integer(names(fd[idx])),
@@ -1356,9 +1358,9 @@ dynatopGIS <- R6::R6Class(
                     id = c(model$channel$id,model$hillslope$id),
                     frc = as.numeric(1) )
             }else{
-                rlyr <- raster::raster(pos_val[rain_lyr])
-                hsu <- raster::raster(pos_val[layer_name])
-                channel_id <- raster::raster(pos_val["channel_id"])
+                rlyr <- terra::rast(pos_val[rain_lyr])
+                hsu <- terra::rast(pos_val[layer_name])
+                channel_id <- terra::rast(pos_val["channel_id"])
                 ## this is just the frequency of the cells - should weight by area as well
                 tmp <- list(crosstab(hsu,rlyr,long=TRUE),
                             crosstab(channel_id,rlyr,long=TRUE))
@@ -1381,9 +1383,9 @@ dynatopGIS <- R6::R6Class(
                     id = c(model$channel$id,model$hillslope$id),
                     frc = as.numeric(1) )
             }else{
-                plyr <- raster::raster(pos_val[pet_lyr])
-                hsu <- raster::raster(pos_val[layer_name])
-                channel_id <- raster::raster(pos_val["channel_id"])
+                plyr <- terra::rast(pos_val[pet_lyr])
+                hsu <- terra::rast(pos_val[layer_name])
+                channel_id <- terra::rast(pos_val["channel_id"])
                 ## this is just the frequency of the cells - should weight by area as well
                 tmp <- list(crosstab(hsu,plyr,long=TRUE),
                             crosstab(channel_id,plyr,long=TRUE))
@@ -1422,9 +1424,9 @@ dynatopGIS <- R6::R6Class(
         ##         stop(input_layer, " is not a user defined or classification layer")
         ##     }
         ##     ## load data
-        ##     hsu_grid <- raster::raster(pos_val[hsu_layer])
-        ##     chn_grid <- raster::raster(pos_val["channel_id"])
-        ##     input_grid <- raster::raster(pos_val[input_layer])
+        ##     hsu_grid <- terra::rast(pos_val[hsu_layer])
+        ##     chn_grid <- terra::rast(pos_val["channel_id"])
+        ##     input_grid <- terra::rast(pos_val[input_layer])
         ##     ## make the matrix
         ##     out <- rbind(raster::crosstab(chn_grid,input_grid),
         ##                  raster::crosstab(hsu_grid,input_grid))

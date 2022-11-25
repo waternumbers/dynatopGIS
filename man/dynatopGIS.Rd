@@ -19,11 +19,11 @@ ctch <- dynatopGIS$new(file.path(demo_dir,"meta.json"))
 
 ## add digital elevation and channel data
 dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
-dem <- raster::raster(dem_file)
+dem <- terra::rast(dem_file)
 ctch$add_dem(dem)
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 package="dynatopGIS", mustWork = TRUE)
-sp_lines <- raster::shapefile(channel_file)
+sp_lines <- terra::vect(channel_file)
 property_names <- c(channel_id="identifier",endNode="endNode",startNode="startNode",length="length")
 ctch$add_channel(sp_lines,property_names)
 
@@ -165,7 +165,7 @@ Import a dem to the `dynatopGIS` object
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If not a \code{raster} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
+If not a \code{raster} the DEM is read in using the terra package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
 }
 
 \subsection{Returns}{
@@ -224,7 +224,7 @@ Add a layer of geographical information
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The file given is read by the \code{raster} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
+The file given is read by the \code{terra} package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.
 }
 
 \subsection{Returns}{
@@ -384,7 +384,7 @@ Create a catchment classification based cutting an existing layer into classes
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
 }
 
 }
@@ -409,7 +409,7 @@ Combine any number of classifications based on unique combinations and burns
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
 }
 
 }
