@@ -2,10 +2,11 @@
 rm(list=ls())
 devtools::load_all()
 ##library("dynatopGIS")
-unlink(demo_dir)
+
 
 ## ----tempory_dir--------------------------------------------------------------
 demo_dir <- tempfile("dygis")
+unlink(demo_dir)
 dir.create(demo_dir)
 
 
@@ -44,15 +45,15 @@ ctch$compute_areas()
 
 
 ## ---- list_layers-------------------------------------------------------------
-ctch$get_layer()
+#ctch$get_layer()
 
 
 ## ---- plot--------------------------------------------------------------------
-ctch$plot_layer("dem", add_channel=TRUE)
+#ctch$plot_layer("dem", add_channel=TRUE)
 
 
 ## ---- get_layer---------------------------------------------------------------
-ctch$get_layer("dem")
+#ctch$get_layer("dem")
 
 
 ## ---- get_meta----------------------------------------------------------------
@@ -62,7 +63,7 @@ tmp <- ctch$get_meta()
 ## ---- sink_fill---------------------------------------------------------------
 ctch$sink_fill()
 
-raster::plot( ctch$get_layer('filled_dem') - ctch$get_layer('dem'),
+terra::plot( ctch$get_layer('filled_dem') - ctch$get_layer('dem'),
              main="Changes to height")
 
 
@@ -80,14 +81,14 @@ tmp <- ctch$get_layer("filled_dem")
 
 
 ## ----height layer-------------------------------------------------------------
-tmp <- raster::reclassify( tmp,
-                          matrix(c(0,500,NA,
-                                   500,1000,-999),
+tmp <- terra::classify( tmp,
+                          rcl=matrix(c(-Inf,500,NA,
+                                   500,1000,-999),ncol=3,
                                  byrow=TRUE))
 
 
 ## ---- write_height_layer------------------------------------------------------
-raster::writeRaster(tmp,file.path(demo_dir,"greater_500.tif"))
+terra::writeRaster(tmp,file.path(demo_dir,"greater_500.tif"))
 
 
 ## ---- add_height_layer--------------------------------------------------------

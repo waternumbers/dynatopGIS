@@ -265,10 +265,10 @@ tmp <- ctch$get_layer("filled_dem")
 then separate it into a layers representing land above and below 500m.
 
 ```{r height layer}
-tmp <- terra::reclassify( tmp,
-                          matrix(c(0,500,NA,
-                                   500,1000,-999),
-                                 byrow=TRUE))
+tmp <- terra::classify( tmp,
+                       matrix(c(0,500,NA,
+                                500,1000,-999),
+                              ncol=3, byrow=TRUE))
 ```
 
 The resulting raster object can now be written to a file
