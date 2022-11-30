@@ -324,16 +324,13 @@ dynatopGIS <- R6::R6Class(
             #browser()
             if(!file.exists(private$meta_path)){ stop("Missing metadata file") }
             meta <- jsonlite::fromJSON(private$meta_path)            
+
             ##if(length(meta$crs)>0){meta$crs <- terra::crs(meta$crs)} ##crs(meta$crs)}
             if(length(meta$extent)>0){meta$extent <- terra::ext(meta$extent)}
             private$meta <- meta
         },
         write_meta = function(){
             meta <- private$meta
-            
-            ## if("CRS" %in% class(meta$crs)){
-            ##     meta$crs <- wkt(meta$crs) ##crs(meta$crs,asText=TRUE)
-            ## }
             if("SpatExtent" %in% class(meta$extent)){
                 meta$extent <- as.vector(meta$extent)
             }
