@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.4</span>
       </span>
     </div>
 
@@ -61,8 +61,14 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="0.2.3" id="dynatopgis-023">dynatopGIS 0.2.3<a class="anchor" aria-label="anchor" href="#dynatopgis-023"></a></h2>
-<ul><li>Calls to rgdal / rgeos replaced by calls to raster</li></ul></div>
+<h2 class="page-header" data-toc-text="0.2.4" id="dynatopgis-024">dynatopGIS 0.2.4<a class="anchor" aria-label="anchor" href="#dynatopgis-024"></a></h2>
+<ul><li>Switch (with suboptimal code) to <code>terra</code> package over <code>raster</code> to fix handling of crs in meta data</li>
+<li>Removal of rgdal from suggests</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="0.2.3" id="dynatopgis-023">dynatopGIS 0.2.3<small>2022-10-10</small><a class="anchor" aria-label="anchor" href="#dynatopgis-023"></a></h2>
+<ul><li>Calls to rgdal / rgeos replaced by calls to raster</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.2" id="dynatopgis-022">dynatopGIS 0.2.2<small>2022-04-13</small><a class="anchor" aria-label="anchor" href="#dynatopgis-022"></a></h2>
 <ul><li>fixed bug in computation of channel area in the model</li>
@@ -71,12 +77,14 @@
 </ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.1" id="dynatopgis-021">dynatopGIS 0.2.1<small>2022-01-07</small><a class="anchor" aria-label="anchor" href="#dynatopgis-021"></a></h2>
-<ul><li>Tidying up of vignettes and package imports for CRAN</li></ul></div>
+<ul><li>Tidying up of vignettes and package imports for CRAN</li>
+</ul></div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.0.9101" id="dynatopgis-0209101">dynatopGIS 0.2.0.9101<a class="anchor" aria-label="anchor" href="#dynatopgis-0209101"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0-9101">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-9101"></a></h3>
-<ul><li>Previous classify method broken into two parts<ul><li>
+<ul><li>Previous classify method broken into two parts
+<ul><li>
 <code>classify</code> to cut a layer into classes</li>
 <li>
 <code>combine_classes</code> to combine classes using cantor pairing and burns</li>
@@ -88,33 +96,40 @@
 <h2 class="page-header" data-toc-text="0.2.0.9030" id="dynatopgis-0209030">dynatopGIS 0.2.0.9030<a class="anchor" aria-label="anchor" href="#dynatopgis-0209030"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0-9030">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-9030"></a></h3>
-<ul><li>Incorporated rainfall and pet weight into the model output</li></ul></div>
+<ul><li>Incorporated rainfall and pet weight into the model output</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.0.9030" id="dynatopgis-0209030-1">dynatopGIS 0.2.0.9030<a class="anchor" aria-label="anchor" href="#dynatopgis-0209030-1"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0-9030-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-9030-1"></a></h3>
-<ul><li>New format for flow linkages in a separate table</li></ul></div>
+<ul><li>New format for flow linkages in a separate table</li>
+</ul></div>
 <div class="section level3">
 <h3 id="other-changes-0-2-0-9030">other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-2-0-9030"></a></h3>
-<ul><li>Added ability to compute weights for gridded inputs</li></ul></div>
+<ul><li>Added ability to compute weights for gridded inputs</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.0.9001" id="dynatopgis-0209001">dynatopGIS 0.2.0.9001<a class="anchor" aria-label="anchor" href="#dynatopgis-0209001"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0-9001">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-9001"></a></h3>
-<ul><li>Altered model structure output to match change to surface zone celerity from time constant in dynatop v0.2.0.9001</li></ul></div>
+<ul><li>Altered model structure output to match change to surface zone celerity from time constant in dynatop v0.2.0.9001</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.2.0.9000" id="dynatopgis-0209000">dynatopGIS 0.2.0.9000<a class="anchor" aria-label="anchor" href="#dynatopgis-0209000"></a></h2>
 <div class="section level3">
 <h3 id="breaking-changes-0-2-0-9000">Breaking Changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-9000"></a></h3>
-<ul><li>Altered analysis of catchment to provide data for the bottom cross section of the HSU. This effects:<ul><li>Derivation of flow directions and fractions for the HSU</li>
+<ul><li>Altered analysis of catchment to provide data for the bottom cross section of the HSU. This effects:
+<ul><li>Derivation of flow directions and fractions for the HSU</li>
 <li>Estimation of the width is now based on contour length</li>
-</ul></li></ul></div>
+</ul></li>
+</ul></div>
 <div class="section level3">
 <h3 id="other-changes-0-2-0-9000">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-2-0-9000"></a></h3>
-<ul><li>More efficient implementation of property computation using few passes of the data</li></ul></div>
+<ul><li>More efficient implementation of property computation using few passes of the data</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.1" id="dynatopgis-01">dynatopGIS 0.1<a class="anchor" aria-label="anchor" href="#dynatopgis-01"></a></h2>
@@ -127,7 +142,8 @@
 <h3 id="new-features-0-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-1"></a></h3>
 <ul><li>Reformulation allows for data and code to saved in a single object allowing full reproducibility</li>
 <li>Additional plotting functions</li>
-<li>Model creation algorithm changes to:<ul><li>take sequence for most downslope band (rather then upslope)</li>
+<li>Model creation algorithm changes to:
+<ul><li>take sequence for most downslope band (rather then upslope)</li>
 <li>Adjusts sequence rather then merging or dropping areas (still experimental) to ensure connectivity</li>
 </ul></li>
 </ul></div>
@@ -141,7 +157,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="new-features-0-0-4">New Features<a class="anchor" aria-label="anchor" href="#new-features-0-0-4"></a></h3>
-<ul><li>New sink fill algorithm which should use fewer passes of the DEM<ul><li>Fills from the sink with lowest possible value first.</li>
+<ul><li>New sink fill algorithm which should use fewer passes of the DEM
+<ul><li>Fills from the sink with lowest possible value first.</li>
 <li>Drops non-connected cells on the edge of the catchment</li>
 </ul></li>
 <li>Rewritten computation of HSU properties based on Quinn et al. 1995 and implemented in two passes of the DEM</li>
@@ -151,13 +168,15 @@
 <h2 class="page-header" data-toc-text="0.0.3" id="dynatopgis-003">dynatopGIS 0.0.3<a class="anchor" aria-label="anchor" href="#dynatopgis-003"></a></h2>
 <div class="section level3">
 <h3 id="bug-fixes-0-0-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-0-3"></a></h3>
-<ul><li>Various minor bug</li></ul></div>
+<ul><li>Various minor bug</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.0.2" id="dynatopgis-002">dynatopGIS 0.0.2<a class="anchor" aria-label="anchor" href="#dynatopgis-002"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-0-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-2"></a></h3>
-<ul><li>Added ability to continue a run of sink_fill by starting with previous filled dem</li></ul></div>
+<ul><li>Added ability to continue a run of sink_fill by starting with previous filled dem</li>
+</ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-0-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-0-2"></a></h3>
 <ul><li>Model generation - missing average gradient property added and class of data frame columns altered</li>
@@ -165,7 +184,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="other-changes-0-0-2">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-0-2"></a></h3>
-<ul><li>Vignette know includes running of model and burning in a class</li></ul></div>
+<ul><li>Vignette know includes running of model and burning in a class</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="0.0.1" id="dynatopgis-001">dynatopGIS 0.0.1<a class="anchor" aria-label="anchor" href="#dynatopgis-001"></a></h2>
@@ -193,7 +213,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="regressions-of-note-0-0-0-9000">Regressions of note<a class="anchor" aria-label="anchor" href="#regressions-of-note-0-0-0-9000"></a></h3>
-<ul><li>No processing of distance histogram for river routing</li></ul></div>
+<ul><li>No processing of distance histogram for river routing</li>
+</ul></div>
 </div>
   </div>
 

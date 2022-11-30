@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.4</span>
       </span>
     </div>
 
@@ -78,7 +78,7 @@
 
       
 
-      </header><script src="Banding_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+      </header><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
       <h1 data-toc-skip>Distance Classification</h1>
@@ -91,23 +91,66 @@
 
     
     
-<p>This document explains the use of “distance” in the classification of of the hill slopes into Hydrological Response Units (HRUs). This is a key difference in the classification and model creation scheme used with dynatopGIS compared to previous model implementations (e.g. the dynatopmodel).</p>
-<p>As with earlier versions of Dynamic TOPMODEL “physical” classification of the raster cells representing the hill slopes by characteristics such as topographic index, soil parameters and rainfall inputs forms etc. is the basis of determining HRUs. However having the performed a “physical” classification there is the need to determine the connectivity of the HRUs and (possibly) the computational sequence for their solution.</p>
-<p>Consider the methods utilised in the <code>dynatopmodel</code> package which determined the connectivity based on the down slope contributions of each raster cell in the HRU. This resulted in a matrix <span class="math inline">\(\mathbf{M)\)</span> of flow fractions such that if the vector of outflows from the HRUs was <span class="math inline">\(\mathbf{l}_{o}\)</span> the inflows <span class="math inline">\(\mathbf{l}_{i}\)</span> are given by <span class="math display">\[
+<p>This document explains the use of “distance” in the classification of
+of the hill slopes into Hydrological Response Units (HRUs). This is a
+key difference in the classification and model creation scheme used with
+dynatopGIS compared to previous model implementations (e.g. the
+dynatopmodel).</p>
+<p>As with earlier versions of Dynamic TOPMODEL “physical”
+classification of the raster cells representing the hill slopes by
+characteristics such as topographic index, soil parameters and rainfall
+inputs forms etc. is the basis of determining HRUs. However having the
+performed a “physical” classification there is the need to determine the
+connectivity of the HRUs and (possibly) the computational sequence for
+their solution.</p>
+<p>Consider the methods utilised in the <code>dynatopmodel</code>
+package which determined the connectivity based on the down slope
+contributions of each raster cell in the HRU. This resulted in a matrix
+<span class="math inline">\(\mathbf{M)\)</span> of flow fractions such
+that if the vector of outflows from the HRUs was <span class="math inline">\(\mathbf{l}_{o}\)</span> the inflows <span class="math inline">\(\mathbf{l}_{i}\)</span> are given by <span class="math display">\[
 \mathbf{l}_{i} = \mathbf{M} \mathbf{l}_{o}
-\]</span> Determining the down slope contributions in such as fashion enables a high degree of spatial averaging of the inflow. For example an area at the bottom of the hillslope near a channel may fall into the same class as the low gradient area higher up the hillslope, where it might be reasonable to presume the inflow from adjacent HRUs was much lower. While such averaging may prove adequate for the hydrological simulation of the outflow it limits the ability of the model to represent interventions on a smaller scale (e.g. reforestation of a low fraction of raster cells; leaky dams limiting slowing the transfer of surface water)</p>
-<p>To address this a “distance” is used to ensure an order to the HRUs. Currently the code allows for the computation of four distances</p>
+\]</span> Determining the down slope contributions in such as fashion
+enables a high degree of spatial averaging of the inflow. For example an
+area at the bottom of the hillslope near a channel may fall into the
+same class as the low gradient area higher up the hillslope, where it
+might be reasonable to presume the inflow from adjacent HRUs was much
+lower. While such averaging may prove adequate for the hydrological
+simulation of the outflow it limits the ability of the model to
+represent interventions on a smaller scale (e.g. reforestation of a low
+fraction of raster cells; leaky dams limiting slowing the transfer of
+surface water)</p>
+<p>To address this a “distance” is used to ensure an order to the HRUs.
+Currently the code allows for the computation of four distances</p>
 <ul>
-<li><p><em>Band</em>. A strict sequencing such that all the cells up slope of a raster cell in band <span class="math inline">\(n\)</span> are in bands <span class="math inline">\(n+1\)</span> and greater.</p></li>
-<li><p><em>Shortest length</em>. The minimum length to a river channel through any flow path.</p></li>
-<li><p><em>Dominant length</em>. The length to a river channel following the flow direction with the highest fraction for each pixel on the path.</p></li>
-<li><p><em>Expected length</em>. The length to a river channel based on the sum of down slope flow weighted by the fraction of flow to each cell.</p></li>
+<li><p><em>Band</em>. A strict sequencing such that all the cells up
+slope of a raster cell in band <span class="math inline">\(n\)</span>
+are in bands <span class="math inline">\(n+1\)</span> and
+greater.</p></li>
+<li><p><em>Shortest length</em>. The minimum length to a river channel
+through any flow path.</p></li>
+<li><p><em>Dominant length</em>. The length to a river channel following
+the flow direction with the highest fraction for each pixel on the
+path.</p></li>
+<li><p><em>Expected length</em>. The length to a river channel based on
+the sum of down slope flow weighted by the fraction of flow to each
+cell.</p></li>
 </ul>
-<p>The “distance” can be used in two ways. Optionally it can be used within the classification of the HRUs thereby providing spatially ordered HRUs. A “distance” is also used in the determining the connectivity. Each HRU is assigned a single distance based on the raster cells within it that are closest to the river. The flow directions from these cells are then used to determine the down slope contributions; which go to HRUs assigned a shorter distance.</p>
+<p>The “distance” can be used in two ways. Optionally it can be used
+within the classification of the HRUs thereby providing spatially
+ordered HRUs. A “distance” is also used in the determining the
+connectivity. Each HRU is assigned a single distance based on the raster
+cells within it that are closest to the river. The flow directions from
+these cells are then used to determine the down slope contributions;
+which go to HRUs assigned a shorter distance.</p>
 <blockquote>
-<p>Although this technique is fairly generic it is strongly suggested that the band distance is used, both in classification and model generation.</p>
+<p>Although this technique is fairly generic it is strongly suggested
+that the band distance is used, both in classification and model
+generation.</p>
 </blockquote>
-<p>In handling the flow contributions this way we ensure a computational sequence for the HRUs is established (that is <span class="math inline">\(\mathbf{M}\)</span> is triangular) which is required for the computational scheme used within the associated dynatop package.</p>
+<p>In handling the flow contributions this way we ensure a computational
+sequence for the HRUs is established (that is <span class="math inline">\(\mathbf{M}\)</span> is triangular) which is
+required for the computational scheme used within the associated dynatop
+package.</p>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

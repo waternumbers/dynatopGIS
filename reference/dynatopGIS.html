@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.4</span>
       </span>
     </div>
 
@@ -195,7 +195,7 @@
 </div>
 <div class="section">
 <h4 id="details-3">Details<a class="anchor" aria-label="anchor" href="#details-3"></a></h4>
-<p>If not a <code>raster</code> the DEM is read in using the raster package. If <code>fill_na</code> is <code>TRUE</code> all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.</p>
+<p>If not a <code>raster</code> the DEM is read in using the terra package. If <code>fill_na</code> is <code>TRUE</code> all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.</p>
 </div>
 
 <div class="section">
@@ -262,7 +262,7 @@
 </div>
 <div class="section">
 <h4 id="details-5">Details<a class="anchor" aria-label="anchor" href="#details-5"></a></h4>
-<p>The file given is read by the <code>raster</code> package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.</p>
+<p>The file given is read by the <code>terra</code> package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.</p>
 </div>
 
 <div class="section">
@@ -436,7 +436,7 @@
 </div>
 <div class="section">
 <h4 id="details-10">Details<a class="anchor" aria-label="anchor" href="#details-10"></a></h4>
-<p>This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using <code><a href="https://rdrr.io/pkg/raster/man/cut.html" class="external-link">raster::cut</a></code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
+<p>This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using <code>terra::cut</code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
 </div>
 
 
@@ -465,7 +465,7 @@
 </div>
 <div class="section">
 <h4 id="details-11">Details<a class="anchor" aria-label="anchor" href="#details-11"></a></h4>
-<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using <code><a href="https://rdrr.io/pkg/raster/man/cut.html" class="external-link">raster::cut</a></code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
+<p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using <code>terra::cut</code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
 </div>
 
 
@@ -611,47 +611,48 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## initialise processing</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Creating meta file at/tmp/RtmpNDxN8G/dygis420c3155c949/meta.json</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Creating meta file at/tmp/RtmpzTZQ8x/dygis1ffb627d1664/meta.json</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>No checks on the meta are currently performed</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## add digital elevation and channel data</span></span></span>
 <span class="r-in"><span><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/raster.html" class="external-link">raster</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required namespace: igraph</span>
 <span class="r-in"><span><span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>,</span></span>
 <span class="r-in"><span>package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">raster</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/shapefile.html" class="external-link">shapefile</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[vect] Z coordinates ignored</span>
 <span class="r-in"><span><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>channel_id<span class="op">=</span><span class="st">"identifier"</span>,endNode<span class="op">=</span><span class="st">"endNode"</span>,startNode<span class="op">=</span><span class="st">"startNode"</span>,length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">sp_lines</span>,<span class="va">property_names</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Modifying to spatial polygons using default width</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in is(sp_lines, "SpatVector"):</span> object 'sp_lines' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## compute properties </span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_areas</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>This function is only useful for Raster* objects with a longitude/latitude coordinates</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_compute_areas():</span> Missing files:</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> channel</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span><span class="op">)</span> <span class="co">## fill sinks in the catchment</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA: No such file or directory (GDAL error 4)</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> [rast] file does not exist: NA</span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span> <span class="co"># like topograpihc index and contour length</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_compute_properties(min_grad, verbose):</span> Not all required input files have been generated </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> Try running compute_areas first and sink_fill first</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_flow_lengths(verbose):</span> Not all required input files have been generated </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> Try running compute_areas first and sink_fill first</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span><span class="co">## classify and create a model</span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"atb"</span>,cuts<span class="op">=</span><span class="fl">20</span><span class="op">)</span> <span class="co"># classify using the topographic index</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_classify(layer_name, base_layer, cuts):</span> Missing layers:atb</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span> <span class="co">## see the details of the classification</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $layer</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "atb"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $cuts</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1]  8.636124  9.265628  9.895133 10.524637 11.154142 11.783646 12.413151</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 13.042655 13.672160 14.301664 14.931169 15.560673 16.190178 16.819682</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] 17.449187 18.078691 18.708195 19.337700 19.967204 20.596709 21.226213</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in match.arg(layer_name, private$find_layer()):</span> 'arg' should be one of “dem”, “channel”, “filled_dem”, “land_area”, “channel_area”, “channel_id”, “gradient”, “upslope_area”, “atb”, “band”, “shortest_flow_length”, “dominant_flow_length”, “expected_flow_length”</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span> <span class="co">## combine classes</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_combine_classes(layer_name, pairs, burns):</span> Missing layers:atb_20band</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="st">"new_model"</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span> <span class="co">## create a model</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> The following Channel HRUs are outflows: 1 </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_create_model(class_layer, dist_layer, dist_delta,     rain_layer, rain_label, pet_layer, pet_label, layer_name,     verbose, transmissivity, channel_solver):</span> Missing layers:atbgradientland_areafilled_demchannelchannel_areachannel_idatb_20_bandband</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span> <span class="co">## look at the output files for the model</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "new_model.rds" "new_model.tif"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> character(0)</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span><span class="co">## tidy up</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></span></span>
