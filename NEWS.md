@@ -1,7 +1,9 @@
 # dynatopGIS 0.2.4
 
+- Switch (with suboptimal code) to `terra` package over `raster` to fix
+  handling of crs in meta data
 - Removal of rgdal from suggests
-- Fix to handling of crs in meta data to reflect changes in `raster` package
+
 # dynatopGIS 0.2.3
 
 - Calls to rgdal / rgeos replaced by calls to raster
