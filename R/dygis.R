@@ -197,7 +197,7 @@ dynatopGIS <- R6::R6Class(
         #' Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
-                                sf_opt = c("cnst","storDis","dfr"),
+                                sf_opt = c("cnstCD","storDis","dfr"),
                                 sz_opt = c("exp","bexp","cnst","dexp"),
                                 dist_delta=0,
                                 rain_layer=NULL, rain_label=character(0),
@@ -257,7 +257,7 @@ dynatopGIS <- R6::R6Class(
         apply_initialize = function(projectFolder){
             ## see if folder exists
             if( !dir.exists(projectFolder) ){
-                print( "Creating new folder" )
+                message( "Creating new folder" )
                 dir.create(projectFolder, showWarnings = TRUE, recursive = TRUE)
             }
 
@@ -265,9 +265,9 @@ dynatopGIS <- R6::R6Class(
             rstNames <- list.files(projectFolder, pattern=".tif$",full.names=TRUE)
             if(length(rstNames) == 0){
                 brk <- chn <- NULL
-                print( paste("Starting new project at", projectFolder) )
+                message( paste("Starting new project at", projectFolder) )
             }else{
-                print( paste("Reading existing project at", projectFolder) )
+                message( paste("Reading existing project at", projectFolder) )
                 brk <- terra::rast(list.files(projectFolder, pattern=".tif$",full.names=TRUE))
 
                 if( !all.equal(diff(terra::res(brk)),0) | terra::is.lonlat(brk) ){
@@ -347,7 +347,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## check the required field names are present
-            if( !all( c("name","length","area","startNode","endNode") %in% names(chn)) ){
+            if( !all( c("name","length","area","startNode","endNode","width") %in% names(chn)) ){
                 stop("A required property name is not specified")
             }
             
@@ -385,12 +385,31 @@ dynatopGIS <- R6::R6Class(
             chn$id <- id
             if( !(all(chn$id>0))){ stop("error ingesting channel") }
             chn <- chn[ order(chn$id),]
-            chn$id <- as.integer( 1:nrow(chn) )
+            chn$id <- 1:nrow(chn)
                         
             ## create a raster of channel id numbers
             ## TODO - possibly sort so do biggest area first???
             chn_rst <- terra::rasterize(chn,private$brk[["dem"]],field = "id",touches=TRUE)
+            chn_rst <- terra::mask(chn_rst,private$brk[["dem"]]) ## make sure value occur only on cells with height
             names(chn_rst) <- "channel"
+
+            
+            ## adjust channel to only include those in the raster
+            idx <- terra::unique(chn_rst)$channel
+            chn$to_keep <- chn$id %in% idx
+            sN <- chn$startNode
+            eN <- chn$endNode
+            for(ii in which(!chn$to_keep)){
+                eN[ eN==sN[ii] ] <- eN[ii]
+            }            
+            chn$endNode <- eN
+            chn$startNode <- sN
+            chn <- chn[chn$to_keep,]
+
+            ## renumber the channel id
+            chn_rst <- terra::subst(chn_rst, chn$id, 1:nrow(chn))
+            chn$id <- 1:nrow(chn)
+                      
             
             shpFile <- file.path(private$projectFolder,"channel.shp")
             rstFile <- file.path(private$projectFolder,"channel.tif")
@@ -771,7 +790,7 @@ dynatopGIS <- R6::R6Class(
         },
         ## split_to_class
         apply_combine_classes = function(layer_name,pairs,burns){
-            
+            browser()
             ## check all cuts and burns are in possible layers
             rq <- c(pairs,burns)
             has_rq <- rq %in% names(private$brk)
@@ -835,27 +854,7 @@ dynatopGIS <- R6::R6Class(
                 df[[ii]] <- terra::as.matrix(private$brk[[ii]],wide=TRUE)[cuq] ## read in raster
             }
             df$burns <- df[[layer_name]] %in% uqb
-            
 
-            ## ## add in burns
-            ## for(ii in burns){
-            ##     x <-  mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
-            ##     ## x <- private$brk[[ii]] ## read in raster
-            ##     idx <- Which(is.finite(x))
-            ##     cp[idx] <- x[idx]
-
-            ##     ux <- sort(unique(x))
-            ##     ## ux that are alreasy layer numbers
-            ##     idx <- df[,layer_name] %in% ux
-            ##     df[idx,ii] <- df[idx,layer_name]
-            ##     ## for ux not in df[,layer_name]
-            ##     ux <- ux[!(ux %in% df[,layer_name])]
-            ##     y <- matrix(NA,length(ux),ncol(df))
-            ##     colnames(y) <- colnames(df)
-            ##     y[,layer_name] <- y[,ii] <- ux
-            ##     df <- rbind(df,y)
-                
-            ## }
             outFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
             private$brk <- c( private$brk, terra::writeRaster( cp, outFile, names=layer_name))
             
@@ -863,12 +862,6 @@ dynatopGIS <- R6::R6Class(
                         groups=df)
             writeLines( jsonlite::toJSON(out), file.path(private$projectFolder,paste0(layer_name,".json")) )
 
- 
-            ## private$brk[[layer_name]] <- cp
-            ## private$writeTIF()
-            ## private$layers[[layer_name]] <- list(type="combination",
-            ##                                      groups=df)
-            ## private$writeJSON()
         },
         
         ## create a model  
@@ -877,8 +870,11 @@ dynatopGIS <- R6::R6Class(
                                       pet_lyr,pet_label,layer_name,verbose,
                                       sf_opt,
                                       sz_opt){
-            
-            rq <- c("atb","gradient","filled_dem","channel",
+
+            browser()
+            print(system.time({
+                
+            rq <- c("gradient","filled_dem","channel",
                     class_lyr,dist_lyr,
                     rain_lyr,pet_lyr)
             has_rq <- rq %in% names(private$brk)            
@@ -889,54 +885,47 @@ dynatopGIS <- R6::R6Class(
             if(verbose){ cat("Setting up HRUs","\n") }
             
             ## make basic template based on sf_opt and sz_opt
-            sf_opt <- "cnstCD"; sz_opt <- "exp"
             tmp_sf <- switch(sf_opt,
-                             "cnstCD" = list(type = "constCD",
-                                             parameters = c(c_sf = 0.3, "d_sf" = 0.0)),
+                             "cnstCD" = list(type = "cnstCD",
+                                             parameters = c("c_sf" = 0.3, "d_sf" = 0.0)),
                              stop("Unrecognised surface option")
                              )
             tmp_sz <- switch(sz_opt,
                              "exp" = list(type = "exp",
-                                          parameters = c( "t_0" = 0.135, "m" = 0.04, "D" = 5 )),
+                                          parameters = c( "t_0" = 0.135, "m" = 0.04 )),
                              stop("Unrecognised saturated zone option")
-                             )          
+                             )
+            if(is.null(rain_lyr)){ tmp_prcp <- c("precip"=1) }else{ tmp_prcp <- numeric(0) }
+            if(is.null(pet_lyr)){ tmp_pet <- c("pet"=1) }else{ tmp_pet <- numeric(0) }
             tmplate <- list(id = integer(0),
                             states = setNames(as.numeric(rep(NA,4)), c("s_sf","s_rz","s_uz","s_sz")),
-                            properties = setNames(rep(0,5), c("area","width","length","gradient","atb")),
+                            properties = setNames(rep(0,4), c("area","width","Dx","gradient")),
                             sf = tmp_sf,
-                            rz = list("orig", parameters = c("s_rzmax" = 0.1)),
+                            rz = list(type="orig", parameters = c("s_rzmax" = 0.1)),
                             uz = list(type="orig", parameters = c("t_d" = 8*60*60)),
                             sz = tmp_sz,
-                            sf_flow_direction = list(id = integer(0), fraction = numeric(0)),
-                            sz_flow_direction = list(id = integer(0), fraction = numeric(0)),
+                            sf_flow_direction = numeric(0), #list(id = integer(0), fraction = numeric(0)),
+                            sz_flow_direction = numeric(0), #list(id = integer(0), fraction = numeric(0)),
                             initialisation = c("s_rz_0" = 0.75, "r_uz_sz_0" = 1e-7),
-                            precip = list(name="precip",frc=1),
-                            pet = list(name="pet",frc=1))
-
+                            precip = tmp_prcp,
+                            pet = tmp_pet
+                            )
+            
             ## read in classification and distance layers
             cls <-  private$brk[[class_lyr]] ## channel values are NA
             dst <- private$brk[[dist_lyr]] ## !!!!We assume that all channel pixels have a distance that puts them in the correct order!!!!!
+                     
             cls <- cls + max(private$shp$id) ## alter class so greater then river channel id
-            hmap <-  terra::cover( private$brk[["channel"]], cls) ## make map of HRUs - but numbering not yest correct
+            hmap <-  terra::cover( private$brk[["channel"]], cls) ## make map of HRUs - but numbering not yet correct
             names(hmap) <- "hru"
-            
+
             ## work out the order of the hrus and add class information
             tbl <- terra::zonal(dst,hmap,min) # minimum distance for each hillslope classification
             tbl$min_dst <- tbl[[dist_lyr]]
             tbl[[dist_lyr]] <- NULL
    
             ## add any missing channels
-            for(ii in setdiff(private$shp$id, tbl$hru )){
-                ## at least one channel hru is not represented in the map
-                mnd <- private$shp$id[ private$shp$startNode == private$shp$endNode[ private$shp$id==ii ] ]
-                if( length(mnd)==0 ){ mnd <- 0.5*min( tbl$min_dst ) }
-                else{ mnd <- max( tbl$min_dst[ tbl$hru %in% mnd ]) }
-                mxd <- private$shp$id[ private$shp$endNode == private$shp$startNode[ private$shp$id==ii ] ]
-                if( length(mxd)==0 ){ mxd <- 0.1+max( tbl$min_dst )  }
-                else{ mxd <- min( tbl$min_dst[ tbl$hru %in% mxd ]) }
-                if( mnd >= mxd ){ stop("Whooooahhh - distance error") }
-                tbl <- rbind( tbl, data.frame(hru=ii, min_dst=(mnd+mxd)/2) )
-            }
+            if( !all(private$shp$id %in% tbl$hru ) ){ stop("where is the HRU!!!") }
 
             ## add class information
             jsonFile <- paste0(tools::file_path_sans_ext(terra::sources(private$brk[[class_lyr]])),".json")
@@ -947,15 +936,17 @@ dynatopGIS <- R6::R6Class(
                 tmp$hru <- tmp[[class_lyr]] + max(private$shp$id)
                 tbl <- merge(tbl, tmp, by="hru", all.x=TRUE)
             }
+            
+            ##tbl$is_channel <- tbl$hru %in% private$shp$id
             tbl <- merge(tbl,as.data.frame(private$shp),by.x="hru",by.y="id",all.x=TRUE) ## add channel information
 
             ## order and renumber
             tbl <- tbl[ order(tbl$min_dst), ]
-            hmap <- terra::subst(hmap, tbl$hru, 0:(nrow(tbl)-1))
+            hmap <- terra::subst(hmap, tbl$hru, 0:(nrow(tbl)-1)) ## this line is slow
             tbl$hru <- 0:(nrow(tbl)-1)
 
             ## make hrus
-            hru <- lapply(1:nrow(tbl), function(ii){
+            hru <- lapply(1:nrow(tbl), function(ii){ ## slow but not as slow as subst..
                 tmp <- as.list(tbl[ii,])
                 out <- tmplate
                 out$id <- tmp$hru
@@ -964,18 +955,31 @@ dynatopGIS <- R6::R6Class(
                 return(out)
             })
             
-            
+            })) ## end of first system.time
+
+            print(system.time({
+                
             ## work out the properties
             if(verbose){ cat("Computing properties","\n") }
      
             ## it is quickest to compute using blocks of a raster
             ## however for small rasters we will just treat as a single block
             d <- terra::as.matrix( private$brk[["filled_dem"]] , wide=TRUE )
-            mp <- terra::as.matrix( hmap , wide=TRUE )
-            dst <- terra::as.matrix( dst  , wide=TRUE )
-            gr <- terra::as.matrix( private$brk[["gradient"]]  , wide=TRUE )
-            atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
+            mp <- terra::as.matrix( hmap, wide=TRUE )
+            dst <- terra::as.matrix( dst, wide=TRUE )
+            gr <- terra::as.matrix( private$brk[["gradient"]], wide=TRUE )
+            if( !is.null(rain_lyr) ){
+                rain <- terra::as.matrix( private$brk[[rain_lyr]], wide=TRUE )
+            }
+            if( !is.null(pet_lyr) ){
+                pet <- terra::as.matrix( private$brk[[pet_lyr]], wide=TRUE )
+            }
 
+            })) ## end of second system.time
+            ##atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
+
+            print(system.time({
+                
             ## distances and contour lengths
             ## distance between cell centres
             rs <- terra::res( private$brk )
@@ -985,20 +989,20 @@ dynatopGIS <- R6::R6Class(
             nr <- nrow(mp); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
             cellArea <- prod(rs)
                 
-            ## work out order to pass through the cells
+            ## work out which cells to pass through
             idx <- which(is.finite(mp))
             n_to_eval <- c(length(idx),0,length(idx)/20)
 
             
             for(ii in idx){
-
                 id <- mp[ii]
                 jj <- id+1 ## index in the hru list (id +1)
-                hru[[jj]]$properties["area"] <- hru[[jj]]$properties["area"] + 1
-                hru[[jj]]$properties["atb_bar"] <- hru[[jj]]$properties["atb_bar"] + atb[ii]
-                hru[[jj]]$properties["s_bar"] <- hru[[jj]]$properties["s_bar"] + gr[ii]
                 
-                ## work out subsurface flow from non-channel
+                hru[[jj]]$properties["area"] <- hru[[jj]]$properties["area"] + 1
+                ##hru[[jj]]$properties["atb_bar"] <- hru[[jj]]$properties["atb_bar"] + atb[ii]
+                hru[[jj]]$properties["gradient"] <- hru[[jj]]$properties["gradient"] + gr[ii]
+                
+                ## work out subsurface flow for non-channel
                 if( is.na(hru[[jj]]$class$startNode) & (dst[ii] <= (hru[[jj]]$class$min_dst + delta_dist)) ){
                     
                     ## look for flow direction      
@@ -1011,16 +1015,36 @@ dynatopGIS <- R6::R6Class(
                     
                     if( any(to_use) ){
                         nghid <- paste(nghid[to_use])
-                        tmp <- nghid[!(nghid %in% names(hru[[id]]$sz_flow_direction$frac))]
+                        tmp <- nghid[!(nghid %in% names(hru[[jj]]$sz_flow_direction))] 
                         if(length(tmp)>0){
-                            hru[[jj]]$sz_flow_direction$frac[ tmp ] <- 0
+                            hru[[jj]]$sz_flow_direction[ tmp ] <- 0
                         }
-                        hru[[jj]]$sz_flow_direction$frac[ nghid ] <- hru[[jj]]$sz_flow_direction$frac[ nghid ] + grd[to_use]*dcl[to_use]
+                        tmp <- tapply(grd[to_use]*dcl[to_use],nghid,sum)
+                        hru[[jj]]$sz_flow_direction[ names(tmp) ] <-
+                            hru[[jj]]$sz_flow_direction[ names(tmp) ] + tmp
                         hru[[jj]]$properties["width"] <- hru[[jj]]$properties["width"] + sum(dcl[to_use])
                     }
                     
                 }
+
+                ## work out precipitation
+                if(!is.null(rain_lyr) && is.finite(rain[ii])){
+                    nm <- paste0(rainfall_label,rain[ii])
+                    if(!(nm %in% names(hru[[jj]]$precip))){
+                        hru[[jj]]$precip[nm] <- 0
+                    }
+                    hru[[jj]]$precip[nm] <- hru[[jj]]$precip[nm] + 1
+                }
                 
+                ## work out pet
+                if(!is.null(pet_lyr) && is.finite(pet[ii])){
+                    nm <- paste0(pet_label,pet[ii])
+                    if(!(nm %in% names(hru[[jj]]$pet))){ 
+                        hru[[jj]]$pet[nm] <- 0
+                    }
+                    hru[[jj]]$pet[nm] <- hru[[jj]]$pet[nm] + 1
+                }   
+                    
                 n_to_eval[2] <- n_to_eval[2] + 1
                 if( verbose & (n_to_eval[2] > n_to_eval[3]) ){
                     cat(round(100*n_to_eval[3] / n_to_eval[1],1),
@@ -1030,45 +1054,82 @@ dynatopGIS <- R6::R6Class(
                 
             }
 
-            
-            ## get vector of startNodes
-            #browser()
-            sN <- sapply(hru, function(h){h$class$startNode})
-            nFD <-  sapply(hru, function(h){ length(h$sz_flow_direction$frac) })
-            if( !all( pmax(!is.na(sN),nFD) > 0 ) ){
-                stop( "The following HRUs have no valid outflows and are not channels: \n",
-                     paste(which( pmax(!is.na(sN),nFD) == 0 )-1 , collapse=", "))
-            }
+            })) ## end of third system.time
+
+            print(system.time({
+                
+            ## second pass to correct sumations and compute surface
+            sN <- sapply(hru,function(h){h$class$startNode})
 
             outlet_id <- NULL
-            
+            no_outflow <- NULL
             for(ii in 1:length(hru)){
-                hru[[ii]]$properties["atb_bar"] <- hru[[ii]]$properties["atb_bar"] / hru[[ii]]$properties["area"]
-                hru[[ii]]$properties["s_bar"] <- hru[[ii]]$properties["s_bar"] / hru[[ii]]$properties["area"]
+
+                ## check precip
+                if(!is.null(rain_lyr)){
+                    ##browser()
+                    if( sum(hru[[ii]]$precip) != hru[[ii]]$properties["area"] ){
+                        warning(paste("HRU",hru[[ii]]$id," - Precip cell count is",sum(hru[[ii]]$precip),
+                                      "full cell count is",hru[[ii]]$properties["area"]))
+                    }
+                }
+                hru[[ii]]$precip <- list(name = as.character(names(hru[[ii]]$precip)),
+                                         fraction = as.numeric(hru[[ii]]$precip/sum(hru[[ii]]$precip)) )
+                
+                ## check pet
+                if(!is.null(pet_lyr)){
+                    if( sum(hru[[ii]]$pet) != hru[[ii]]$properties["area"] ){
+                        warning(paste("HRU",hru[[ii]]$id," - PET cell count is",sum(hru[[ii]]$precip),
+                                      "full cell count is",hru[[ii]]$properties["area"]))
+                    }
+                }
+                
+                hru[[ii]]$pet <- list(name = as.character(names(hru[[ii]]$pet)),
+                                      fraction = as.numeric(hru[[ii]]$pet/sum(hru[[ii]]$pet)) )
+                
+                ##hru[[ii]]$properties["atb_bar"] <- hru[[ii]]$properties["atb_bar"] / hru[[ii]]$properties["area"]
+                hru[[ii]]$properties["gradient"] <- hru[[ii]]$properties["gradient"] / hru[[ii]]$properties["area"]
                 hru[[ii]]$properties["area"] <- hru[[ii]]$properties["area"] * cellArea
                 
- 
-
                 if( !is.na(hru[[ii]]$class$startNode) ){
                     ## then a channel
                     hru[[ii]]$properties["Dx"] <- hru[[ii]]$class$length
+                    hru[[ii]]$properties["width"] <- hru[[ii]]$class$width
                     jdx <- which( sN == hru[[ii]]$class$endNode)
                     if(length(jdx) >0){
                         ## has downstream connenction
-                        hru[[ii]]$sf_flow_direction$id <- as.integer( jdx - 1 )
-                        hru[[ii]]$sf_flow_direction$frac <- as.numeric( 1 / length(jdx) )
+                        hru[[ii]]$sf_flow_direction <- list(
+                            id = as.integer( jdx - 1 ),
+                            fraction = as.numeric( 1 / length(jdx) ) )
                     }else{
                         ## goes to an outlet
+                        hru[[ii]]$sf_flow_direction <- list(id = integer(0),fraction=numeric(0))
                         outlet_id <- c(outlet_id,hru[[ii]]$id)
                     }
-                                            
-                }else{
+                    ## set subsruface to match surface
+                    hru[[ii]]$sz_flow_direction <- hru[[ii]]$sf_flow_direction
                     
-                    hru[[ii]]$sz_flow_direction$id <- as.integer(names( hru[[ii]]$sz_flow_direction$frac ) )
-                    hru[[ii]]$sz_flow_direction$frac <- as.numeric( hru[[ii]]$sz_flow_direction$frac / sum(hru[[ii]]$sz_flow_direction$frac) )
+                }else{
+                    if( length(hru[[ii]]$sz_flow_direction)==0 ){
+                        no_outflow <- c(no_outflow, hru[[ii]]$id)
+                    }
+                    
+                    hru[[ii]]$sz_flow_direction <- list(
+                        id = as.integer(names( hru[[ii]]$sz_flow_direction )),
+                        fraction = as.numeric( hru[[ii]]$sz_flow_direction/sum(hru[[ii]]$sz_flow_direction) ))
+
+                    ## set surface to match subsurface
                     hru[[ii]]$sf_flow_direction <- hru[[ii]]$sz_flow_direction
                     hru[[ii]]$properties["Dx"] <- hru[[ii]]$properties["area"]/hru[[ii]]$properties["width"]
                 }
+            }
+
+            })) ## end of system.time
+            
+            ## stop if any points with no outflow that aren't channels
+            if( length(no_outflow) >0 ){
+                stop( "The following HRUs have no valid outflows and are not channels: \n",
+                     paste(no_outflow, collapse=", "))
             }
             
             ## ############################################
@@ -1078,55 +1139,9 @@ dynatopGIS <- R6::R6Class(
             output_flux<- data.frame(name = paste0("q_sf_",outlet_id),
                                            id = as.integer( outlet_id ), flux = "q_sf")
             
-            ## ## ##################################
-            ## ## Add point inflow table
-            ## ## ##################################
-            ## ## blank point inflow table
-            ## if(verbose){ cat("Adding a blank inflow table","\n") }
-            ## model$inflow_table <- data.frame(
-            ##     name = character(0),
-            ##     id = integer(0),
-            ##     state = character(0),
-            ##     frc = numeric(0)
-            ## )
-            
-            ## ##################################
-            ## Compute precip weights
-            ## ##################################
-            if( !is.null(rain_lyr) ){
-                if(verbose){ cat("Computing rainfall weights","\n") }
-                tmp <- c(hmap,private$brk[[rain_lyr]])
-                tmp <- terra::crosstab(tmp,long=TRUE)
-                names(tmp) <- c("id","name","cnt")
-                tmp$name <- paste0(rainfall_label,tmp$name)
-                tmp <- split(tmp,tmp$id)
-                tmp <- lapply(tmp,function(x){list(name=x$name, frc = x$cnt / sum(x$cnt))})
-                browser()
-                ##model$hru$precip <- rep( list(list(name="",frc=numeric(0))),nrow(model$hru))
-                ##model$hru$precip[ as.integer(names(tmp)) ] <- tmp
-            }
-            
-            ## #################################
-            ## Compute PET weights
-            ## #################################
-            if( !is.null(pet_lyr) ){
-                if(verbose){ cat("Computing the pet weights","\n") }
-                tmp <- c(hmap,private$brk[[pet_lyr]])
-                tmp <- terra::crosstab(tmp,long=TRUE)
-                names(tmp) <- c("id","name","cnt")
-                tmp$name <- paste0(pet_label,tmp$name)
-                tmp <- split(tmp,tmp$id)
-                tmp <- lapply(tmp,function(x){list(name=x$name, frc = x$cnt / sum(x$cnt))})
-                browser()
-                ##model$hru$pet <- rep( list(list(name="",frc=numeric(0))),nrow(model$hru))
-                ##model$hru$pet[ as.integer(names(tmp)) ] <- tmp
-            }
             
             ## ############################
             ## save model
-            ##map[["channel"]] <- private$brk[["channel"]]
-            ##if( !is.null(pet_lyr) ){ map[["pet"]] <- private$brk[[pet_lyr]] }
-            ##if( !is.null(rain_lyr) ){ map[["precip"]] <- private$brk[[rain_lyr]] }
             model <- list(hru=hru, output_flux = output_flux)
             model$map <- paste0(layer_name,".tif")
             terra::writeRaster(hmap,model$map,overwrite=TRUE)

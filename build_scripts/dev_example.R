@@ -46,7 +46,6 @@ ctch$get_layer()
 
 
 
-
 ctch$classify("atb_20","atb",cuts=20)
 ctch$plot_layer("atb_20")
 ctch$get_layer()
@@ -64,4 +63,14 @@ ctch$plot_layer("atb_20_band_500")
 
 ctch$create_model("./demo/test_model","atb_20_band","band_inc_chn",verbose=TRUE)
 
-unlink( list.files("./demo",full.names=TRUE) )
+#unlink( list.files("./demo",full.names=TRUE) )
+devtools::load_all("../../dynatop")
+tmp <- readRDS("./demo/test_model.rds")
+dy <- dynatop$new(tmp$hru)
+data(Swindale)
+dy$add_data(Swindale$obs)
+dy$initialise()
+dy$sim(tmp$output_flux)
+out <- dy$get_output()
+plot(Swindale$obs[,"flow"]); lines(out,col="red")
+

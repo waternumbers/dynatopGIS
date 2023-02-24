@@ -40,7 +40,7 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
         stop("A field given in property_names does not exist")
     }
     
-    ## mutate the names so that they match `those on the property_names
+    ## mutate the names so that they match those on the property_names
     nm <- names(vect_object)
     for(ii in names(property_names)){
         nm[nm == property_names[ii]] <- ii
@@ -55,24 +55,30 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
 
     ## check if SpatialPolygon object - if not buffer using a width
     if(!is_polygon){
-        if(!("width" %in% names(property_names))){
+        if(!("width" %in% names(vect_object))){
             warning("Modifying to spatial polygons using default width")
-            vect_object <- terra::buffer(vect_object, width=default_width)
+            vect_object$width <- default_width
+            vect_object <- terra::buffer(vect_object, width=default_width/2)
         }else{
             warning("Modifying to spatial polygons using specified width")
-            vect_object <- terra::buffer(vect_object, width=vect_object[[ property_names['width'] ]])
+            vect_object <- terra::buffer(vect_object, width=vect_object[['width']]/2)
         }
     }
-
+    
     vect_object$area <- terra::expanse(vect_object)
-        
+
+    if(!("width" %in% names(vect_object))){
+        warning("Computing width from area and length")
+        vect_object$width <- vect_object$area / vect_object$length
+    }
+
     ## some further basic checks
     vect_object$name <- as.character(vect_object$name)
     vect_object$startNode <- as.character(vect_object$startNode)
     vect_object$endNode <- as.character(vect_object$endNode)
     vect_object$length <- as.numeric(vect_object$length)
-    if(!all(is.finite(c(vect_object$length,vect_object$area))) ){
-        stop("Some non-finite values of channel lengths or areas found!")
+    if(!all(is.finite(c(vect_object$length,vect_object$width,vect_object$area))) ){
+        stop("Some non-finite values of channel lengths, widths or areas found!")
     }
     return( vect_object )
 }
