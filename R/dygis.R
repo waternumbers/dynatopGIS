@@ -197,7 +197,7 @@ dynatopGIS <- R6::R6Class(
         #' Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
         create_model = function(layer_name,class_layer,dist_layer,
-                                sf_opt = c("cnstCD","storDis","dfr"),
+                                sf_opt = c("cnst","kin"),
                                 sz_opt = c("exp","bexp","cnst","dexp"),
                                 dist_delta=0,
                                 rain_layer=NULL, rain_label=character(0),
@@ -370,6 +370,7 @@ dynatopGIS <- R6::R6Class(
             if( !all(is.finite(chn$length)) ){
                 stop("Some non-finite values of length found!")
             }
+
             
             ## arrange id in order of flow direction - so lowest values at outlets of the network
             ## This is much quicker as a vector is not constantly accessing via the vect object
@@ -670,7 +671,7 @@ dynatopGIS <- R6::R6Class(
             eN <- private$shp$endNode
             sN <- private$shp$startNode
             cbnd <- private$shp$band
-            idx <- private$shp$id==1
+            idx <- !(eN %in% sN) ##private$shp$id==1
             cnt <- 1
             while( any(idx) ){
                 cbnd[idx] <- cnt
@@ -726,13 +727,13 @@ dynatopGIS <- R6::R6Class(
 
 
             ## save raster maps
-            out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd )
-            rstFile <- file.path(private$projectFolder,"band.tif")
-            terra::writeRaster(out, rstFile); 
-            private$brk <- c( private$brk, terra::rast(rstFile))
+            ## out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd )
+            ## rstFile <- file.path(private$projectFolder,"band.tif")
+            ## terra::writeRaster(out, rstFile); 
+            ## private$brk <- c( private$brk, terra::rast(rstFile))
             
-            out <- terra::rast( private$brk[["dem"]], names="band_inc_chn", vals=bnd_inc_chn)
-            rstFile <- file.path(private$projectFolder,"band_inc_chn.tif")
+            out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd_inc_chn) ##_inc_chn", vals=bnd_inc_chn)
+            rstFile <- file.path(private$projectFolder,"band.tif") ##_inc_chn.tif")
             terra::writeRaster(out, rstFile); 
             private$brk <- c( private$brk, terra::rast(rstFile))
             
@@ -790,7 +791,7 @@ dynatopGIS <- R6::R6Class(
         },
         ## split_to_class
         apply_combine_classes = function(layer_name,pairs,burns){
-            browser()
+            
             ## check all cuts and burns are in possible layers
             rq <- c(pairs,burns)
             has_rq <- rq %in% names(private$brk)
@@ -871,8 +872,8 @@ dynatopGIS <- R6::R6Class(
                                       sf_opt,
                                       sz_opt){
 
-            browser()
-            print(system.time({
+            
+##            print(system.time({
                 
             rq <- c("gradient","filled_dem","channel",
                     class_lyr,dist_lyr,
@@ -886,13 +887,23 @@ dynatopGIS <- R6::R6Class(
             
             ## make basic template based on sf_opt and sz_opt
             tmp_sf <- switch(sf_opt,
-                             "cnstCD" = list(type = "cnstCD",
-                                             parameters = c("c_sf" = 0.3, "d_sf" = 0.0)),
+                             "cnst" = list(type = "cnst",
+                                             parameters = c("c_sf" = 0.3, "d_sf" = 0.0,
+                                                            "s_raf" = 0.0, "t_raf" = 999.9)),
+                             "kin" = list(type = "kin",
+                                          parameters = c("n" = 0.03,
+                                                         "s_raf" = 0.0, "t_raf" = 999.9)),
                              stop("Unrecognised surface option")
                              )
             tmp_sz <- switch(sz_opt,
                              "exp" = list(type = "exp",
                                           parameters = c( "t_0" = 0.135, "m" = 0.04 )),
+                             "bexp" = list(type = "bexp",
+                                           parameters = c( "t_0" = 0.135, "m" = 0.04 , "h_sz_max" = 5)),
+                             "dexp" = list(type = "dexp",
+                                           parameters = c( "t_0" = 0.135, "m" = 0.04, "m2" = 0.1, "omega"=0.5)),
+                             "cnst" = list(type = "cnst",
+                                          parameters = c( "v_sz" = 0.1, "h_sz_max" = 5 )),
                              stop("Unrecognised saturated zone option")
                              )
             if(is.null(rain_lyr)){ tmp_prcp <- c("precip"=1) }else{ tmp_prcp <- numeric(0) }
@@ -955,9 +966,9 @@ dynatopGIS <- R6::R6Class(
                 return(out)
             })
             
-            })) ## end of first system.time
+##            })) ## end of first system.time
 
-            print(system.time({
+##            print(system.time({
                 
             ## work out the properties
             if(verbose){ cat("Computing properties","\n") }
@@ -975,10 +986,10 @@ dynatopGIS <- R6::R6Class(
                 pet <- terra::as.matrix( private$brk[[pet_lyr]], wide=TRUE )
             }
 
-            })) ## end of second system.time
+##            })) ## end of second system.time
             ##atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
 
-            print(system.time({
+##            print(system.time({
                 
             ## distances and contour lengths
             ## distance between cell centres
@@ -1054,9 +1065,9 @@ dynatopGIS <- R6::R6Class(
                 
             }
 
-            })) ## end of third system.time
+##            })) ## end of third system.time
 
-            print(system.time({
+##            print(system.time({
                 
             ## second pass to correct sumations and compute surface
             sN <- sapply(hru,function(h){h$class$startNode})
@@ -1067,7 +1078,6 @@ dynatopGIS <- R6::R6Class(
 
                 ## check precip
                 if(!is.null(rain_lyr)){
-                    ##browser()
                     if( sum(hru[[ii]]$precip) != hru[[ii]]$properties["area"] ){
                         warning(paste("HRU",hru[[ii]]$id," - Precip cell count is",sum(hru[[ii]]$precip),
                                       "full cell count is",hru[[ii]]$properties["area"]))
@@ -1100,7 +1110,7 @@ dynatopGIS <- R6::R6Class(
                         ## has downstream connenction
                         hru[[ii]]$sf_flow_direction <- list(
                             id = as.integer( jdx - 1 ),
-                            fraction = as.numeric( 1 / length(jdx) ) )
+                            fraction = rep( as.numeric( 1 / length(jdx) ),length(jdx) ))
                     }else{
                         ## goes to an outlet
                         hru[[ii]]$sf_flow_direction <- list(id = integer(0),fraction=numeric(0))
@@ -1124,7 +1134,7 @@ dynatopGIS <- R6::R6Class(
                 }
             }
 
-            })) ## end of system.time
+##            })) ## end of system.time
             
             ## stop if any points with no outflow that aren't channels
             if( length(no_outflow) >0 ){

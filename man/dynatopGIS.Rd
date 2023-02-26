@@ -345,7 +345,7 @@ Compute a Dynamic TOPMODEL
   layer_name,
   class_layer,
   dist_layer,
-  sf_opt = c("cnst", "storDis", "dfr"),
+  sf_opt = c("cnst", "kin"),
   sz_opt = c("exp", "bexp", "cnst", "dexp"),
   dist_delta = 0,
   rain_layer = NULL,
