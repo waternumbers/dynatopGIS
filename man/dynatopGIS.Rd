@@ -61,6 +61,7 @@ unlink(demo_dir)
 \item \href{#method-dynatopGIS-combine_classes}{\code{dynatopGIS$combine_classes()}}
 \item \href{#method-dynatopGIS-create_model}{\code{dynatopGIS$create_model()}}
 \item \href{#method-dynatopGIS-get_version}{\code{dynatopGIS$get_version()}}
+\item \href{#method-dynatopGIS-get_method}{\code{dynatopGIS$get_method()}}
 \item \href{#method-dynatopGIS-clone}{\code{dynatopGIS$clone()}}
 }
 }
@@ -88,7 +89,8 @@ This loads the project data files found at \code{projFile} if present. If not th
 A new `dynatopGIS` object
 }
 }
-\if{html}{\out{<hr>}} \if{html}{\out{<a id="method-dynatopGIS-add_dem"></a>}}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-dynatopGIS-add_dem"></a>}}
 \if{latex}{\out{\hypertarget{method-dynatopGIS-add_dem}{}}}
 \subsection{Method \code{add_dem()}}{
 Import a dem to the `dynatopGIS` object
