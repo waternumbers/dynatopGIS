@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.2.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0.001</span>
       </span>
     </div>
 
@@ -73,50 +73,38 @@
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
 <ul><li><p><a href="#method-dynatopGIS-new"><code>dynatopGIS$new()</code></a></p></li>
-<li><p><a href="#method-dynatopGIS-get_meta"><code>dynatopGIS$get_meta()</code></a></p></li>
-<li><p><a href="#method-dynatopGIS-get_working_directory"><code>dynatopGIS$get_working_directory()</code></a></p></li>
-<li><p><a href="#method-dynatopGIS-set_working_directory"><code>dynatopGIS$set_working_directory()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-add_dem"><code>dynatopGIS$add_dem()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-add_channel"><code>dynatopGIS$add_channel()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-add_layer"><code>dynatopGIS$add_layer()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-get_layer"><code>dynatopGIS$get_layer()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-plot_layer"><code>dynatopGIS$plot_layer()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-sink_fill"><code>dynatopGIS$sink_fill()</code></a></p></li>
-<li><p><a href="#method-dynatopGIS-compute_areas"><code>dynatopGIS$compute_areas()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-compute_properties"><code>dynatopGIS$compute_properties()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-compute_flow_lengths"><code>dynatopGIS$compute_flow_lengths()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-classify"><code>dynatopGIS$classify()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-combine_classes"><code>dynatopGIS$combine_classes()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-create_model"><code>dynatopGIS$create_model()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-get_version"><code>dynatopGIS$get_version()</code></a></p></li>
-<li><p><a href="#method-dynatopGIS-get_class_method"><code>dynatopGIS$get_class_method()</code></a></p></li>
+<li><p><a href="#method-dynatopGIS-get_method"><code>dynatopGIS$get_method()</code></a></p></li>
 <li><p><a href="#method-dynatopGIS-clone"><code>dynatopGIS$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-dynatopGIS-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Initialise a project, or reopen an existing project</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">meta_file</span>, check <span class="op">=</span> <span class="cn">TRUE</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">projectFolder</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
-<p></p><div class="arguments"><dl><dt><code>meta_file</code></dt>
-<dd><p>filename and path of the meta data file</p></dd>
-
-
-<dt><code>check</code></dt>
-<dd><p>logical, should checks be performed [TRUE]</p></dd>
-
-
-<dt><code>verbose</code></dt>
-<dd><p>printing of checking output [TRUE]</p></dd>
+<p></p><div class="arguments"><dl><dt><code>projectFolder</code></dt>
+<dd><p>folder for data files</p></dd>
 
 
 </dl><p></p></div>
 </div>
 <div class="section">
 <h4 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h4>
-<p>This loads the meta data file found at <code>meta_path</code>, or creates it with a warning if no file is present. It <code>check</code> is <code>TRUE</code> then the meta data file contents are checked with the level of returned information being controlled by <code>verbose</code>.</p>
+<p>This loads the project data files found at <code>projFile</code> if present. If not the value is stored for later use. The project data files are given by <code>projfile,&lt;tif,shp&gt;</code></p>
 </div>
 
 <div class="section">
@@ -124,61 +112,15 @@
 <p>A new `dynatopGIS` object</p>
 </div>
 
-</div><p></p><hr><a id="method-dynatopGIS-get_meta"></a><div class="section">
-<h3 id="method-get-meta-">Method <code>get_meta()</code><a class="anchor" aria-label="anchor" href="#method-get-meta-"></a></h3>
-<p>Get project meta data</p><div class="section">
+</div><p></p><hr><a id="method-dynatopGIS-add_dem"></a><div class="section">
+<h3 id="method-add-dem-">Method <code>add_dem()</code><a class="anchor" aria-label="anchor" href="#method-add-dem-"></a></h3>
+<p>Import a dem to the `dynatopGIS` object</p><div class="section">
 <h4 id="usage-1">Usage<a class="anchor" aria-label="anchor" href="#usage-1"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">get_meta</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-
-</div><p></p><hr><a id="method-dynatopGIS-get_working_directory"></a><div class="section">
-<h3 id="method-get-working-directory-">Method <code>get_working_directory()</code><a class="anchor" aria-label="anchor" href="#method-get-working-directory-"></a></h3>
-<p>Get current working directory</p><div class="section">
-<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">get_working_directory</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
-<h4 id="details-1">Details<a class="anchor" aria-label="anchor" href="#details-1"></a></h4>
-<p>Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.</p>
-</div>
-
-
-</div><p></p><hr><a id="method-dynatopGIS-set_working_directory"></a><div class="section">
-<h3 id="method-set-working-directory-">Method <code>set_working_directory()</code><a class="anchor" aria-label="anchor" href="#method-set-working-directory-"></a></h3>
-<p>Set current working directory</p><div class="section">
-<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">set_working_directory</span><span class="op">(</span><span class="va">file_path</span>, create <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span>, fill_na <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments-1">Arguments<a class="anchor" aria-label="anchor" href="#arguments-1"></a></h4>
-<p></p><div class="arguments"><dl><dt><code>file_path</code></dt>
-<dd><p>the path to the new directory to create</p></dd>
-
-
-<dt><code>create</code></dt>
-<dd><p>should the directory be created if it doesn't exist</p></dd>
-
-
-</dl><p></p></div>
-</div>
-<div class="section">
-<h4 id="details-2">Details<a class="anchor" aria-label="anchor" href="#details-2"></a></h4>
-<p>Newly generated layers are added to the working directory. By default this is the directory containing the meta date file.</p>
-</div>
-
-
-</div><p></p><hr><a id="method-dynatopGIS-add_dem"></a><div class="section">
-<h3 id="method-add-dem-">Method <code>add_dem()</code><a class="anchor" aria-label="anchor" href="#method-add-dem-"></a></h3>
-<p>Import a dem to the `dynatopGIS` object</p><div class="section">
-<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span>, fill_na <span class="op">=</span> <span class="cn">TRUE</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
-<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>dem</code></dt>
 <dd><p>a <code>raster</code> layer object or the path to file containing one which is the DEM</p></dd>
 
@@ -194,7 +136,7 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-3">Details<a class="anchor" aria-label="anchor" href="#details-3"></a></h4>
+<h4 id="details-1">Details<a class="anchor" aria-label="anchor" href="#details-1"></a></h4>
 <p>If not a <code>raster</code> the DEM is read in using the terra package. If <code>fill_na</code> is <code>TRUE</code> all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.</p>
 </div>
 
@@ -206,34 +148,21 @@
 </div><p></p><hr><a id="method-dynatopGIS-add_channel"></a><div class="section">
 <h3 id="method-add-channel-">Method <code>add_channel()</code><a class="anchor" aria-label="anchor" href="#method-add-channel-"></a></h3>
 <p>Import channel data to the `dynatopGIS` object</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span></span>
-<span>  <span class="va">channel</span>,</span>
-<span>  property_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>length <span class="op">=</span> <span class="st">"length"</span>, startNode <span class="op">=</span> <span class="st">"startNode"</span>, endNode <span class="op">=</span> <span class="st">"endNode"</span>,</span>
-<span>    width <span class="op">=</span> <span class="st">"width"</span><span class="op">)</span>,</span>
-<span>  default_width <span class="op">=</span> <span class="fl">2</span></span>
-<span><span class="op">)</span></span></code></pre></div><p></p></div>
+<h4 id="usage-2">Usage<a class="anchor" aria-label="anchor" href="#usage-2"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">channel</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<h4 id="arguments-2">Arguments<a class="anchor" aria-label="anchor" href="#arguments-2"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>channel</code></dt>
 <dd><p>a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information</p></dd>
-
-
-<dt><code>property_names</code></dt>
-<dd><p>named vector of columns of the spatial data frame to use for channel properties - see details</p></dd>
-
-
-<dt><code>default_width</code></dt>
-<dd><p>default width of a channel if not specified in property_names. Defaults to 2 metres.</p></dd>
 
 
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-4">Details<a class="anchor" aria-label="anchor" href="#details-4"></a></h4>
-<p>Takes the input channel converts it a SpatialPolygonDataFrame with properties length, startNode and endNode. The variable names in the sp_object data frame which corresponding to these properties can be specified in the <code>property_names</code> vector. In the channel is a SpatialLinesDataFrame (or read in as one) an additional property width is used to buffer the lines and create channel polygons. If required the width property is created using the default value. Note that any columns called length, startNode, endNode  and width are overwritten. Any column called id is copied to a column original_id then overwritten.</p>
+<h4 id="details-2">Details<a class="anchor" aria-label="anchor" href="#details-2"></a></h4>
+<p>Takes the representation of the channel network as a SpatialPolygonsDataFrame with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.</p>
 </div>
 
 <div class="section">
@@ -244,25 +173,25 @@
 </div><p></p><hr><a id="method-dynatopGIS-add_layer"></a><div class="section">
 <h3 id="method-add-layer-">Method <code>add_layer()</code><a class="anchor" aria-label="anchor" href="#method-add-layer-"></a></h3>
 <p>Add a layer of geographical information</p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="va">layer_name</span>, <span class="va">file_path</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="va">layer</span>, layer_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">layer</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
-<p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
+<h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>layer</code></dt>
+<dd><p>the raster layer to add (see details)</p></dd>
+
+
+<dt><code>layer_name</code></dt>
 <dd><p>name to give to the layer</p></dd>
-
-
-<dt><code>file_path</code></dt>
-<dd><p>the location of the file containing the new layer</p></dd>
 
 
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-5">Details<a class="anchor" aria-label="anchor" href="#details-5"></a></h4>
-<p>The file given is read by the <code>terra</code> package and checked against the project meta data. Only layer names not already in use (or reserved) are allowed. If successful the meta data for the project are altered to reflect the new layer name and file location.</p>
+<h4 id="details-3">Details<a class="anchor" aria-label="anchor" href="#details-3"></a></h4>
+<p>The layer should either be a raster layer or a file that can be read by the <code>raster</code> package. The projection, resolution and extent are checked against the existing project data. Only layer names not already in use (or reserved) are allowed. If successful the layer is added to the project tif file.</p>
 </div>
 
 <div class="section">
@@ -273,12 +202,12 @@
 </div><p></p><hr><a id="method-dynatopGIS-get_layer"></a><div class="section">
 <h3 id="method-get-layer-">Method <code>get_layer()</code><a class="anchor" aria-label="anchor" href="#method-get-layer-"></a></h3>
 <p>Get a layer of geographical information or a list of layer names</p><div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span>layer_name <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
 <dd><p>name of the layer give to the layer</p></dd>
 
@@ -293,12 +222,12 @@
 </div><p></p><hr><a id="method-dynatopGIS-plot_layer"></a><div class="section">
 <h3 id="method-plot-layer-">Method <code>plot_layer()</code><a class="anchor" aria-label="anchor" href="#method-plot-layer-"></a></h3>
 <p>Plot a layer</p><div class="section">
-<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="va">layer_name</span>, add_channel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
 <dd><p>the name of layer to plot</p></dd>
 
@@ -317,7 +246,7 @@
 </div><p></p><hr><a id="method-dynatopGIS-sink_fill"></a><div class="section">
 <h3 id="method-sink-fill-">Method <code>sink_fill()</code><a class="anchor" aria-label="anchor" href="#method-sink-fill-"></a></h3>
 <p>The sink filling algorithm of Planchona and Darboux (2001)</p><div class="section">
-<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span></span>
 <span>  min_grad <span class="op">=</span> <span class="fl">1e-04</span>,</span>
 <span>  max_it <span class="op">=</span> <span class="fl">1e+06</span>,</span>
@@ -327,7 +256,7 @@
 </div>
 
 <div class="section">
-<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>min_grad</code></dt>
 <dd><p>Minimum gradient between cell centres</p></dd>
 
@@ -347,33 +276,20 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-6">Details<a class="anchor" aria-label="anchor" href="#details-6"></a></h4>
+<h4 id="details-4">Details<a class="anchor" aria-label="anchor" href="#details-4"></a></h4>
 <p>The algorithm implemented is that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (&lt;https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf&gt;).</p>
-</div>
-
-
-</div><p></p><hr><a id="method-dynatopGIS-compute_areas"></a><div class="section">
-<h3 id="method-compute-areas-">Method <code>compute_areas()</code><a class="anchor" aria-label="anchor" href="#method-compute-areas-"></a></h3>
-<p>Computes area maps and presence of channel in dem pixels</p><div class="section">
-<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">compute_areas</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
-</div>
-
-<div class="section">
-<h4 id="details-7">Details<a class="anchor" aria-label="anchor" href="#details-7"></a></h4>
-<p>The algorithm calculates the land and channel area for each DEM pixel assigning a channel_id to each pixel with a channel area.</p>
 </div>
 
 
 </div><p></p><hr><a id="method-dynatopGIS-compute_properties"></a><div class="section">
 <h3 id="method-compute-properties-">Method <code>compute_properties()</code><a class="anchor" aria-label="anchor" href="#method-compute-properties-"></a></h3>
 <p>Computes statistics e.g. gradient, log(upslope area / gradient) for raster cells</p><div class="section">
-<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span>min_grad <span class="op">=</span> <span class="fl">1e-04</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>min_grad</code></dt>
 <dd><p>gradient that can be assigned to a pixel if it can't be computed</p></dd>
 
@@ -385,7 +301,7 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-8">Details<a class="anchor" aria-label="anchor" href="#details-8"></a></h4>
+<h4 id="details-5">Details<a class="anchor" aria-label="anchor" href="#details-5"></a></h4>
 <p>The algorithm passed through the cells in decreasing height. Min grad is applied to all cells. It is also used for missing gradients in pixels which are partially channel but have no upslope neighbours.</p>
 </div>
 
@@ -393,12 +309,12 @@
 </div><p></p><hr><a id="method-dynatopGIS-compute_flow_lengths"></a><div class="section">
 <h3 id="method-compute-flow-lengths-">Method <code>compute_flow_lengths()</code><a class="anchor" aria-label="anchor" href="#method-compute-flow-lengths-"></a></h3>
 <p>Computes flow length for each pixel to the channel</p><div class="section">
-<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>verbose</code></dt>
 <dd><p>print out additional diagnostic information</p></dd>
 
@@ -406,7 +322,7 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-9">Details<a class="anchor" aria-label="anchor" href="#details-9"></a></h4>
+<h4 id="details-6">Details<a class="anchor" aria-label="anchor" href="#details-6"></a></h4>
 <p>The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.</p>
 </div>
 
@@ -414,12 +330,12 @@
 </div><p></p><hr><a id="method-dynatopGIS-classify"></a><div class="section">
 <h3 id="method-classify-">Method <code>classify()</code><a class="anchor" aria-label="anchor" href="#method-classify-"></a></h3>
 <p>Create a catchment classification based cutting an existing layer into classes</p><div class="section">
-<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="va">layer_name</span>, <span class="va">base_layer</span>, <span class="va">cuts</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
 <dd><p>name of the new layer to create</p></dd>
 
@@ -435,7 +351,7 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-10">Details<a class="anchor" aria-label="anchor" href="#details-10"></a></h4>
+<h4 id="details-7">Details<a class="anchor" aria-label="anchor" href="#details-7"></a></h4>
 <p>This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using <code>terra::cut</code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
 </div>
 
@@ -443,12 +359,12 @@
 </div><p></p><hr><a id="method-dynatopGIS-combine_classes"></a><div class="section">
 <h3 id="method-combine-classes-">Method <code>combine_classes()</code><a class="anchor" aria-label="anchor" href="#method-combine-classes-"></a></h3>
 <p>Combine any number of classifications based on unique combinations and burns</p><div class="section">
-<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
+<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="va">layer_name</span>, <span class="va">pairs</span>, burns <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
 <dd><p>name of the new layer to create</p></dd>
 
@@ -464,7 +380,7 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-11">Details<a class="anchor" aria-label="anchor" href="#details-11"></a></h4>
+<h4 id="details-8">Details<a class="anchor" aria-label="anchor" href="#details-8"></a></h4>
 <p>This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using <code>terra::cut</code> with <code>include.lowest = TRUE</code>. Note that is specifying a vector of cuts values outside the limits will be set to NA.</p>
 </div>
 
@@ -472,13 +388,13 @@
 </div><p></p><hr><a id="method-dynatopGIS-create_model"></a><div class="section">
 <h3 id="method-create-model-">Method <code>create_model()</code><a class="anchor" aria-label="anchor" href="#method-create-model-"></a></h3>
 <p>Compute a Dynamic TOPMODEL</p><div class="section">
-<h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
+<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span></span>
 <span>  <span class="va">layer_name</span>,</span>
 <span>  <span class="va">class_layer</span>,</span>
 <span>  <span class="va">dist_layer</span>,</span>
-<span>  transmissivity <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exp"</span>, <span class="st">"bexp"</span>, <span class="st">"cnst"</span>, <span class="st">"dexp"</span><span class="op">)</span>,</span>
-<span>  channel_solver <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"histogram"</span><span class="op">)</span>,</span>
+<span>  sf_opt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cnst"</span>, <span class="st">"kin"</span><span class="op">)</span>,</span>
+<span>  sz_opt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"exp"</span>, <span class="st">"bexp"</span>, <span class="st">"cnst"</span>, <span class="st">"dexp"</span><span class="op">)</span>,</span>
 <span>  dist_delta <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  rain_layer <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rain_label <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span>,</span>
@@ -489,7 +405,7 @@
 </div>
 
 <div class="section">
-<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
 <dd><p>name for the new model and layers</p></dd>
 
@@ -502,16 +418,16 @@
 <dd><p>the layer defining the distances to the channel</p></dd>
 
 
-<dt><code>transmissivity</code></dt>
-<dd><p>transmissivity profile to use</p></dd>
+<dt><code>sf_opt</code></dt>
+<dd><p>Surface solution to use</p></dd>
 
 
-<dt><code>channel_solver</code></dt>
-<dd><p>channel solver to use</p></dd>
+<dt><code>sz_opt</code></dt>
+<dd><p>transmissivity transmissivity profile to use</p></dd>
 
 
 <dt><code>dist_delta</code></dt>
-<dd><p>used in computing flow linkages see details</p></dd>
+<dd><p>TODO</p></dd>
 
 
 <dt><code>rain_layer</code></dt>
@@ -537,9 +453,9 @@
 </dl><p></p></div>
 </div>
 <div class="section">
-<h4 id="details-12">Details<a class="anchor" aria-label="anchor" href="#details-12"></a></h4>
+<h4 id="details-9">Details<a class="anchor" aria-label="anchor" href="#details-9"></a></h4>
 <p>The <code>class_layer</code> is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta of the shortest distance within the HRU.
-Setting the transmissivity and channel_solver options ensure the model is set up with the correct parameters present.
+Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
 The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id values of different rainfall (pet) series. If the value of <code>rain_layer</code> (<code>pet_layer</code>) is not <code>NULL</code> the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.</p>
 </div>
 
@@ -547,12 +463,12 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 </div><p></p><hr><a id="method-dynatopGIS-get_version"></a><div class="section">
 <h3 id="method-get-version-">Method <code>get_version()</code><a class="anchor" aria-label="anchor" href="#method-get-version-"></a></h3>
 <p>get the version number</p><div class="section">
-<h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
+<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">get_version</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="details-13">Details<a class="anchor" aria-label="anchor" href="#details-13"></a></h4>
+<h4 id="details-10">Details<a class="anchor" aria-label="anchor" href="#details-10"></a></h4>
 <p>the version number indicates the version of the algorithms within the object</p>
 </div>
 
@@ -561,15 +477,15 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 <p>a numeric version number</p>
 </div>
 
-</div><p></p><hr><a id="method-dynatopGIS-get_class_method"></a><div class="section">
-<h3 id="method-get-class-method-">Method <code>get_class_method()</code><a class="anchor" aria-label="anchor" href="#method-get-class-method-"></a></h3>
+</div><p></p><hr><a id="method-dynatopGIS-get_method"></a><div class="section">
+<h3 id="method-get-method-">Method <code>get_method()</code><a class="anchor" aria-label="anchor" href="#method-get-method-"></a></h3>
 <p>get the cuts and burns used to classify</p><div class="section">
-<h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="va">layer_name</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">get_method</span><span class="op">(</span><span class="va">layer_name</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>layer_name</code></dt>
 <dd><p>the name of layer whose classification method is returned</p></dd>
 
@@ -584,12 +500,12 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 </div><p></p><hr><a id="method-dynatopGIS-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-18">Usage<a class="anchor" aria-label="anchor" href="#usage-18"></a></h4>
+<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
+<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -610,9 +526,9 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## initialise processing</span></span></span>
-<span class="r-in"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"meta.json"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Creating meta file at/tmp/RtmpyNBBLs/dygis1e3f2359aa75/meta.json</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>No checks on the meta are currently performed</span>
+<span class="r-in"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va">dynatopGIS</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"test"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Creating new folder</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Starting new project at /tmp/Rtmp1UiXow/dygis1e25478b6141/test</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## add digital elevation and channel data</span></span></span>
 <span class="r-in"><span><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
@@ -622,37 +538,38 @@ The <code>rain_layer</code> (<code>pet_layer</code>) can contain the numeric id 
 <span class="r-in"><span>package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>[vect] Z coordinates ignored</span>
-<span class="r-in"><span><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>channel_id<span class="op">=</span><span class="st">"identifier"</span>,endNode<span class="op">=</span><span class="st">"endNode"</span>,startNode<span class="op">=</span><span class="st">"startNode"</span>,length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">sp_lines</span>,<span class="va">property_names</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in is(sp_lines, "SpatVector"):</span> object 'sp_lines' not found</span>
+<span class="r-in"><span><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>name<span class="op">=</span><span class="st">"identifier"</span>,endNode<span class="op">=</span><span class="st">"endNode"</span>,startNode<span class="op">=</span><span class="st">"startNode"</span>,length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">chn</span> <span class="op">&lt;-</span> <span class="fu"><a href="convert_channel.html">convert_channel</a></span><span class="op">(</span><span class="va">sp_lines</span>,<span class="va">property_names</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Modifying to spatial polygons using default width</span>
+<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">chn</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## compute properties </span></span></span>
-<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_areas</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_compute_areas():</span> Missing files:</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> channel</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span><span class="op">)</span> <span class="co">## fill sinks in the catchment</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NA: No such file or directory (GDAL error 4)</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> [rast] file does not exist: NA</span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span> <span class="co"># like topograpihc index and contour length</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_compute_properties(min_grad, verbose):</span> Not all required input files have been generated </span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> Try running compute_areas first and sink_fill first</span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_flow_lengths(verbose):</span> Not all required input files have been generated </span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> Try running compute_areas first and sink_fill first</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NAs introduced by coercion to integer range</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NAs introduced by coercion to integer range</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span><span class="co">## classify and create a model</span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"atb"</span>,cuts<span class="op">=</span><span class="fl">20</span><span class="op">)</span> <span class="co"># classify using the topographic index</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_classify(layer_name, base_layer, cuts):</span> Missing layers:atb</span>
-<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_class_method</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span> <span class="co">## see the details of the classification</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in match.arg(layer_name, private$find_layer()):</span> 'arg' should be one of “dem”, “channel”, “filled_dem”, “land_area”, “channel_area”, “channel_id”, “gradient”, “upslope_area”, “atb”, “band”, “shortest_flow_length”, “dominant_flow_length”, “expected_flow_length”</span>
+<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_method</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span> <span class="co">## see the details of the classification</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "classification"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $layer</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "atb"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $cuts</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1]  8.6361  9.3714 10.1066 10.8418 11.5771 12.3123 13.0476 13.7828 14.5181</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [10] 15.2533 15.9885 16.7238 17.4590 18.1943 18.9295 19.6647 20.4000 21.1352</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [19] 21.8705 22.6057 23.3410</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span> <span class="co">## combine classes</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_combine_classes(layer_name, pairs, burns):</span> Missing layers:atb_20band</span>
-<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="st">"new_model"</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span> <span class="co">## create a model</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in private$apply_create_model(class_layer, dist_layer, dist_delta,     rain_layer, rain_label, pet_layer, pet_label, layer_name,     verbose, transmissivity, channel_solver):</span> Missing layers:atbgradientland_areafilled_demchannelchannel_areachannel_idatb_20_bandband</span>
+<span class="r-in"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"new_model"</span><span class="op">)</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span> <span class="co">## create a model</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span> <span class="co">## look at the output files for the model</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> character(0)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "new_model.rds" "new_model.tif"</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span><span class="co">## tidy up</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/unlink.html" class="external-link">unlink</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span></span></span>
