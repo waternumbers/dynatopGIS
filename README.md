@@ -1,4 +1,4 @@
-# dynatopGIS
+# dynatopGIS - v0.2.* maintainance branch
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/waternumbers/dynatopGIS/workflows/R-CMD-check/badge.svg)](https://github.com/waternumbers/dynatopGIS/actions)
@@ -6,6 +6,8 @@
 [![codecov](https://img.shields.io/codecov/c/gh/waternumbers/dynatopGIS/master)](https://app.codecov.io/gh/waternumbers/dynatopGIS)
 [![dynatopGIS status badge](https://waternumbers.r-universe.dev/badges/dynatopGIS)](https://waternumbers.r-universe.dev)
 <!-- badges: end -->
+
+**This is the maintainance branch for the v0.2.? series of dynatopGIS**
 
 This R package contains the code to generate a dynamic TOPMODEL from GIS
 data. A related package for computing dynamic TOPMODEL simulations can be found
