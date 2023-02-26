@@ -253,6 +253,7 @@ tmp <- terra::classify( tmp,
                           matrix(c(0,500,NA,
                                    500,1000,-999),
                                  ncol=3,byrow=TRUE))
+
 ```
 
 The resulting raster object can now be added to the project with

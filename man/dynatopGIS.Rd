@@ -61,7 +61,6 @@ unlink(demo_dir)
 \item \href{#method-dynatopGIS-combine_classes}{\code{dynatopGIS$combine_classes()}}
 \item \href{#method-dynatopGIS-create_model}{\code{dynatopGIS$create_model()}}
 \item \href{#method-dynatopGIS-get_version}{\code{dynatopGIS$get_version()}}
-\item \href{#method-dynatopGIS-get_method}{\code{dynatopGIS$get_method()}}
 \item \href{#method-dynatopGIS-clone}{\code{dynatopGIS$clone()}}
 }
 }
@@ -89,8 +88,7 @@ This loads the project data files found at \code{projFile} if present. If not th
 A new `dynatopGIS` object
 }
 }
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-dynatopGIS-add_dem"></a>}}
+\if{html}{\out{<hr>}} \if{html}{\out{<a id="method-dynatopGIS-add_dem"></a>}}
 \if{latex}{\out{\hypertarget{method-dynatopGIS-add_dem}{}}}
 \subsection{Method \code{add_dem()}}{
 Import a dem to the `dynatopGIS` object
@@ -110,7 +108,7 @@ Import a dem to the `dynatopGIS` object
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If not a \code{raster} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
+If not a \code{raster} the DEM is read in using the terra package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
 }
 
 \subsection{Returns}{
@@ -306,7 +304,7 @@ Create a catchment classification based cutting an existing layer into classes
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
 }
 
 }
@@ -331,7 +329,7 @@ Combine any number of classifications based on unique combinations and burns
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
 }
 
 }

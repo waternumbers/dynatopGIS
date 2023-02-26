@@ -57,7 +57,7 @@ dynatopGIS <- R6::R6Class(
         #' @param fill_na  should NA values in dem be filled. See details
         #' @param verbose Should additional progress information be printed
         #'
-        #' @details If not a \code{raster} the DEM is read in using the raster package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
+        #' @details If not a \code{raster} the DEM is read in using the terra package. If \code{fill_na} is \code{TRUE} all NA values other then those that link to the edge of the dem are filled so they can be identified as sinks.
         #'
         #' @return suitable for chaining              
         add_dem = function(dem,fill_na=TRUE){
@@ -113,6 +113,7 @@ dynatopGIS <- R6::R6Class(
                 return( private$shp )
             }else{
                 return( private$brk[[layer_name]] )
+
             }
         },
         #' @description Plot a layer
@@ -162,7 +163,7 @@ dynatopGIS <- R6::R6Class(
         #' @param base_layer name of the layer to be cut into classes
         #' @param cuts values on which to cut into classes. These should be numeric and define either the number of bands (single value) or breaks between band (multiple values).
         #'
-        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layer to produce areal groupings of the catchment. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         classify = function(layer_name,base_layer,cuts){
             private$apply_classify(as.character(layer_name), as.character(base_layer), cuts)
             invisible(self)
@@ -172,7 +173,7 @@ dynatopGIS <- R6::R6Class(
         #' @param pairs a vector of layer names to combine into new classes through unique combinations. Names should correspond to raster layers in the project directory.
         #' @param burns a vector of layer names which are to be burnt on
         #'
-        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{raster::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
+        #' @details This applies the given cuts to the supplied landscape layers to produce areal groupings of the catchment. Burns are added directly in the order they are given. Cuts are implement using \code{terra::cut} with \code{include.lowest = TRUE}. Note that is specifying a vector of cuts values outside the limits will be set to NA.
         combine_classes = function(layer_name,pairs,burns=NULL){
             private$apply_combine_classes(as.character(layer_name),
                                           as.character(pairs),
@@ -306,6 +307,7 @@ dynatopGIS <- R6::R6Class(
             
             ## add to ensure NA on each edge
             dem <- terra::extend(dem,c(1,1)) # ,NA)
+
             ## check the projection is OK
             if( !all.equal(diff(terra::res(dem)),0) | terra::is.lonlat(dem) ){
                 stop("Processing currently only works on projected dem's with a square grid")
@@ -328,11 +330,13 @@ dynatopGIS <- R6::R6Class(
                 }
                 dem <- terra::cover(dem,na_clumps) # replace
             }
+
             ## save
             names(dem) <- "dem"
             demFile <- file.path(private$projectFolder,"dem.tif")
             terra::writeRaster(dem, demFile)
             private$brk <- terra::rast(demFile)
+
             
         },
         ## add the channel
@@ -370,6 +374,7 @@ dynatopGIS <- R6::R6Class(
             if( !all(is.finite(chn$length)) ){
                 stop("Some non-finite values of length found!")
             }
+
 
             
             ## arrange id in order of flow direction - so lowest values at outlets of the network
@@ -411,7 +416,6 @@ dynatopGIS <- R6::R6Class(
             chn_rst <- terra::subst(chn_rst, chn$id, 1:nrow(chn))
             chn$id <- 1:nrow(chn)
                       
-            
             shpFile <- file.path(private$projectFolder,"channel.shp")
             rstFile <- file.path(private$projectFolder,"channel.tif")
             terra::writeVector(chn, shpFile)
@@ -524,7 +528,6 @@ dynatopGIS <- R6::R6Class(
                 it <- it+1
                 
             }
-
             
             rfd <- terra::rast( private$brk[["dem"]], names="filled_dem", vals=fd )
             rstFile <- file.path(private$projectFolder,"filled_dem.tif")
@@ -725,7 +728,6 @@ dynatopGIS <- R6::R6Class(
                 it <- it+1
             }
 
-
             ## save raster maps
             ## out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd )
             ## rstFile <- file.path(private$projectFolder,"band.tif")
@@ -766,8 +768,7 @@ dynatopGIS <- R6::R6Class(
                 stop("layer_name is already used")
             }
 
-            ## TODO - check layer_name isn;t reserved
-            
+            ## TODO - check layer_name isn;t reserved            
             ## load base layer and mask out channel
             x <-  terra::mask( private$brk[[base_layer]], private$brk[["channel"]], inverse=TRUE)
 
@@ -807,12 +808,11 @@ dynatopGIS <- R6::R6Class(
             ## work out new pairings by cantor method then renumber
             init <- TRUE
             for(ii in pairs){
-                ## x <- private$brk[[ii]]
                 x <-  terra::mask( private$brk[[ii]], private$brk[["channel"]], inverse=TRUE)
                 if(init){
                     cp <- x
                     init <- FALSE
-                }else{
+                }else{                    
                     cp <- 0.5*(cp+x)*(cp+x+1)+x
                     uq <- sort(terra::unique(cp)[[1]])
                     cp <- terra::classify(cp, c(-Inf,(uq[-1]+uq[-length(uq)])/2,Inf),include.lowest=TRUE)
@@ -862,7 +862,6 @@ dynatopGIS <- R6::R6Class(
             out <- list(type="combination",
                         groups=df)
             writeLines( jsonlite::toJSON(out), file.path(private$projectFolder,paste0(layer_name,".json")) )
-
         },
         
         ## create a model  
@@ -1148,8 +1147,7 @@ dynatopGIS <- R6::R6Class(
             ##idx <- sapply(hru,function(x){ifelse(length(x$sf_flow_direction$id)==0,x$id,NULL)})
             output_flux<- data.frame(name = paste0("q_sf_",outlet_id),
                                            id = as.integer( outlet_id ), flux = "q_sf")
-            
-            
+                        
             ## ############################
             ## save model
             model <- list(hru=hru, output_flux = output_flux)

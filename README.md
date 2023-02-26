@@ -4,6 +4,7 @@
 [![R-CMD-check](https://github.com/waternumbers/dynatopGIS/workflows/R-CMD-check/badge.svg)](https://github.com/waternumbers/dynatopGIS/actions)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/waternumbers/dynatopGIS?branch=master&svg=true)](https://ci.appveyor.com/project/waternumbers/dynatopGIS)
 [![codecov](https://img.shields.io/codecov/c/gh/waternumbers/dynatopGIS/master)](https://app.codecov.io/gh/waternumbers/dynatopGIS)
+[![dynatopGIS status badge](https://waternumbers.r-universe.dev/badges/dynatopGIS)](https://waternumbers.r-universe.dev)
 <!-- badges: end -->
 
 This R package contains the code to generate a dynamic TOPMODEL from GIS
@@ -31,13 +32,12 @@ contributed to the original R port of Dynamic TOPMODEL.
 
 ## Using the code
 
-Currently the packages are not available on
-[CRAN](https://cran.r-project.org/). They can be installed from within R using
-the devtools package: 
+Alongside the packages available on [CRAN](https://cran.r-project.org/) the
+latest development version can be installed from
+the git repository from within R using the devtools package:
 
 ```
 devtools::install_github("waternumbers/dynatopGIS")
 ```
 
-Prebuild packages (usually including the latest
-version) are available from the waternumbers drat repository [here](https://waternumbers.github.io/drat/).
+Prebuild packages of the development version (which may be ahead of CRAN) are available from the [r-universe](https://waternumbers.r-universe.dev/ui#package:dynatopGIS)

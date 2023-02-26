@@ -21,7 +21,7 @@ BugReports: https://github.com/waternumbers/dynatopGIS/issues
 URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
 RoxygenNote: 7.2.3
 Suggests:
-	igraph,
+	  igraph,
     knitr,
     rmarkdown,
 VignetteBuilder: knitr
