@@ -1,0 +1,17 @@
+dynatopGIS
+
+3) Update vignette
+
+4) check map output with precip and pet - seems OK
+
+6) check dependancies
+
+7) finalise and document new band method (replace old?)
+
+9) Check model generation with rainfall and pet maps
+
+10) speed up convert_channel and add_channel - maybe convert to data frame and
+then back?
+
+11) Speed up model generation - to many loops??
+
