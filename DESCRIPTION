@@ -1,6 +1,6 @@
 Package: dynatopGIS
 Title: Algorithms for Helping Build Dynamic TOPMODEL Implementations from Spatial Data
-Version: 0.2.4
+Version: 0.2.5
 Authors@R: 
     person(given = "Paul",
            family = "Smith",
@@ -20,9 +20,8 @@ Depends:
 	R (>= 4.0.0)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
 URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
-RoxygenNote: 7.2.2
+RoxygenNote: 7.2.3
 Suggests:
-    igraph,
     knitr,
     rmarkdown
 VignetteBuilder: knitr

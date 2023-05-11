@@ -1422,8 +1422,8 @@ dynatopGIS <- R6::R6Class(
                 hsu <- terra::rast(pos_val[layer_name])
                 channel_id <- terra::rast(pos_val["channel_id"])
                 ## this is just the frequency of the cells - should weight by area as well
-                tmp <- list(crosstab(hsu,rlyr,long=TRUE),
-                            crosstab(channel_id,rlyr,long=TRUE))
+                tmp <- list(crosstab(c(hsu,rlyr),long=TRUE),
+                            crosstab(c(channel_id,rlyr),long=TRUE))
                 for(ii in 1:length(tmp)){names(tmp[[ii]]) <- c("id","name","cnt")}
                 tmp <- do.call(rbind,tmp)
                 tmp <- tmp[order(tmp$id),]
@@ -1447,8 +1447,8 @@ dynatopGIS <- R6::R6Class(
                 hsu <- terra::rast(pos_val[layer_name])
                 channel_id <- terra::rast(pos_val["channel_id"])
                 ## this is just the frequency of the cells - should weight by area as well
-                tmp <- list(crosstab(hsu,plyr,long=TRUE),
-                            crosstab(channel_id,plyr,long=TRUE))
+                tmp <- list(crosstab(c(hsu,plyr),long=TRUE),
+                            crosstab(c(channel_id,plyr),long=TRUE))
                 for(ii in 1:length(tmp)){names(tmp[[ii]]) <- c("id","name","cnt")}
                 tmp <- do.call(rbind,tmp)
                 tmp <- tmp[order(tmp$id),]

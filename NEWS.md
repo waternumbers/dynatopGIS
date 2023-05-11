@@ -1,3 +1,8 @@
+# dynatopGIS 0.2.5
+
+- fix bug in crosstab when computing input weights
+- removed dependency on igraph
+
 # dynatopGIS 0.2.4
 
 - Switch (with suboptimal code) to `terra` package over `raster` to fix
