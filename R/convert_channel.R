@@ -61,7 +61,7 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
             vect_object <- terra::buffer(vect_object, width=default_width/2)
         }else{
             warning("Modifying to spatial polygons using specified width")
-            vect_object <- terra::buffer(vect_object, width=vect_object[['width']]/2)
+            vect_object <- terra::buffer(vect_object, width=vect_object$width/2)
         }
     }
     
