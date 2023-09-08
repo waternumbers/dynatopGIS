@@ -413,9 +413,14 @@ dynatopGIS <- R6::R6Class(
             chn <- chn[chn$to_keep,]
 
             ## renumber the channel id
-            chn_rst <- terra::subst(chn_rst, chn$id, 1:nrow(chn))
+            ## chn_rst <- terra::subst(chn_rst, chn$id, 1:nrow(chn)) - this is very slow
             chn$id <- 1:nrow(chn)
-                      
+            ## this is quicker but possibly prone to error??
+            ##tmp <- chn_rst
+            chn_rst <- terra::rasterize(chn,private$brk[["dem"]],field = "id",touches=TRUE)
+            chn_rst <- terra::mask(chn_rst,private$brk[["dem"]]) ## make sure value occur only on cells with height
+            names(chn_rst) <- "channel"
+            
             shpFile <- file.path(private$projectFolder,"channel.shp")
             rstFile <- file.path(private$projectFolder,"channel.tif")
             terra::writeVector(chn, shpFile)
@@ -585,7 +590,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             
-            for(ii in idx){
+            for(ii in idx){    
                 ngh <- ii + delta ## neighbouring cells
                 ## compute gradient
                 grd <- (d[ii]-d[ngh])/dxy
@@ -597,10 +602,13 @@ dynatopGIS <- R6::R6Class(
                     gr[ii] <- max(sum(gcl) / sum(dcl[to_use]),min_grad)
                     ## topographic index
                     atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
-                    ## fraction of flow in each direction
-                    frc <- gcl/sum(gcl)
-                    ## propogate area downslope
-                    upa[ ngh[to_use] ]  <- upa[ ngh[to_use] ] + frc*upa[ii]
+                    ## if a hillslope propergate upslope area
+                    if( !is.finite(ch[ii]) ){
+                        ## fraction of flow in each direction
+                        frc <- gcl/sum(gcl)
+                        ## propogate area downslope
+                        upa[ ngh[to_use] ]  <- upa[ ngh[to_use] ] + frc*upa[ii]
+                    }
                 }else{
                     if( !is.finite(ch[ii]) ){
                         ## a hillslope cell that drains nowhere - this is an error
