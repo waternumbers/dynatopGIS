@@ -153,9 +153,10 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @param verbose print out additional diagnostic information
         #'
-        #' @details The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
-        compute_flow_lengths = function(verbose=FALSE){
-            private$apply_flow_lengths(verbose)
+        #' @details TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+        compute_flow_lengths = function(flow_routing=c("expected","dominant","d8","shortest"), verbose=FALSE){
+            flow_routing = match.arg(flow_routing)
+            private$apply_flow_lengths(flow_routing,verbose)
             invisible(self)
         }, 
         #' @description Create a catchment classification based cutting an existing layer into classes
@@ -245,8 +246,7 @@ dynatopGIS <- R6::R6Class(
         shp = character(0),
         reserved_layers = c("dem","channel","filled_dem",
                             "gradient","upslope_area","atb",
-                            "band","shortest_flow_length",
-                            "dominant_flow_length","expected_flow_length"),
+                            "band","flow_length"),
         readJSON = function(fn){
             
             if(!file.exists(fn)){
@@ -293,7 +293,11 @@ dynatopGIS <- R6::R6Class(
                      }
                 }
             }
-
+            
+            ## TODO
+            ## - add check that flow_direction.rds exists if flow direct processed
+            ## - add check that channel_direction.rds exists if channel processed
+            
             private$projectFolder <- projectFolder
             private$brk <- brk
             private$shp <- chn
@@ -375,8 +379,6 @@ dynatopGIS <- R6::R6Class(
                 stop("Some non-finite values of length found!")
             }
 
-
-            
             ## arrange id in order of flow direction - so lowest values at outlets of the network
             ## This is much quicker as a vector is not constantly accessing via the vect object
             id <- rep(as.integer(0),nrow(chn))
@@ -387,11 +389,12 @@ dynatopGIS <- R6::R6Class(
             while(sum(idx)>0){
                 id[idx] <- max(id) + 1:sum(idx)
                 idx <- eN %in% sN[idx]
+                it <- it+1
             }
             chn$id <- id
             if( !(all(chn$id>0))){ stop("error ingesting channel") }
             chn <- chn[ order(chn$id),]
-            chn$id <- 1:nrow(chn)
+            ##chn$id <- 1:nrow(chn)
                         
             ## create a raster of channel id numbers
             ## TODO - possibly sort so do biggest area first???
@@ -556,6 +559,16 @@ dynatopGIS <- R6::R6Class(
                 stop("Not all required input layers have been generated \n",
                      "Try running sink_fill first")
             }
+
+            rq <- c(file.path(private$projectFolder,"flow_direction.rds"),
+                    file.path(private$projectFolder,"channel_routing.rds"))
+            if( ! all( file.exists(rq) ) ){
+                stop("No flow routing method defined\n",
+                     "Try running compute_flow_lengths first")
+            }else{
+                flow_routing <- readRDS(rq[1])
+                channel_routing <- readRDS( rq[2] )
+            }
             
             ## load raster layer
             ## it is quickest to compute using blocks of dem as a raster
@@ -564,10 +577,11 @@ dynatopGIS <- R6::R6Class(
             
             d <- terra::as.matrix( private$brk[["filled_dem"]] , wide=TRUE)
             ch <- terra::as.matrix( private$brk[["channel"]] , wide=TRUE)
-
+            
             ## work out order to pass through the cells
-            idx <- order(d,decreasing=TRUE,na.last=NA)
-            n_to_eval <- length(idx)
+##            idx <- order(d,decreasing=TRUE,na.last=NA)
+##            n_to_eval <- length(idx)
+            n_to_eval <- nrow(flow_routing)
             
             ## distances and contour lengths
             ## distance between cell centres
@@ -590,35 +604,36 @@ dynatopGIS <- R6::R6Class(
             }
             
             
-            for(ii in idx){    
+            for(rwnum in nrow(flow_routing):1){
+                ii <- flow_routing[rwnum,1]
+                w <- flow_routing[rwnum,2:9]
+                
                 ngh <- ii + delta ## neighbouring cells
                 ## compute gradient
                 grd <- (d[ii]-d[ngh])/dxy
-                
-                to_use <- is.finite(grd) & (grd > 0)
-                if(any(to_use)){
+
+                to_use <- w>0 ##is.finite(grd) & (grd > 0)
+                if(any(to_use) & is.na(ch[ii])){
                     gcl <- grd[to_use]*dcl[to_use]
                     ## gradient
                     gr[ii] <- max(sum(gcl) / sum(dcl[to_use]),min_grad)
                     ## topographic index
                     atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
                     ## if a hillslope propergate upslope area
-                    if( !is.finite(ch[ii]) ){
-                        ## fraction of flow in each direction
-                        frc <- gcl/sum(gcl)
+                    if( !is.finite(ch[ii]) ){ ##then propogate area downslope
                         ## propogate area downslope
-                        upa[ ngh[to_use] ]  <- upa[ ngh[to_use] ] + frc*upa[ii]
+                        upa[ ngh ]  <- upa[ ngh ] + w*upa[ii]
                     }
                 }else{
-                    if( !is.finite(ch[ii]) ){
-                        ## a hillslope cell that drains nowhere - this is an error
-                        stop(paste("Cell",k,"is a hillslope cell with no lower neighbours"))
+                    if( is.na(ch[ii]) ){
+                    ## a hillslope cell that drains nowhere - this is an error
+                        stop(paste("Cell",ii,"is a hillslope cell with no lower neighbours"))
                     }else{
-                        ## channel cell that is a sink - use min_grad
-                        gr[ii] <- min_grad
-                        atb[ii] <- log(upa[ii]/gr[ii]) #log( upa[ii] / sum(gcl) )
+                        stop("routing area from a channel cell...")
                     }
-                }    
+                }
+                
+                    
                 
                 ## verbose output here
                 if(it >= next_print){
@@ -629,6 +644,22 @@ dynatopGIS <- R6::R6Class(
                 
                 it <- it+1
             }
+
+            ## merge upslope areas into the channel object
+            ch_upa <- tapply(upa,ch,sum)
+            ch_upa <- ch_upa[is.finite(ch_upa)]
+            if( !all(private$shp$id == as.integer(names(ch_upa))) ){ stop("channels out of order...") }
+            private$shp$up_area = as.numeric(ch_upa)
+
+            ## compute catchment area to each reach
+            ct_area <- private$shp$up_area
+            for(ii in length(channel_routing):1){ ## since in reverse order
+                if( length(channel_routing[[ii]] ) > 0 ){
+                    ct_area[ channel_routing[[ii]] ] <- ct_area[ channel_routing[[ii]] ] +
+                        ct_area[ii]/length( channel_routing[[ii]] )
+                }
+            }
+            private$shp$ct_area <- ct_area
 
             ## save raster maps
             out <- terra::rast( private$brk[["dem"]], names="gradient", vals=gr )
@@ -645,9 +676,13 @@ dynatopGIS <- R6::R6Class(
             rstFile <- file.path(private$projectFolder,"atb.tif")
             terra::writeRaster(out, rstFile); 
             private$brk <- c( private$brk, terra::rast(rstFile))
+
+            shpFile <- file.path(private$projectFolder,"channel.shp")
+            terra::writeVector(private$shp, shpFile, overwrite=TRUE)
+
         },
         ## work out flow lengths to channel
-        apply_flow_lengths = function(verbose){
+        apply_flow_lengths = function(flow_length,verbose){
 
             rq <- c("filled_dem","channel")
             if(!all( rq %in% names( private$brk) )){
@@ -663,11 +698,10 @@ dynatopGIS <- R6::R6Class(
             ch <- terra::as.matrix( private$brk[["channel"]],  wide=TRUE )
             
             ## create some distance matrices
-            sfl <- d; sfl[] <- NA
-            dfl <- d; dfl[] <- NA
-            efl <- d; efl[] <- NA
+            fl <- d; fl[] <- NA
             bnd <- d; bnd[] <- NA
-            bnd_inc_chn <- d*NA
+            
+            
 
             ## distances and contour lengths
             ## distance between cell centres
@@ -678,6 +712,7 @@ dynatopGIS <- R6::R6Class(
             nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
 
             ## compute channel bands
+            if( verbose ){ print("Computing channel bands") }
             private$shp$band <- as.integer(NA)
             eN <- private$shp$endNode
             sN <- private$shp$startNode
@@ -691,10 +726,23 @@ dynatopGIS <- R6::R6Class(
             }
             private$shp$band <- cbnd
 
+            ## compute channel routing
+            if( verbose ){ print("Computing channel routing") }
+            chn_route <- rep(list(integer(0),nrow(private$shp)))
+            for(ii in nrow(private$shp):1){
+                chn_route[[ii]] <- which( sN==eN[ii] )
+            }
+            
+
             
             ## if we go up in height order then we must have looked at all lower
             ## cells first
             idx <- order(d,na.last=NA)
+            
+            ## create flow direction storage
+            fd <- matrix(as.numeric(NA),length(idx),9)
+            colnames(fd) <- c("cell","topLeft","left","bottomLeft","top","bottom","topRight","right","bottomRight")
+            fd_cnt <- 0
             
             n_to_eval <- length(idx)
 
@@ -706,24 +754,48 @@ dynatopGIS <- R6::R6Class(
                 next_print <- Inf
             }
 
+            w <- rep(0,8)
             for(ii in idx){
                 if(is.finite(ch[ii])){
                     ## just channel
-                    bnd[ii] <- 0
-                    sfl[ii]  <- dfl[ii] <- efl[ii] <- 0
-                    bnd_inc_chn[ii] <- cbnd[ ch[ii] ]
+                    bnd[ii] <- cbnd[ ch[ii] ] ## relies in channels being ordered...
+                    fl[ii]  <- 0
+                    ## no need to increment count
                 }else{
+                    
                     ## it is not a channel
                     jdx <- ii+delta
-                    gcl <- (d[jdx]-d[ii])*dcl/dxy
+                    grd <- (d[jdx]-d[ii])/dxy
+                    gcl <- grd*dcl
                     is_lower <- is.finite(gcl) & gcl<0
-                    kdx <- jdx[is_lower]
-                    bnd[ii] <- max(bnd[kdx])+1
-                    bnd_inc_chn[ii] <- max(bnd_inc_chn[kdx])+1
-                    sfl[ii] <- min(sfl[kdx]+dxy[is_lower])
-                    efl[ii] <- sum((efl[kdx]+dxy[is_lower])*gcl[is_lower])/sum(gcl[is_lower])
-                    kdx <- which.min(gcl)
-                    dfl[ii] <- dfl[jdx[kdx]]+dxy[kdx]
+                    ## compute weights to sum flow lengths
+                    if(flow_length=="shortest"){
+                        tmp <- (fl[jdx] + dxy) + (!is_lower * Inf)
+                        w[] <- 0
+                        w[which.min(tmp)] <- 1
+                    }
+                    if(flow_length=="d8"){
+                        w[] <- 0
+                        w[which.min(grd)] <- 1
+                    }
+                    if(flow_length=="dominant"){
+                        w[] <- 0
+                        w[which.min(gcl)] <- 1
+                    }
+                    if(flow_length=="expected"){
+                        w[] <- 0
+                        w[is_lower] <- gcl[is_lower] / sum( gcl[is_lower] )
+                    }
+
+                    ## round the weights
+                    w <- round(w,2)
+                    w <- w/sum(w)
+
+                    bnd[ii] <- max(bnd[ jdx[w>0] ])+1
+                    fl[ii] <- sum( (fl[jdx]+dxy)*w, na.rm=TRUE )
+                    
+                    fd_cnt <- fd_cnt + 1
+                    fd[fd_cnt,] <- c(ii,w)
                 }
 
                 ## verbose output here
@@ -742,27 +814,22 @@ dynatopGIS <- R6::R6Class(
             ## terra::writeRaster(out, rstFile); 
             ## private$brk <- c( private$brk, terra::rast(rstFile))
             
-            out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd_inc_chn) ##_inc_chn", vals=bnd_inc_chn)
-            rstFile <- file.path(private$projectFolder,"band.tif") ##_inc_chn.tif")
+            out <- terra::rast( private$brk[["dem"]], names="band", vals=bnd)
+            rstFile <- file.path(private$projectFolder,"band.tif")
             terra::writeRaster(out, rstFile); 
             private$brk <- c( private$brk, terra::rast(rstFile))
-            
-            out <- terra::rast( private$brk[["dem"]], names="shortest_flow_length", vals=sfl )
-            rstFile <- file.path(private$projectFolder,"shortest_flow_length.tif")
+
+            out <- terra::rast( private$brk[["dem"]], names="flow_length", vals=fl )
+            rstFile <- file.path(private$projectFolder,"flow_length.tif")
             terra::writeRaster(out, rstFile); 
             private$brk <- c( private$brk, terra::rast(rstFile))
-            
-            out <- terra::rast( private$brk[["dem"]], names="dominant_flow_length", vals=dfl )
-            rstFile <- file.path(private$projectFolder,"dominant_flow_length.tif")
-            terra::writeRaster(out, rstFile); 
-            private$brk <- c( private$brk, terra::rast(rstFile))
-            
-            out <- terra::rast( private$brk[["dem"]], names="expected_flow_length", vals=efl )
-            rstFile <- file.path(private$projectFolder,"expected_flow_length.tif")
-            terra::writeRaster(out, rstFile); 
-            private$brk <- c( private$brk, terra::rast(rstFile))
-        },
-        
+
+            shpFile <- file.path(private$projectFolder,"channel.shp")
+            terra::writeVector(private$shp, shpFile, overwrite=TRUE)
+
+            saveRDS(chn_route,file.path(private$projectFolder,"channel_routing.rds"))
+            saveRDS(fd[1:fd_cnt,],file.path(private$projectFolder,"flow_direction.rds"))
+        },        
         ## split_to_class
         apply_classify = function(layer_name,base_layer,cuts){
             
@@ -870,6 +937,7 @@ dynatopGIS <- R6::R6Class(
             out <- list(type="combination",
                         groups=df)
             writeLines( jsonlite::toJSON(out), file.path(private$projectFolder,paste0(layer_name,".json")) )
+            
         },
         
         ## create a model  
