@@ -1,4 +1,4 @@
-Package: dynatopGIS
+Package: dynatopGISc
 Title: Algorithms for Helping Build Dynamic TOPMODEL Implementations from Spatial Data
 Version: 0.3.0.010
 Authors@R: 
