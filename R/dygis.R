@@ -355,7 +355,7 @@ dynatopGIS <- R6::R6Class(
             }
             
             ## check the required field names are present
-            if( !all( c("name","length","area","startNode","endNode","width") %in% names(chn)) ){
+            if( !all( c("name","length","area","startNode","endNode","width","slope") %in% names(chn)) ){
                 stop("A required property name is not specified")
             }
             
@@ -1180,6 +1180,7 @@ dynatopGIS <- R6::R6Class(
                     ## then a channel
                     hru[[ii]]$properties["Dx"] <- hru[[ii]]$class$length
                     hru[[ii]]$properties["width"] <- hru[[ii]]$class$width
+                    hru[[ii]]$properties["gradient"] <- hru[[ii]]$class$slope ## PJS TODO document this and requirement to have it as a variable
                     jdx <- which( sN == hru[[ii]]$class$endNode)
                     if(length(jdx) >0){
                         ## has downstream connenction
