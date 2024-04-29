@@ -7,8 +7,9 @@
 convert_channel(
   vect_object,
   property_names = c(name = "DRN_ID", length = "length", startNode = "startNode", endNode
-    = "endNode", width = "width"),
-  default_width = 2
+    = "endNode", width = "width", slope = "slope"),
+  default_width = 2,
+  default_slope = 0.001
 )
 }
 \arguments{

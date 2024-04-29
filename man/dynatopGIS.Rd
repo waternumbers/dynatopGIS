@@ -50,12 +50,14 @@ unlink(demo_dir)
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-dynatopGIS-new}{\code{dynatopGIS$new()}}
+\item \href{#method-dynatopGIS-add_catchment}{\code{dynatopGIS$add_catchment()}}
 \item \href{#method-dynatopGIS-add_dem}{\code{dynatopGIS$add_dem()}}
 \item \href{#method-dynatopGIS-add_channel}{\code{dynatopGIS$add_channel()}}
 \item \href{#method-dynatopGIS-add_layer}{\code{dynatopGIS$add_layer()}}
 \item \href{#method-dynatopGIS-get_layer}{\code{dynatopGIS$get_layer()}}
 \item \href{#method-dynatopGIS-plot_layer}{\code{dynatopGIS$plot_layer()}}
 \item \href{#method-dynatopGIS-sink_fill}{\code{dynatopGIS$sink_fill()}}
+\item \href{#method-dynatopGIS-band}{\code{dynatopGIS$band()}}
 \item \href{#method-dynatopGIS-compute_properties}{\code{dynatopGIS$compute_properties()}}
 \item \href{#method-dynatopGIS-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
 \item \href{#method-dynatopGIS-classify}{\code{dynatopGIS$classify()}}
@@ -83,11 +85,35 @@ Initialise a project, or reopen an existing project
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-This loads the project data files found at \code{projFile} if present. If not the value is stored for later use. The project data files are given by \code{projfile,<tif,shp>}
+This loads the project data files found in the \code{projectFolder} if present. If not the folder is created. The project data files are given by \code{projectFolder/<filename>.<tif,shp>}
 }
 
 \subsection{Returns}{
 A new `dynatopGIS` object
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-dynatopGIS-add_catchment"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-add_catchment}{}}}
+\subsection{Method \code{add_catchment()}}{
+Add a catchment outline to the `dynatopGIS` project
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_catchment(catchment)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{catchment}}{a \code{SpatRaster} object or the path to file containing one which contains a rasterised catchment map.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+If not a \code{SpatRaster} object the the catchment is read in using the terra package. Finite values in the raster indicate that the area is part of the catchment; with each subcatchment taking a unique finite value. Note that in the leter processing it is assumed that outflow from teh subcatchments can occur only through the channel network. The resolution and projection of the project is taken from the provided catchment
+}
+
+\subsection{Returns}{
+\code{invisible(self)}
 }
 }
 \if{html}{\out{<hr>}}
@@ -220,7 +246,8 @@ The sink filling algorithm of Planchona and Darboux (2001)
   min_grad = 1e-04,
   max_it = 1e+06,
   verbose = FALSE,
-  hot_start = FALSE
+  hot_start = FALSE,
+  flow_type = c("quinn", "d8")
 )}\if{html}{\out{</div>}}
 }
 
@@ -238,7 +265,30 @@ The sink filling algorithm of Planchona and Darboux (2001)
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The algorithm implemented is that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (<https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf>).
+The algorithm implemented is based on that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (<https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf>). The adaptations made are to ensure that all cells drain only within the subcatchments if provided.
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-dynatopGIS-band"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-band}{}}}
+\subsection{Method \code{band()}}{
+Computes the computational band of each cell
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$band(type = c("strict"), verbose = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{type}}{type of banding}
+
+\item{\code{verbose}}{print out additional diagnostic information}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
 }
 
 }
@@ -271,18 +321,23 @@ The algorithm passed through the cells in decreasing height. Min grad is applied
 \subsection{Method \code{compute_flow_lengths()}}{
 Computes flow length for each pixel to the channel
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_flow_lengths(verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_flow_lengths(
+  flow_routing = c("expected", "dominant", "shortest"),
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{flow_routing}}{TODO}
+
 \item{\code{verbose}}{print out additional diagnostic information}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
 }
 
 }

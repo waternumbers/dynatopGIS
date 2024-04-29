@@ -11,18 +11,20 @@ Description: A set of algorithms based on Quinn et al. (1991) <doi:10.1002/hyp.3
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
-Imports:
+Imports: 
     R6,
     terra,
     jsonlite
-Depends:
+Depends: 
 	R (>= 4.0.0)
 BugReports: https://github.com/waternumbers/dynatopGIS/issues
-URL: https://waternumbers.github.io/dynatopGIS/, https://github.com/waternumbers/dynatopGIS
-RoxygenNote: 7.2.3
-Suggests:
+URL: https://waternumbers.github.io/dynatopGIS/,
+        https://github.com/waternumbers/dynatopGIS
+RoxygenNote: 7.3.1
+Suggests: 
     igraph,
     knitr,
     rmarkdown,
+    tinytest
 VignetteBuilder: knitr
 Language: en-GB

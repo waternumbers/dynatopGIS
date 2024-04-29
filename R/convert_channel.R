@@ -18,8 +18,9 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
                                                        length = "length",
                                                        startNode = "startNode",
                                                        endNode = "endNode",
-                                                       width = "width"),
-                            default_width=2){
+                                                       width = "width",
+                                                       slope = "slope"),
+                            default_width=2, default_slope=0.001){
     
     ## read in sp object is a character sting
     if(is.character(vect_object)){
@@ -71,6 +72,12 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
         warning("Computing width from area and length")
         vect_object$width <- vect_object$area / vect_object$length
     }
+    
+    if(!("slope" %in% names(vect_object))){
+        warning("Adding default slope")
+        vect_object$slope <- default_slope
+    }
+    
 
     ## some further basic checks
     vect_object$name <- as.character(vect_object$name)

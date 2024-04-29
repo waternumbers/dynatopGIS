@@ -3,7 +3,6 @@
 \docType{package}
 \name{dynatopGIS-package}
 \alias{dynatopGIS-package}
-\alias{_PACKAGE}
 \title{dynatopGIS: Algorithms for Helping Build Dynamic TOPMODEL Implementations from Spatial Data}
 \description{
 A set of algorithms based on Quinn et al. (1991) \doi{10.1002/hyp.3360050106} for processing river network and digital elevation data to build implementations of Dynamic TOPMODEL, a semi-distributed hydrological model proposed in Beven and Freer (2001) \doi{10.1002/hyp.252}. The 'dynatop' package implements simulation code for Dynamic TOPMODEL based on the output of 'dynatopGIS'.
