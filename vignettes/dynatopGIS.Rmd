@@ -65,7 +65,6 @@ For this vignette we will store the data into a temporary directory
 ```{r tempory_dir}
 demo_dir <- tempfile("dygis")
 dir.create(demo_dir)
-on.exit( unlink(demo_dir) )
 ```
 and initialise the analysis by creating a new object specifying the location
 of the meta data file, which will be created if it doesn't exist.
@@ -162,7 +161,7 @@ property_names <- c(name="name1",
 chn <- convert_channel(sp_lines,property_names)
 ```
 Since the data set for Swindale does not contain a channel width or slope default
-values are used.
+values are used and warnings issued.
 
 The river network can then be added to the project by
 
@@ -264,11 +263,8 @@ tmp <- ctch$get_layer("filled_dem")
 then separate it into a layers representing land above and below 500m.
 
 ```{r height layer}
-tmp <- terra::classify( tmp,
-                          matrix(c(0,500,NA,
-                                   500,1000,-999),
-                                 ncol=3,byrow=TRUE))
-
+## T
+tmp <- terra::ifel(tmp<=500,NA,-999)
 ```
 
 The resulting raster object can now be added to the project with
@@ -298,6 +294,7 @@ $i$ are known.
 The computation is initiated with
 ```{r, flow_length}
 ctch$compute_flow_lengths()
+ctch$compute_band()
 ```
 
 The additional layers can be examined as expected
@@ -360,7 +357,7 @@ in the computations can be returned
 
 
 ```{r see_class}
-head( ctch$get_method("atb_20_band_500") )
+head( ctch$get_method("atb_20_band_500")$groups )
 ```
 
 Note that by giving the area to be burnt in a negative value when it was

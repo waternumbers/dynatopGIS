@@ -18,6 +18,8 @@ convert_channel(
 \item{property_names}{a named vector of containing the columns of existing data properties required in the final SpatialPolygonsDataFrame}
 
 \item{default_width}{the width in m to be used for buffering lines to produce polygons}
+
+\item{default_slope}{the slope in m/m to be used when none is provided}
 }
 \description{
 Converts SpatialLinesDataFrame or SpatialPolygonsDataFrame to the correct format of SpatialPolygonsDataFrame for dynatopGIS.

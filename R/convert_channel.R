@@ -4,6 +4,7 @@
 #' @param vect_object a SpatVect object or a file which can read by terra::vect to create one
 #' @param property_names a named vector of containing the columns of existing data properties required in the final SpatialPolygonsDataFrame
 #' @param default_width the width in m to be used for buffering lines to produce polygons
+#' @param default_slope the slope in m/m to be used when none is provided
 #'
 #' @details If the property_names vector contains a width this is used for buffering lines to produce polygons, otherwise the default_width value is used.
 #' 

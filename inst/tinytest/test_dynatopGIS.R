@@ -1,6 +1,8 @@
 setwd("./inst/tinytest")
 library(tinytest)
 devtools::load_all()
+#library(dynatopGIS)
+
 demo_dir <- tempfile("dygis")
 on.exit( unlink(demo_dir) )
 dir.create(demo_dir)
@@ -12,9 +14,15 @@ expect_silent({
     channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp", package="dynatopGIS", mustWork = TRUE)
 })
 
-## test adding dem
+## test adding a catchment
 expect_silent({
     dem <- terra::rast(dem_file)
+    dem <- terra::extend(dem,1)
+    catchment_outline <- terra::ifel(is.finite(dem),1,NA)
+    ctch$add_catchment(catchment_outline)
+})
+## test adding dem
+expect_silent({
     ctch$add_dem(dem)
 })
 
@@ -45,9 +53,7 @@ expect_true( terra::identical(ctch$get_layer("channel"), terra::rast("./test_out
 expect_silent({ ctch$sink_fill() })
 expect_true( terra::identical(ctch$get_layer("filled_dem"), terra::rast("./test_output/demo/filled_dem.tif")) )
 
-expect_silent({ ctch$flow_direction() })
-
-expect_silent({ ctch$band(verbose=T) })
+expect_silent({ ctch$compute_band() })
 terra::identical(ctch$get_layer("band"), terra::rast("./test_output/demo/band.tif"))
 
 ## Check compute properties
@@ -68,12 +74,11 @@ expect_true( terra::identical(ctch$get_layer("shortest_flow_length"), terra::ras
 ## test adding a layer
 expect_silent({ 
     tmp <- ctch$get_layer("filled_dem")
-    tmp <- terra::classify( tmp,
-                           matrix(c(0,500,NA,
-                                    500,1000,-999),
-                                  ncol=3,byrow=TRUE))
+    tmp <- terra::ifel(tmp<=500,NA,-999)
     ctch$add_layer(tmp, "greater_500")
 })
+
+## add this so test on classification etc pass
 expect_silent({ ctch$add_layer( terra::rast("./test_output/demo/atb.tif"), "atb_old") })
 
 ## test a classification
@@ -100,3 +105,4 @@ expect_silent({
     tmp <- readRDS( file.path(demo_dir,"new_model.rds") )
     ttmp <- readRDS( "./test_output/new_model.rds")
 })
+## TODO test model

@@ -18,9 +18,14 @@ dir.create(demo_dir)
 ## initialise processing
 ctch <- dynatopGIS$new(file.path(demo_dir,"test"))
 
-## add digital elevation and channel data
+## add a catchment outline based on the digital elevation model
 dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
 dem <- terra::rast(dem_file)
+dem <- terra::extend(dem,1)
+catchment_outline <- terra::ifel(is.finite(dem),1,NA)
+ctch$add_catchment(catchment_outline)
+
+## add digital elevation and channel data
 ctch$add_dem(dem)
 channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 package="dynatopGIS", mustWork = TRUE)
@@ -30,9 +35,10 @@ chn <- convert_channel(sp_lines,property_names)
 ctch$add_channel(chn)
 
 ## compute properties 
-ctch$sink_fill() ## fill sinks in the catchment
+ctch$sink_fill() ## fill sinks in the catchment can computes dem flow directions
 \donttest{
 ctch$compute_properties() # like topograpihc index and contour length
+ctch$compute_band()
 ctch$compute_flow_lengths()
 }
 ## classify and create a model
@@ -57,7 +63,7 @@ unlink(demo_dir)
 \item \href{#method-dynatopGIS-get_layer}{\code{dynatopGIS$get_layer()}}
 \item \href{#method-dynatopGIS-plot_layer}{\code{dynatopGIS$plot_layer()}}
 \item \href{#method-dynatopGIS-sink_fill}{\code{dynatopGIS$sink_fill()}}
-\item \href{#method-dynatopGIS-band}{\code{dynatopGIS$band()}}
+\item \href{#method-dynatopGIS-compute_band}{\code{dynatopGIS$compute_band()}}
 \item \href{#method-dynatopGIS-compute_properties}{\code{dynatopGIS$compute_properties()}}
 \item \href{#method-dynatopGIS-compute_flow_lengths}{\code{dynatopGIS$compute_flow_lengths()}}
 \item \href{#method-dynatopGIS-classify}{\code{dynatopGIS$classify()}}
@@ -122,7 +128,7 @@ If not a \code{SpatRaster} object the the catchment is read in using the terra p
 \subsection{Method \code{add_dem()}}{
 Import a dem to the `dynatopGIS` object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_dem(dem, fill_na = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_dem(dem, fill_na = -9999)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -150,18 +156,20 @@ suitable for chaining
 \subsection{Method \code{add_channel()}}{
 Import channel data to the `dynatopGIS` object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(channel)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$add_channel(channel, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{channel}}{a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information}
+\item{\code{channel}}{a SpatVect object or file path that can be loaded as one containing the channel information}
+
+\item{\code{verbose}}{Should additional progress information be printed}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Takes the representation of the channel network as a SpatialPolygonsDataFrame with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
+Takes the representation of the channel network as a SpatVect with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
 }
 
 \subsection{Returns}{
@@ -261,21 +269,27 @@ The sink filling algorithm of Planchona and Darboux (2001)
 \item{\code{verbose}}{print out additional diagnostic information}
 
 \item{\code{hot_start}}{start from filled_dem if it exists}
+
+\item{\code{flow_type}}{The type of flow routing to apply see details}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
 The algorithm implemented is based on that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (<https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf>). The adaptations made are to ensure that all cells drain only within the subcatchments if provided.
+
+The flow_type can be either
+- "quinn" where flow is split across all downslope directions or
+- "d8" where all flow follows the steepeest between cell gradient
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-dynatopGIS-band"></a>}}
-\if{latex}{\out{\hypertarget{method-dynatopGIS-band}{}}}
-\subsection{Method \code{band()}}{
+\if{html}{\out{<a id="method-dynatopGIS-compute_band"></a>}}
+\if{latex}{\out{\hypertarget{method-dynatopGIS-compute_band}{}}}
+\subsection{Method \code{compute_band()}}{
 Computes the computational band of each cell
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$band(type = c("strict"), verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$compute_band(type = c("strict"), verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -288,7 +302,7 @@ Computes the computational band of each cell
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+Banding is used within the model to define the HRUs and control the order of the flow between them; HRUs can only pass flow to HRUs in a lower numbered band. Currently only a strict ordering of river channels and cells in the DEM is implimented. To compute this the algorithm passes first up the channel network (with outlets being in band 1) then through the cells of the DEM in increasing height.
 }
 
 }
@@ -337,7 +351,7 @@ Computes flow length for each pixel to the channel
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+The algorithm passes through the cells in teh DEM in increasing height. Three measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell). By definition cells in the channel that have no land area have a length of NA.
 }
 
 }

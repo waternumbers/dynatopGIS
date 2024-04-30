@@ -9,9 +9,14 @@
 #' ## initialise processing
 #' ctch <- dynatopGIS$new(file.path(demo_dir,"test"))
 #'
-#' ## add digital elevation and channel data
+#' ## add a catchment outline based on the digital elevation model
 #' dem_file <- system.file("extdata", "SwindaleDTM40m.tif", package="dynatopGIS", mustWork = TRUE)
 #' dem <- terra::rast(dem_file)
+#' dem <- terra::extend(dem,1)
+#' catchment_outline <- terra::ifel(is.finite(dem),1,NA)
+#' ctch$add_catchment(catchment_outline)
+#' 
+#' ## add digital elevation and channel data
 #' ctch$add_dem(dem)
 #' channel_file <- system.file("extdata", "SwindaleRiverNetwork.shp",
 #' package="dynatopGIS", mustWork = TRUE)
@@ -21,9 +26,10 @@
 #' ctch$add_channel(chn)
 #'
 #' ## compute properties 
-#' ctch$sink_fill() ## fill sinks in the catchment
+#' ctch$sink_fill() ## fill sinks in the catchment can computes dem flow directions
 #' \donttest{
 #' ctch$compute_properties() # like topograpihc index and contour length
+#' ctch$compute_band()
 #' ctch$compute_flow_lengths()
 #' }
 #' ## classify and create a model
@@ -81,9 +87,9 @@ dynatopGIS <- R6::R6Class(
         },
         #' @description Import channel data to the `dynatopGIS` object
         #'
-        #' @param channel a SpatialLinesDataFrame, SpatialPolygonsDataFrame or file path containing the channel information
-        #'
-        #' @details Takes the representation of the channel network as a SpatialPolygonsDataFrame with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
+        #' @param channel a SpatVect object or file path that can be loaded as one containing the channel information
+        #' @param verbose Should additional progress information be printed
+        #' @details Takes the representation of the channel network as a SpatVect with properties name, length, area, startNode, endNode and overlaying it on the DEM. In doing this a variable called id is created (or overwritten) other variables in the data frame are passed through unaltered.
         #'
         #' @return suitable for chaining
         add_channel = function(channel,verbose=FALSE){
@@ -147,31 +153,26 @@ dynatopGIS <- R6::R6Class(
         #' @param max_it maximum number of replacement cycles
         #' @param verbose print out additional diagnostic information
         #' @param hot_start start from filled_dem if it exists
+        #' @param flow_type The type of flow routing to apply see details
         #' @details The algorithm implemented is based on that described in Planchona and Darboux, "A fast, simple and versatile algorithm to fill the depressions in digital elevation models" Catena 46 (2001). A pdf can be found at (<https://horizon.documentation.ird.fr/exl-doc/pleins_textes/pleins_textes_7/sous_copyright/010031925.pdf>). The adaptations made are to ensure that all cells drain only within the subcatchments if provided.
+        #'
+        #' The flow_type can be either
+        #' - "quinn" where flow is split across all downslope directions or
+        #' - "d8" where all flow follows the steepeest between cell gradient
         #'
         sink_fill = function(min_grad = 1e-4,max_it=1e6,verbose=FALSE, hot_start=FALSE, flow_type=c("quinn","d8")){
             flow_type <- match.arg(flow_type)
             private$apply_sink_fill(min_grad,max_it,verbose,hot_start,flow_type)
             invisible(self)
         },
-        ## #' @description Computes a record of the flow driections for each pixel and channel element
-        ## #'
-        ## #' @param type type of flow direction
-        ## #' @param verbose print out additional diagnostic information
-        ## #'
-        ## #' @details TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
-        ## flow_direction = function(type=c("quinn","d8"), verbose=FALSE){
-        ##     type = match.arg(type)
-        ##     private$apply_flow_direction(type,verbose)
-        ##     invisible(self)
-        ## },
         #' @description Computes the computational band of each cell
         #'
         #' @param type type of banding
         #' @param verbose print out additional diagnostic information
         #'
-        #' @details TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
-        band = function(type=c("strict"), verbose=FALSE){
+        #' @details Banding is used within the model to define the HRUs and control the order of the flow between them; HRUs can only pass flow to HRUs in a lower numbered band. Currently only a strict ordering of river channels and cells in the DEM is implimented. To compute this the algorithm passes first up the channel network (with outlets being in band 1) then through the cells of the DEM in increasing height.
+        # TODO impliment a categorical band (i.e. check routing then write into band)
+        compute_band = function(type=c("strict"), verbose=FALSE){
             type = match.arg(type)
             private$apply_band(type,verbose)
             invisible(self)
@@ -191,7 +192,7 @@ dynatopGIS <- R6::R6Class(
         #' @param flow_routing TODO
         #' @param verbose print out additional diagnostic information
         #'
-        #' @details TODO rewrite - The algorithm passed through the cells in increasing height. For measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell) and band (strict sequence to ensure that all contributing cell have a higher band value). By definition cells in the channel that have no land area have a length (or band) of NA.
+        #' @details The algorithm passes through the cells in teh DEM in increasing height. Three measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell). By definition cells in the channel that have no land area have a length of NA.
         compute_flow_lengths = function(flow_routing=c("expected","dominant","shortest"), verbose=FALSE){
             flow_routing = match.arg(flow_routing)
             private$apply_flow_lengths(flow_routing,verbose)
@@ -539,7 +540,7 @@ dynatopGIS <- R6::R6Class(
             
             ## values that should be valid
             to_be_valid <- !is.na(ctch) #!is.na(d) & is.na(ch)  # all values not NA should have a valid height
-            is_valid <- is.finite(ch) # & !is.na(d) # TRUE if a channel cell for initialisation
+            is_valid <- !is.na(ch) # & !is.na(d) # TRUE if a channel cell for initialisation
             changed <- is_valid # cells changed at last iteration
             fd <- to_be_valid*Inf; fd[is_valid] <- d[is_valid]
             to_eval <- is_valid; to_eval[] <- FALSE
@@ -564,6 +565,7 @@ dynatopGIS <- R6::R6Class(
                 to_eval[] <- FALSE
                 idx <- which(changed,arr.ind=TRUE) # index of changed cells
                 sctch <- ctch[idx] # sub catchment number
+                ##if( any(is.na(sctch)) ){ browser() }
                 jdx <- idx
                 for(ii in c(-1,0,1)){
                     for(jj in c(-1,0,1)){
@@ -575,12 +577,12 @@ dynatopGIS <- R6::R6Class(
                         ## trim so only evaluate
                         ## (ii) cells within the same subcatchment
                         cjdx <- ctch[jdx]
-                        kdx <- is.finite(cjdx) & (sctch == cjdx)
-                        jjdx <- jdx[kdx,]
+                        kdx <- !is.na(cjdx) & (sctch == cjdx)
+                        jjdx <- jdx[kdx,, drop=F]
                         to_eval[jjdx] <- !is_valid[jjdx] #TRUE
                     }
                 }
-#                to_eval <- to_eval & to_be_valid #& !is_valid
+                to_eval <- to_eval & to_be_valid #& !is_valid
                 if(verbose){
                     cat("Iteration",it,"\n")
                     cat("\t","Cells to evaluate:",sum(to_eval),"\n")
@@ -591,6 +593,7 @@ dynatopGIS <- R6::R6Class(
                 #browser()
                 idx <- which(to_eval,arr.ind=TRUE) # index of changed cells
                 sctch <- ctch[idx] # sub catchment number
+                ##if( any(is.na(sctch)) ){ browser() }
                 jdx <- idx
                 mind <- rep(Inf,nrow(idx))
                 for(ii in c(-1,0,1)){
@@ -602,9 +605,13 @@ dynatopGIS <- R6::R6Class(
                         ## trim so only evaluate
                         ## (ii) cells within the same subcatchment
                         cjdx <- ctch[jdx]
-                        kdx <- is.finite(cjdx) & (sctch == cjdx)
-                        jjdx <- jdx[kdx,]
-                        if( any(is.na(kdx)) | any(is.na(jjdx)) ){ browser() }
+                        kdx <- !is.na(cjdx) & (sctch == cjdx)
+                        if( !any(kdx) ){ next }
+                        jjdx <- jdx[kdx,,drop=F]
+                        ##if( any(is.na(kdx)) | any(is.na(jjdx)) ){ browser() }
+                        ##if( sum(kdx)==0 ){ browser() }##| sum(kdx) != nrow(jjdx) ){ browser() }
+                        tmp <- pmin(mind[kdx],fd[jjdx] + dxy[ii+2,jj+2],na.rm=TRUE)
+                        ##if( length(tmp) != length( mind[kdx] )){ browser() }
                         mind[kdx] <- pmin(mind[kdx],fd[jjdx] + dxy[ii+2,jj+2],na.rm=TRUE)
                     }
                 }
@@ -620,10 +627,11 @@ dynatopGIS <- R6::R6Class(
 
             rfd <- terra::rast( private$brk[["dem"]], names="filled_dem", vals=fd )
             rstFile <- file.path(private$projectFolder,"filled_dem.tif")
-            terra::writeRaster(rfd, rstFile)
             if(hot_start){
+                terra::writeRaster(rfd, rstFile,overwrite=TRUE)
                 private$brk[["filled_dem"]] <- terra::rast(rstFile)
             }else{
+                terra::writeRaster(rfd, rstFile)
                 private$brk <- c( private$brk, terra::rast(rstFile))
             }
      
@@ -717,8 +725,8 @@ dynatopGIS <- R6::R6Class(
             ## load raster layer
             ch <- terra::as.matrix( private$brk[["channel"]],  wide=TRUE )
             
-            rq <- c( file.path(private$projectFolder,"flow_direction.rds"),
-                    file.path(private$projectFolder,"channel_direction.rds") )
+            rq <- c( file.path(private$projectFolder,"dem.rds"),
+                    file.path(private$projectFolder,"channel.rds") )
             if( ! all( file.exists(rq) ) ){
                 stop("No flow routing records defined\n",
                      "Try running compute_flow_paths first")
@@ -799,8 +807,8 @@ dynatopGIS <- R6::R6Class(
                      "Try running sink_fill first")
             }
 
-            rq <- c( file.path(private$projectFolder,"flow_direction.rds"),
-                    file.path(private$projectFolder,"channel_direction.rds") )
+            rq <- c( file.path(private$projectFolder,"dem.rds"),
+                    file.path(private$projectFolder,"channel.rds") )
             if( ! all( file.exists(rq) ) ){
                 stop("No flow routing records defined\n",
                      "Try running compute_flow_paths first")
@@ -925,8 +933,8 @@ dynatopGIS <- R6::R6Class(
             d <- terra::as.matrix( private$brk[["filled_dem"]], wide=TRUE )
             ch <- terra::as.matrix( private$brk[["channel"]],  wide=TRUE )
 
-            rq <- c( file.path(private$projectFolder,"flow_direction.rds"),
-                    file.path(private$projectFolder,"channel_direction.rds") )
+            rq <- c( file.path(private$projectFolder,"dem.rds"),
+                    file.path(private$projectFolder,"channel.rds") )
             if( ! all( file.exists(rq) ) ){
                 stop("No flow routing records defined\n",
                      "Try running compute_flow_paths first")
