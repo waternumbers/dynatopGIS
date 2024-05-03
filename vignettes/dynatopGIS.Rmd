@@ -197,10 +197,14 @@ All layers are returned as `SpatRast` objects with the exception of the
 # Filling sinks
 
 For the hill slope to be connected to the river network all DEM cells must
-drain to those that intersect with the river network.
+drain to those that intersect with the river network. The algorithm
+implemented in the `sink_fill` method ensures this is the case. 
+In calling the `sink_fill` method a flow direction algorithm
+is specified and the resulting flow paths recorded. If subcatchments are
+present in the catchment map then only flow paths within the subcatchment are
+considered.
 
-The algorithm of implemented in the `sink_fill` method ensures
-this is the case. Since the algorithm is iterative the execution time of the
+The algorithm of used by the `sink_fill` method is iterative and the execution time of the
 function is limited by capping the maximum number of iterations. If
 this limit is reached without completion the method can call again with the
 "hot start" option to continue from where it finished.
@@ -213,6 +217,20 @@ ctch$sink_fill()
 
 terra::plot( ctch$get_layer('filled_dem') - ctch$get_layer('dem'),
             main="Changes to height")
+```
+
+## Determining Ordering
+
+The computational scheme in the `dynatop` package works with an ordered
+sequence of HRUs constructed such that the sequence moves downslope to
+catchment outlet. This is acheived by banding the channel reaches and
+hillslope cells such that the catchment outlet(s) are in band 1, those cells
+or reaches draining only into band 1 are in band 2 and so forth. banding is
+acheived by the following call
+
+```{r, sink_fill}
+ctch$compute_band()
+ctch$plot_layer("band")
 ```
 
 # Computing properties

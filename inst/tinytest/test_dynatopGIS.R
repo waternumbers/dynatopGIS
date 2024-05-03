@@ -1,7 +1,7 @@
-setwd("./inst/tinytest")
+##setwd("./inst/tinytest")
 library(tinytest)
-devtools::load_all()
-#library(dynatopGIS)
+##devtools::load_all()
+library(dynatopGIS)
 
 demo_dir <- tempfile("dygis")
 on.exit( unlink(demo_dir) )
