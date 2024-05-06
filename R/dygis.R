@@ -2,7 +2,7 @@
 #' @examples
 #' ## The vignettes contains more examples of the method calls.
 #' 
-#' ## create temport directory for output
+#' ## create temporary directory for output
 #' demo_dir <- tempfile("dygis")
 #' dir.create(demo_dir)
 #'
@@ -26,7 +26,7 @@
 #' ctch$add_channel(chn)
 #'
 #' ## compute properties 
-#' ctch$sink_fill() ## fill sinks in the catchment can computes dem flow directions
+#' ctch$sink_fill() ## fill sinks in the catchment and computes dem flow directions
 #' \donttest{
 #' ctch$compute_properties() # like topograpihc index and contour length
 #' ctch$compute_band()
@@ -37,7 +37,7 @@
 #' ctch$classify("atb_20","atb",cuts=20) # classify using the topographic index
 #' ctch$get_method("atb_20") ## see the details of the classification
 #' ctch$combine_classes("atb_20_band",c("atb_20","band")) ## combine classes
-#' ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band","band") ## create a model
+#' ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band") ## create a model
 #' list.files(demo_dir,pattern="new_model*") ## look at the output files for the model
 #' }
 #' ## tidy up
@@ -61,7 +61,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @param catchment a \code{SpatRaster} object or the path to file containing one which contains a rasterised catchment map.
         #'
-        #' @details If not a \code{SpatRaster} object the the catchment is read in using the terra package. Finite values in the raster indicate that the area is part of the catchment; with each subcatchment taking a unique finite value. Note that in the leter processing it is assumed that outflow from teh subcatchments can occur only through the channel network. The resolution and projection of the project is taken from the provided catchment
+        #' @details If not a \code{SpatRaster} object the the catchment is read in using the terra package. Finite values in the raster indicate that the area is part of the catchment; with each subcatchment taking a unique finite value. Note that in the later processing it is assumed that outflow from the subcatchments can occur only through the channel network. The resolution and projection of the project is taken from the provided catchment
         #'
         #' @return \code{invisible(self)}
         add_catchment = function(catchment){
@@ -111,7 +111,7 @@ dynatopGIS <- R6::R6Class(
             layer_name <- as.character(layer_name)
             if(!("SpatRaster" %in% class(layer))){ layer <- terra::rast(as.character(layer)) }
             if(!("SpatRaster" %in% class(layer))){ stop("layer is not a SpatRaster") }
-            if( length(layer_name) != terra::nlyr(layer) ){ stop("Length of names does not match number fo layers") }
+            if( length(layer_name) != terra::nlyr(layer) ){ stop("Length of names does not match number of layers") }
             private$apply_add_layer(layer,layer_name)
             invisible(self)
         },
@@ -158,7 +158,7 @@ dynatopGIS <- R6::R6Class(
         #'
         #' The flow_type can be either
         #' - "quinn" where flow is split across all downslope directions or
-        #' - "d8" where all flow follows the steepeest between cell gradient
+        #' - "d8" where all flow follows the steepest between cell gradient
         #'
         sink_fill = function(min_grad = 1e-4,max_it=1e6,verbose=FALSE, hot_start=FALSE, flow_type=c("quinn","d8")){
             flow_type <- match.arg(flow_type)
@@ -170,8 +170,7 @@ dynatopGIS <- R6::R6Class(
         #' @param type type of banding
         #' @param verbose print out additional diagnostic information
         #'
-        #' @details Banding is used within the model to define the HRUs and control the order of the flow between them; HRUs can only pass flow to HRUs in a lower numbered band. Currently only a strict ordering of river channels and cells in the DEM is implimented. To compute this the algorithm passes first up the channel network (with outlets being in band 1) then through the cells of the DEM in increasing height.
-        # TODO impliment a categorical band (i.e. check routing then write into band)
+        #' @details Banding is used within the model to define the HRUs and control the order of the flow between them; HRUs can only pass flow to HRUs in a lower numbered band. Currently only a strict ordering of river channels and cells in the DEM is implemented. To compute this the algorithm passes first up the channel network (with outlets being in band 1) then through the cells of the DEM in increasing height.
         compute_band = function(type=c("strict"), verbose=FALSE){
             type = match.arg(type)
             private$apply_band(type,verbose)
@@ -192,7 +191,7 @@ dynatopGIS <- R6::R6Class(
         #' @param flow_routing TODO
         #' @param verbose print out additional diagnostic information
         #'
-        #' @details The algorithm passes through the cells in teh DEM in increasing height. Three measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell). By definition cells in the channel that have no land area have a length of NA.
+        #' @details The algorithm passes through the cells in the DEM in increasing height. Three measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell). By definition cells in the channel that have no land area have a length of NA.
         compute_flow_lengths = function(flow_routing=c("expected","dominant","shortest"), verbose=FALSE){
             flow_routing = match.arg(flow_routing)
             private$apply_flow_lengths(flow_routing,verbose)
@@ -224,23 +223,20 @@ dynatopGIS <- R6::R6Class(
         #'
         #' @param layer_name name for the new model and layers
         #' @param class_layer the layer defining the topographic classes
-        #' @param dist_layer the layer defining the distances to the channel
         #' @param sf_opt Surface solution to use
-        #' @param sz_opt transmissivity transmissivity profile to use
-        #' @param dist_delta TODO
+        #' @param sz_opt transmissivity profile to use
         #' @param rain_layer the layer defining the rainfall inputs
         #' @param rain_label Prepended to rain_layer values to give rainfall series name        
         #' @param pet_layer the layer defining the pet inputs
         #' @param pet_label Prepended to pet_layer values to give pet series name
         #' @param verbose print more details of progress
         #'
-        #' @details The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta of the shortest distance within the HRU.
+        #' @details The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the ordering of the catchment (see the \code{compute_band} method). Flow from a HRU can only go to a HRU with a lower band.
         #' Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
         #' The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
-        create_model = function(layer_name,class_layer,dist_layer,
+        create_model = function(layer_name,class_layer,
                                 sf_opt = c("cnst","kin"),
                                 sz_opt = c("exp","bexp","cnst","dexp"),
-                                dist_delta=0,
                                 rain_layer=NULL, rain_label=character(0),
                                 pet_layer=NULL, pet_label=character(0),
                                 verbose=FALSE){
@@ -249,7 +245,7 @@ dynatopGIS <- R6::R6Class(
             sf_opt<- match.arg(sf_opt)
             sz_opt <- match.arg(sz_opt)
             
-            private$apply_create_model(class_layer, dist_layer,dist_delta,
+            private$apply_create_model(class_layer,
                                        rain_layer, rain_label,
                                        pet_layer, pet_label,
                                        layer_name,verbose,
@@ -1010,17 +1006,23 @@ dynatopGIS <- R6::R6Class(
                 stop("layer_name is already used")
             }
 
-            ## TODO - check layer_name isn;t reserved            
+            ## TODO - check layer_name isn't reserved
+            if(layer_name %in% names(private$reserved_layers)){
+                stop("layer_name is reserved")
+            }
+            
             ## load base layer and mask out channel
             x <-  terra::mask( private$brk[[base_layer]], private$brk[["channel"]], inverse=TRUE)
 
             ## work out breaks
             brk <- as.numeric(cuts)
-            if( length(brk)==1 | is.na(brk) ){
+            if( length(brk)==1 ){
                 ## this defines brks in the same way as cut would otherwise
                 rng <- as.numeric( terra::global(x, fun="range",na.rm=TRUE) )
                 brk <- seq(rng[1],rng[2],length=brk+1)
             }
+            if( any(is.na(brk)) ){ stop("NA value in brk") }
+
             ## cut the raster
             outFile <- file.path(private$projectFolder,paste0(layer_name,".tif"))
 
@@ -1108,7 +1110,9 @@ dynatopGIS <- R6::R6Class(
         },
         
         ## create a model  
-        apply_create_model = function(class_lyr,dist_lyr,delta_dist,
+        apply_create_model = function(class_lyr,
+##                                      dist_lyr,
+##                                      delta_dist,
                                       rain_lyr,rainfall_label,
                                       pet_lyr,pet_label,
                                       layer_name,verbose,
@@ -1116,7 +1120,12 @@ dynatopGIS <- R6::R6Class(
                                       sz_opt){
 
             
-##            print(system.time({
+            ##            print(system.time({
+
+            ## THESE are quick hacks to force the use of band
+            ## Need removing during the rewrite of model generation
+            dist_lyr <- "band"
+            delta_dist <- 0
                 
             rq <- c("gradient","filled_dem","channel",
                     class_lyr,dist_lyr,

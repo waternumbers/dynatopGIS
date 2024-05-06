@@ -11,7 +11,7 @@ R6 Class for processing a catchment to make a Dynamic TOPMODEL
 \examples{
 ## The vignettes contains more examples of the method calls.
 
-## create temport directory for output
+## create temporary directory for output
 demo_dir <- tempfile("dygis")
 dir.create(demo_dir)
 
@@ -35,7 +35,7 @@ chn <- convert_channel(sp_lines,property_names)
 ctch$add_channel(chn)
 
 ## compute properties 
-ctch$sink_fill() ## fill sinks in the catchment can computes dem flow directions
+ctch$sink_fill() ## fill sinks in the catchment and computes dem flow directions
 \donttest{
 ctch$compute_properties() # like topograpihc index and contour length
 ctch$compute_band()
@@ -46,7 +46,7 @@ ctch$compute_flow_lengths()
 ctch$classify("atb_20","atb",cuts=20) # classify using the topographic index
 ctch$get_method("atb_20") ## see the details of the classification
 ctch$combine_classes("atb_20_band",c("atb_20","band")) ## combine classes
-ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band","band") ## create a model
+ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band") ## create a model
 list.files(demo_dir,pattern="new_model*") ## look at the output files for the model
 }
 ## tidy up
@@ -115,7 +115,7 @@ Add a catchment outline to the `dynatopGIS` project
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If not a \code{SpatRaster} object the the catchment is read in using the terra package. Finite values in the raster indicate that the area is part of the catchment; with each subcatchment taking a unique finite value. Note that in the leter processing it is assumed that outflow from teh subcatchments can occur only through the channel network. The resolution and projection of the project is taken from the provided catchment
+If not a \code{SpatRaster} object the the catchment is read in using the terra package. Finite values in the raster indicate that the area is part of the catchment; with each subcatchment taking a unique finite value. Note that in the later processing it is assumed that outflow from the subcatchments can occur only through the channel network. The resolution and projection of the project is taken from the provided catchment
 }
 
 \subsection{Returns}{
@@ -279,7 +279,7 @@ The algorithm implemented is based on that described in Planchona and Darboux, "
 
 The flow_type can be either
 - "quinn" where flow is split across all downslope directions or
-- "d8" where all flow follows the steepeest between cell gradient
+- "d8" where all flow follows the steepest between cell gradient
 }
 
 }
@@ -302,7 +302,7 @@ Computes the computational band of each cell
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-Banding is used within the model to define the HRUs and control the order of the flow between them; HRUs can only pass flow to HRUs in a lower numbered band. Currently only a strict ordering of river channels and cells in the DEM is implimented. To compute this the algorithm passes first up the channel network (with outlets being in band 1) then through the cells of the DEM in increasing height.
+Banding is used within the model to define the HRUs and control the order of the flow between them; HRUs can only pass flow to HRUs in a lower numbered band. Currently only a strict ordering of river channels and cells in the DEM is implemented. To compute this the algorithm passes first up the channel network (with outlets being in band 1) then through the cells of the DEM in increasing height.
 }
 
 }
@@ -351,7 +351,7 @@ Computes flow length for each pixel to the channel
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The algorithm passes through the cells in teh DEM in increasing height. Three measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell). By definition cells in the channel that have no land area have a length of NA.
+The algorithm passes through the cells in the DEM in increasing height. Three measures of flow length to the channel are computed. The shortest length (minimum length to channel through any flow path), the dominant length (the length taking the flow direction with the highest fraction for each pixel on the path) and expected flow length (flow length based on sum of downslope flow lengths based on fraction of flow to each cell). By definition cells in the channel that have no land area have a length of NA.
 }
 
 }
@@ -414,10 +414,8 @@ Compute a Dynamic TOPMODEL
 \if{html}{\out{<div class="r">}}\preformatted{dynatopGIS$create_model(
   layer_name,
   class_layer,
-  dist_layer,
   sf_opt = c("cnst", "kin"),
   sz_opt = c("exp", "bexp", "cnst", "dexp"),
-  dist_delta = 0,
   rain_layer = NULL,
   rain_label = character(0),
   pet_layer = NULL,
@@ -433,13 +431,9 @@ Compute a Dynamic TOPMODEL
 
 \item{\code{class_layer}}{the layer defining the topographic classes}
 
-\item{\code{dist_layer}}{the layer defining the distances to the channel}
-
 \item{\code{sf_opt}}{Surface solution to use}
 
-\item{\code{sz_opt}}{transmissivity transmissivity profile to use}
-
-\item{\code{dist_delta}}{TODO}
+\item{\code{sz_opt}}{transmissivity profile to use}
 
 \item{\code{rain_layer}}{the layer defining the rainfall inputs}
 
@@ -454,7 +448,7 @@ Compute a Dynamic TOPMODEL
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the distance to a channel. For each HRU the shortest distance to a channel is computed. Flow from a HRU can only go to a HRU with a lower shortest distance to the channel. Flow from a HRU can occur from any raster cell within the HRU whose distance to the channel is within dist_delta of the shortest distance within the HRU.
+The \code{class_layer} is used to define the HRUs. Flow between HRUs is based on the ordering of the catchment (see the \code{compute_band} method). Flow from a HRU can only go to a HRU with a lower band.
 Setting the sf_opt and sz_opt options ensures the model is set up with the correct parameters present.
 The \code{rain_layer} (\code{pet_layer}) can contain the numeric id values of different rainfall (pet) series. If the value of \code{rain_layer} (\code{pet_layer}) is not \code{NULL} the weights used to compute an averaged input value for each HRU are computed, otherwise an input table for the models generated with the value "missing" used in place of the series name.
 }
