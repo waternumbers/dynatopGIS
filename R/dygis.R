@@ -275,7 +275,7 @@ dynatopGIS <- R6::R6Class(
         }               
     ),
     private = list(
-        version = "0.4.0",
+        version = "0.3.1",
         projectFolder = character(0),
         brk = character(0),
         shp = character(0),
@@ -445,7 +445,7 @@ dynatopGIS <- R6::R6Class(
             if( !(all(chn$id > 0))){ stop("error ingesting channel") }
             chn <- chn[ order(chn$id),]
 
-            
+            browser()
             ## create a raster of channel id numbers
             ## TODO - possibly sort so do biggest area first???
             chn_rst <- terra::rasterize(chn,private$brk[["catchment"]],field = "id",touches=TRUE)
@@ -1400,7 +1400,7 @@ dynatopGIS <- R6::R6Class(
             ## ############################################
             ##idx <- sapply(hru,function(x){ifelse(length(x$sf_flow_direction$id)==0,x$id,NULL)})
             output_flux<- data.frame(name = paste0("q_sf_",outlet_id),
-                                           id = as.integer( outlet_id ), flux = "q_sf")
+                                           id = as.integer( outlet_id ), flux = "q_sf", scale = 1.0)
                         
             ## ############################
             ## save model
