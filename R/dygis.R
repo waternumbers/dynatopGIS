@@ -98,8 +98,7 @@ dynatopGIS <- R6::R6Class(
 
             private$apply_add_channel(channel,as.logical(verbose))
             invisible(self)
-        },
-        
+        },        
         #' @description Add a layer of geographical information
         #'
         #' @param layer the raster layer to add (see details)
@@ -445,7 +444,7 @@ dynatopGIS <- R6::R6Class(
             if( !(all(chn$id > 0))){ stop("error ingesting channel") }
             chn <- chn[ order(chn$id),]
 
-            browser()
+#            browser()
             ## create a raster of channel id numbers
             ## TODO - possibly sort so do biggest area first???
             chn_rst <- terra::rasterize(chn,private$brk[["catchment"]],field = "id",touches=TRUE)
@@ -1231,6 +1230,7 @@ dynatopGIS <- R6::R6Class(
             mp <- terra::as.matrix( hmap, wide=TRUE )
             dst <- terra::as.matrix( dst, wide=TRUE )
             gr <- terra::as.matrix( private$brk[["gradient"]], wide=TRUE )
+            ctch <- terra::as.matrix( private$brk[["catchment"]],  wide=TRUE )
             if( !is.null(rain_lyr) ){
                 rain <- terra::as.matrix( private$brk[[rain_lyr]], wide=TRUE )
             }
@@ -1242,20 +1242,24 @@ dynatopGIS <- R6::R6Class(
             ##atb <- terra::as.matrix( private$brk[["atb"]]  , wide=TRUE )
 
 ##            print(system.time({
-                
+
+
+
+
+            
+            if( verbose ){ print("Computing hillslope routing") }
             ## distances and contour lengths
             ## distance between cell centres
             rs <- terra::res( private$brk )
             dxy <- rep(sqrt(sum(rs^2)),8)
             dxy[c(2,7)] <- rs[1]; dxy[c(4,5)] <- rs[2]
             dcl <- c(0.35,0.5,0.35,0.5,0.5,0.35,0.5,0.35)*mean(rs)
-            nr <- nrow(mp); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+            nr <- nrow(d); delta <- c(-nr-1,-nr,-nr+1,-1,1,nr-1,nr,nr+1)
+            
+            ## if we go up in height order then we are working from near the channel to the heighest point
+            idx <- order(d,na.last=NA)
+            n_to_eval <- length(idx)
             cellArea <- prod(rs)
-                
-            ## work out which cells to pass through
-            idx <- which(is.finite(mp))
-            n_to_eval <- c(length(idx),0,length(idx)/20)
-
             
             for(ii in idx){
                 id <- mp[ii]
@@ -1268,13 +1272,15 @@ dynatopGIS <- R6::R6Class(
                 ## work out subsurface flow for non-channel
                 if( is.na(hru[[jj]]$class$startNode) & (dst[ii] <= (hru[[jj]]$class$min_dst + delta_dist)) ){
                     
-                    ## look for flow direction      
+                    ## look for flow direction
                     ngh <- ii + delta ## neighbouring cells
                     nghid <- mp[ngh]
+                    cjdx <- ctch[ngh]
+                    
                     ## compute gradient
                     grd <- (d[ii]-d[ngh])/dxy
                     ## test if can be used
-                    to_use <- is.finite(grd) & (grd > 0) & is.finite(nghid) & (nghid < id)
+                    to_use <- is.finite(grd) & (grd > 0) & is.finite(nghid) & (nghid < id) & (cjdx==ctch[ii])
                     
                     if( any(to_use) ){
                         nghid <- paste(nghid[to_use])

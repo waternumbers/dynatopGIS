@@ -104,6 +104,7 @@ expect_silent({ ctch$create_model(file.path(demo_dir,"new_model"),"atb_20_band")
 expect_silent({
     tmp <- readRDS( file.path(demo_dir,"new_model.rds") )
     ttmp <- readRDS( "./test_output/new_model.rds")
+    tmp$output_flux$scale <- NULL ## remove this since not in original
 })
 ## TODO test model
 expect_true( terra::identical(terra::rast( file.path(demo_dir,"new_model.tif") ),
