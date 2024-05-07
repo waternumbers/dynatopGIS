@@ -4,6 +4,7 @@
 #' @param vect_object a SpatVect object or a file which can read by terra::vect to create one
 #' @param property_names a named vector of containing the columns of existing data properties required in the final SpatialPolygonsDataFrame
 #' @param default_width the width in m to be used for buffering lines to produce polygons
+#' @param default_slope the slope in m/m to be used when none is provided
 #'
 #' @details If the property_names vector contains a width this is used for buffering lines to produce polygons, otherwise the default_width value is used.
 #' 
@@ -18,8 +19,9 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
                                                        length = "length",
                                                        startNode = "startNode",
                                                        endNode = "endNode",
-                                                       width = "width"),
-                            default_width=2){
+                                                       width = "width",
+                                                       slope = "slope"),
+                            default_width=2, default_slope=0.001){
     
     ## read in sp object is a character sting
     if(is.character(vect_object)){
@@ -61,7 +63,7 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
             vect_object <- terra::buffer(vect_object, width=default_width/2)
         }else{
             warning("Modifying to spatial polygons using specified width")
-            vect_object <- terra::buffer(vect_object, width=vect_object[['width']]/2)
+            vect_object <- terra::buffer(vect_object, width=vect_object$width/2)
         }
     }
     
@@ -71,6 +73,12 @@ convert_channel <- function(vect_object,property_names=c(name = "DRN_ID",
         warning("Computing width from area and length")
         vect_object$width <- vect_object$area / vect_object$length
     }
+    
+    if(!("slope" %in% names(vect_object))){
+        warning("Adding default slope")
+        vect_object$slope <- default_slope
+    }
+    
 
     ## some further basic checks
     vect_object$name <- as.character(vect_object$name)
