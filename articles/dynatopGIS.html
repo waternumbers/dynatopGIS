@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Building a Dynamic TOPMODEL • dynatopGIS</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">dynatopGIS</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0.001</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.3.0.1010</span>
       </span>
     </div>
 
@@ -141,9 +141,8 @@ directory</p>
 location of the meta data file, which will be created if it doesn’t
 exist.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"demo"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Creating new folder</span></span>
-<span><span class="co">#&gt; Starting new project at /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">ctch</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/dynatopGIS.html">dynatopGIS</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Starting new project at /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="adding-catchment-data">Adding catchment data<a class="anchor" aria-label="anchor" href="#adding-catchment-data"></a>
@@ -151,8 +150,7 @@ exist.</p>
 <p>The basis of the analysis is a rasterised Digital Elevation Model
 (DEM) of the catchment and a vectorised representation of the river
 network with attributes. Currently these can be in any format supported
-by the <code>raster</code> and <code>sp</code> libraries
-respectively.</p>
+by the <code>terra</code> library.</p>
 <p>However, within the calculations used for sink filling, flow routing
 and topographic index calculations the raster DEM is presumed to be
 projected so that is has square cells such that the difference between
@@ -162,19 +160,28 @@ using:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dem_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleDTM40m.tif"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">channel_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"SwindaleRiverNetwork.shp"</span>, package<span class="op">=</span><span class="st">"dynatopGIS"</span>, mustWork <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Before adding either the DEM or channel a raster map of the catchment
+outline must be provided. This defines not only the catchment boundaries
+but also, if required, subcatchments, each of which must be given a
+unique number. The projection and resolution of this map is used in all
+subsequent GIS processing</p>
+<p>In this example the catchment map is generated from the DEM, which,
+by convention must contain a edge rows and columns containing only
+<code>NA</code> values.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span></span>
+<span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/extend.html" class="external-link">extend</a></span><span class="op">(</span><span class="va">dem</span>,<span class="fl">1</span><span class="op">)</span> <span class="co">## pad with NA values</span></span>
+<span><span class="va">catchment_outline</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ifelse.html" class="external-link">ifel</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/is.finite.html" class="external-link">is.finite</a></span><span class="op">(</span><span class="va">dem</span><span class="op">)</span>,<span class="fl">1</span>,<span class="cn">NA</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_catchment</span><span class="op">(</span><span class="va">catchment_outline</span><span class="op">)</span></span></code></pre></div>
 <p>Either the DEM or channel files can be added to the project first. In
 this case we add the DEM with</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dem</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/rast.html" class="external-link">rast</a></span><span class="op">(</span><span class="va">dem_file</span><span class="op">)</span></span>
-<span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></code></pre></div>
-<p><em>Note:</em> An additional row and column of <code>NA</code> is
-added to each edge of the DEM. All raster layers in the project have the
-same projection, resolution and extent of the extended DEM.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_dem</span><span class="op">(</span><span class="va">dem</span><span class="op">)</span></span></code></pre></div>
 <p>Adding river channel data is more complex. The
-<code>add_channel</code> method requires a
-<code>SpatialPolygonsDataFrame</code> as generated by the
-<code>sp</code> package. Each entry in the data.frame is treated as a
-length of river channel which requires the following properties</p>
+<code>add_channel</code> method requires a <code>SpatVector</code>
+object (or a file name that can be loaded as a <code>SpatVect</code>
+object). Each vector object is treated as a length of river channel
+which requires the following properties</p>
 <ul>
 <li>
 <em>name</em> - a label for the channel length</li>
@@ -188,6 +195,10 @@ length</li>
 <em>length</em> - the length in meters</li>
 <li>
 <em>area</em> - surface area in square meters</li>
+<li>
+<em>width</em> - width of the channel</li>
+<li>
+<em>slope</em> - bed slope of the channel</li>
 </ul>
 <p>Additional properties are currently kept but ignored with the
 exception of <em>id</em> which is overwritten.</p>
@@ -195,8 +206,8 @@ exception of <em>id</em> which is overwritten.</p>
 under different names some basic preprocessing may be required. The
 <code>convert_channel</code> function is designed to help with this. To
 illustrate this let us examine the river network for Swindale</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sp_lines</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/vect.html" class="external-link">vect</a></span><span class="op">(</span><span class="va">channel_file</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: [vect] Z coordinates ignored</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">sp_lines</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  class       : SpatVector </span></span>
@@ -224,18 +235,19 @@ objects to create polygons</p>
 the variable names to be use for the properties. If we want to carry
 over the identifier as the name we could call
 <code>convert_channel</code> with as follows:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>name<span class="op">=</span><span class="st">"identifier"</span>,</span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">property_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>name<span class="op">=</span><span class="st">"name1"</span>,</span>
 <span>                    endNode<span class="op">=</span><span class="st">"endNode"</span>,</span>
 <span>                    startNode<span class="op">=</span><span class="st">"startNode"</span>,</span>
 <span>                    length<span class="op">=</span><span class="st">"length"</span><span class="op">)</span></span>
 <span><span class="va">chn</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/convert_channel.html">convert_channel</a></span><span class="op">(</span><span class="va">sp_lines</span>,<span class="va">property_names</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning in convert_channel(sp_lines, property_names): Modifying to spatial</span></span>
-<span><span class="co">#&gt; polygons using default width</span></span></code></pre></div>
-<p>Since the data set for Swindale does not contain a channel width the
-default width of 2m is used for buffering.</p>
+<span><span class="co">#&gt; polygons using default width</span></span>
+<span><span class="co">#&gt; Warning in convert_channel(sp_lines, property_names): Adding default slope</span></span></code></pre></div>
+<p>Since the data set for Swindale does not contain a channel width or
+slope default values are used and warnings issued.</p>
 <p>The river network can then be added to the project by</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_channel</span><span class="op">(</span><span class="va">chn</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -244,17 +256,19 @@ default width of 2m is used for buffering.</p>
 <p>The <code>dynatopGIS</code> class has methods for returning and
 plotting the GIS data in the project. The names of all the different GIS
 layers stored is returned by</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     layer                                             source</span></span>
-<span><span class="co">#&gt; 1     dem     /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/dem.tif</span></span>
-<span><span class="co">#&gt; 2 channel /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/channel.tif</span></span></code></pre></div>
-<p>These can be plotted (with or without the channel), for example</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;          layer                                          source</span></span>
+<span><span class="co">#&gt; 1    catchment /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/catchment.tif</span></span>
+<span><span class="co">#&gt; 2          dem       /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/dem.tif</span></span>
+<span><span class="co">#&gt; 3      channel   /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/channel.tif</span></span>
+<span><span class="co">#&gt; 4 channel_vect   /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/channel.shp</span></span></code></pre></div>
+<p>These can be plotted (with or without the channel), for example</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"dem"</span>, add_channel<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot-1.png" width="700"></p>
 <p>or returned, for example</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"dem"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; class       : SpatRaster </span></span>
 <span><span class="co">#&gt; dimensions  : 163, 124, 1  (nrow, ncol, nlyr)</span></span>
@@ -265,29 +279,47 @@ layers stored is returned by</p>
 <span><span class="co">#&gt; name        :      dem </span></span>
 <span><span class="co">#&gt; min value   : 262.8004 </span></span>
 <span><span class="co">#&gt; max value   : 710.7533</span></span></code></pre></div>
-<p>All layers are returned as <code>RasterLayer</code> objects with the
-exception of the <code>channel</code> layer which is returned as a
-<code>SpatialPolygonsDataFrame</code> object.</p>
+<p>All layers are returned as <code>SpatRast</code> objects with the
+exception of the <code>channel_vect</code> layer which is returned as a
+<code>SpatVect</code> object.</p>
 </div>
 <div class="section level2">
 <h2 id="filling-sinks">Filling sinks<a class="anchor" aria-label="anchor" href="#filling-sinks"></a>
 </h2>
 <p>For the hill slope to be connected to the river network all DEM cells
-must drain to those that intersect with the river network.</p>
-<p>The algorithm of implemented in the <code>sink_fill</code> method
-ensures this is the case. Since the algorithm is iterative the execution
-time of the function is limited by capping the maximum number of
-iterations. If this limit is reached without completion the method can
-call again with the “hot start” option to continue from where it
-finished.</p>
+must drain to those that intersect with the river network. The algorithm
+implemented in the <code>sink_fill</code> method ensures this is the
+case. In calling the <code>sink_fill</code> method a flow direction
+algorithm is specified and the resulting flow paths recorded. If
+subcatchments are present in the catchment map then only flow paths
+within the subcatchment are considered.</p>
+<p>The algorithm of used by the <code>sink_fill</code> method is
+iterative and the execution time of the function is limited by capping
+the maximum number of iterations. If this limit is reached without
+completion the method can call again with the “hot start” option to
+continue from where it finished.</p>
 <p>For Swindale, where the example DEM is already partially filled the
 algorithm only alters a small area near the foot of the catchment.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">sink_fill</span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/plot.html" class="external-link">plot</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'filled_dem'</span><span class="op">)</span> <span class="op">-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'dem'</span><span class="op">)</span>,</span>
+<span><span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/plot.html" class="external-link">plot</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'filled_dem'</span><span class="op">)</span> <span class="op">-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">'dem'</span><span class="op">)</span>,</span>
 <span>            main<span class="op">=</span><span class="st">"Changes to height"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/sink_fill-1.png" width="700"></p>
+<div class="section level3">
+<h3 id="determining-ordering">Determining Ordering<a class="anchor" aria-label="anchor" href="#determining-ordering"></a>
+</h3>
+<p>The computational scheme in the <code>dynatop</code> package works
+with an ordered sequence of HRUs constructed such that the sequence
+moves downslope to catchment outlet. This is achieved by banding the
+channel reaches and hillslope cells such that the catchment outlet(s)
+are in band 1, those cells or reaches draining only into band 1 are in
+band 2 and so forth. banding is achieved by the following call</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_band</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"band"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="dynatopGIS_files/figure-html/band-1.png" width="700"></p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="computing-properties">Computing properties<a class="anchor" aria-label="anchor" href="#computing-properties"></a>
@@ -309,48 +341,17 @@ case of pixels which contain river channels the average of the gradients
 from upslope pixels weighted by contour length us used.</p>
 <p>These properties are computed in an algorithm that passes over the
 data once in descending height. It is called as follows</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_properties</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>The plot of the topographic index shows a pattern of increasing
 values closer to the river channels</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">## plot of topographic index (log(a/tan b))</span></span>
 <span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">'atb'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/plot_atb-1.png" width="700"></p>
-<div class="section level3">
-<h3 id="adding-additional-layer">Adding additional layer<a class="anchor" aria-label="anchor" href="#adding-additional-layer"></a>
-</h3>
-<p>Properties may come in additional GIS layers. To demonstrate the
-addition of an additional layer we will extract the filled dem</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span></span></code></pre></div>
-<p>then separate it into a layers representing land above and below
-500m.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/terra/man/classify.html" class="external-link">classify</a></span><span class="op">(</span> <span class="va">tmp</span>,</span>
-<span>                          <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">500</span>,<span class="cn">NA</span>,</span>
-<span>                                   <span class="fl">500</span>,<span class="fl">1000</span>,<span class="op">-</span><span class="fl">999</span><span class="op">)</span>,</span>
-<span>                                 ncol<span class="op">=</span><span class="fl">3</span>,byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>The resulting raster object can now be added to the project with</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="va">tmp</span>, <span class="st">"greater_500"</span><span class="op">)</span></span>
-<span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt;          layer                                                  source</span></span>
-<span><span class="co">#&gt; 1          dem          /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/dem.tif</span></span>
-<span><span class="co">#&gt; 2      channel      /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/channel.tif</span></span>
-<span><span class="co">#&gt; 3   filled_dem   /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/filled_dem.tif</span></span>
-<span><span class="co">#&gt; 4     gradient     /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/gradient.tif</span></span>
-<span><span class="co">#&gt; 5 upslope_area /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/upslope_area.tif</span></span>
-<span><span class="co">#&gt; 6          atb          /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/atb.tif</span></span>
-<span><span class="co">#&gt; 7  greater_500  /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/greater_500.tif</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="flow-distances-and-ordering">Flow distances and ordering<a class="anchor" aria-label="anchor" href="#flow-distances-and-ordering"></a>
-</h2>
-<p>Since <code>dynatop</code> simulations make use of ordered HRUs to
-work downslope, a metric is required to order the downslope sequencing.
-The calculation of four such metrics is supported</p>
+<p>Although not used in ordering the HRUs <code>dynatopGIS</code> also
+provides the ability to compute flow distances for the hill slope cells.
+The calculation of three distances is supported</p>
 <ul>
 <li>
 <em>shortest flow length</em> - the shortest length based on the
@@ -360,48 +361,81 @@ pixel flow paths to a channel</li>
 the dominant (largest fraction) flow direction from any grid cell</li>
 <li>
 <em>Expected flow length</em> - the distance to the channel based on
-a weighted average of the downslope flow lengths. Weights are given by
+a weighted average of the down-slope flow lengths. Weights are given by
 the fraction of flow in each direction.</li>
-<li>
-<em>Band</em> - A strict computational order, starting at the
-channel arranged such that if all pixels in band <span class="math inline">\(i+1,i+2,\ldots\)</span> are evaluated the inflows
-to band <span class="math inline">\(i\)</span> are known.</li>
 </ul>
-<p>The computation is initiated with</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in .getSpatDF(x@ptr$df): NAs introduced by coercion to integer range</span></span>
-<span><span class="co">#&gt; Warning in .getSpatDF(x@ptr$df, ...): NAs introduced by coercion to integer</span></span>
-<span><span class="co">#&gt; range</span></span></code></pre></div>
+<p>The computation, in this example for the shortest flow length, is
+initiated with</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">compute_flow_lengths</span><span class="op">(</span>flow_routing<span class="op">=</span><span class="st">"shortest"</span><span class="op">)</span></span></code></pre></div>
 <p>The additional layers can be examined as expected</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                   layer</span></span>
-<span><span class="co">#&gt; 1                   dem</span></span>
-<span><span class="co">#&gt; 2               channel</span></span>
-<span><span class="co">#&gt; 3            filled_dem</span></span>
-<span><span class="co">#&gt; 4              gradient</span></span>
-<span><span class="co">#&gt; 5          upslope_area</span></span>
-<span><span class="co">#&gt; 6                   atb</span></span>
-<span><span class="co">#&gt; 7           greater_500</span></span>
-<span><span class="co">#&gt; 8                  band</span></span>
+<span><span class="co">#&gt; 1             catchment</span></span>
+<span><span class="co">#&gt; 2                   dem</span></span>
+<span><span class="co">#&gt; 3               channel</span></span>
+<span><span class="co">#&gt; 4            filled_dem</span></span>
+<span><span class="co">#&gt; 5                  band</span></span>
+<span><span class="co">#&gt; 6              gradient</span></span>
+<span><span class="co">#&gt; 7          upslope_area</span></span>
+<span><span class="co">#&gt; 8                   atb</span></span>
 <span><span class="co">#&gt; 9  shortest_flow_length</span></span>
-<span><span class="co">#&gt; 10 dominant_flow_length</span></span>
-<span><span class="co">#&gt; 11 expected_flow_length</span></span>
-<span><span class="co">#&gt;                                                             source</span></span>
-<span><span class="co">#&gt; 1                   /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/dem.tif</span></span>
-<span><span class="co">#&gt; 2               /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/channel.tif</span></span>
-<span><span class="co">#&gt; 3            /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/filled_dem.tif</span></span>
-<span><span class="co">#&gt; 4              /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/gradient.tif</span></span>
-<span><span class="co">#&gt; 5          /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/upslope_area.tif</span></span>
-<span><span class="co">#&gt; 6                   /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/atb.tif</span></span>
-<span><span class="co">#&gt; 7           /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/greater_500.tif</span></span>
-<span><span class="co">#&gt; 8                  /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/band.tif</span></span>
-<span><span class="co">#&gt; 9  /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/shortest_flow_length.tif</span></span>
-<span><span class="co">#&gt; 10 /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/dominant_flow_length.tif</span></span>
-<span><span class="co">#&gt; 11 /tmp/RtmpFb8DWA/dygis1eee4e2b5813/demo/expected_flow_length.tif</span></span>
-<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"band"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; 10         channel_vect</span></span>
+<span><span class="co">#&gt;                                                        source</span></span>
+<span><span class="co">#&gt; 1             /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/catchment.tif</span></span>
+<span><span class="co">#&gt; 2                   /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/dem.tif</span></span>
+<span><span class="co">#&gt; 3               /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/channel.tif</span></span>
+<span><span class="co">#&gt; 4            /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/filled_dem.tif</span></span>
+<span><span class="co">#&gt; 5                  /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/band.tif</span></span>
+<span><span class="co">#&gt; 6              /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/gradient.tif</span></span>
+<span><span class="co">#&gt; 7          /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/upslope_area.tif</span></span>
+<span><span class="co">#&gt; 8                   /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/atb.tif</span></span>
+<span><span class="co">#&gt; 9  /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/shortest_flow_length.tif</span></span>
+<span><span class="co">#&gt; 10              /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/channel.shp</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"shortest_flow_length"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/flow_length_plot-1.png" width="700"></p>
+<div class="section level3">
+<h3 id="adding-additional-layer">Adding additional layer<a class="anchor" aria-label="anchor" href="#adding-additional-layer"></a>
+</h3>
+<p>Properties may come in additional GIS layers. To demonstrate the
+addition of an additional layer we will extract the filled dem</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="st">"filled_dem"</span><span class="op">)</span></span></code></pre></div>
+<p>then separate it into a layers representing land above and below
+500m.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co">## T</span></span>
+<span><span class="va">tmp</span> <span class="op">&lt;-</span> <span class="fu">terra</span><span class="fu">::</span><span class="fu"><a href="https://rspatial.github.io/terra/reference/ifelse.html" class="external-link">ifel</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">&lt;=</span><span class="fl">500</span>,<span class="cn">NA</span>,<span class="op">-</span><span class="fl">999</span><span class="op">)</span></span></code></pre></div>
+<p>The resulting raster object can now be added to the project with</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">add_layer</span><span class="op">(</span><span class="va">tmp</span>, <span class="st">"greater_500"</span><span class="op">)</span></span>
+<span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_layer</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                   layer</span></span>
+<span><span class="co">#&gt; 1             catchment</span></span>
+<span><span class="co">#&gt; 2                   dem</span></span>
+<span><span class="co">#&gt; 3               channel</span></span>
+<span><span class="co">#&gt; 4            filled_dem</span></span>
+<span><span class="co">#&gt; 5                  band</span></span>
+<span><span class="co">#&gt; 6              gradient</span></span>
+<span><span class="co">#&gt; 7          upslope_area</span></span>
+<span><span class="co">#&gt; 8                   atb</span></span>
+<span><span class="co">#&gt; 9  shortest_flow_length</span></span>
+<span><span class="co">#&gt; 10          greater_500</span></span>
+<span><span class="co">#&gt; 11         channel_vect</span></span>
+<span><span class="co">#&gt;                                                        source</span></span>
+<span><span class="co">#&gt; 1             /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/catchment.tif</span></span>
+<span><span class="co">#&gt; 2                   /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/dem.tif</span></span>
+<span><span class="co">#&gt; 3               /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/channel.tif</span></span>
+<span><span class="co">#&gt; 4            /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/filled_dem.tif</span></span>
+<span><span class="co">#&gt; 5                  /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/band.tif</span></span>
+<span><span class="co">#&gt; 6              /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/gradient.tif</span></span>
+<span><span class="co">#&gt; 7          /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/upslope_area.tif</span></span>
+<span><span class="co">#&gt; 8                   /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/atb.tif</span></span>
+<span><span class="co">#&gt; 9  /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/shortest_flow_length.tif</span></span>
+<span><span class="co">#&gt; 10          /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/greater_500.tif</span></span>
+<span><span class="co">#&gt; 11              /tmp/RtmpYJ5ZBV/dygis1c2a3f5734d8/channel.shp</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="classifying-into-hydrological-response-units">Classifying into Hydrological Response Units<a class="anchor" aria-label="anchor" href="#classifying-into-hydrological-response-units"></a>
@@ -417,14 +451,14 @@ class.</p>
 a landscape property to be <em>cut</em> into classes.</p>
 <p>For example to cut the topographic index for Swindale into 21
 classes:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">classify</span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"atb"</span>,cuts<span class="op">=</span><span class="fl">20</span><span class="op">)</span></span>
 <span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_split-1.png" width="700"></p>
 <p>Providing a single value to the cuts argument determines the number
 of classes. The values used to cut the variable can be extracted from
 the meta data with</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">get_method</span><span class="op">(</span><span class="st">"atb_20"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $type</span></span>
 <span><span class="co">#&gt; [1] "classification"</span></span>
@@ -433,9 +467,9 @@ the meta data with</p>
 <span><span class="co">#&gt; [1] "atb"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $cuts</span></span>
-<span><span class="co">#&gt;  [1]  8.6361  9.3714 10.1066 10.8418 11.5771 12.3123 13.0476 13.7828 14.5181</span></span>
-<span><span class="co">#&gt; [10] 15.2533 15.9885 16.7238 17.4590 18.1943 18.9295 19.6647 20.4000 21.1352</span></span>
-<span><span class="co">#&gt; [19] 21.8705 22.6057 23.3410</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1]  8.6361  9.2646  9.8931 10.5217 11.1502 11.7787 12.4072 13.0357 13.6642</span></span>
+<span><span class="co">#&gt; [10] 14.2927 14.9212 15.5498 16.1783 16.8068 17.4353 18.0638 18.6923 19.3208</span></span>
+<span><span class="co">#&gt; [19] 19.9493 20.5779 21.2064</span></span></code></pre></div>
 <p>The <code>combine_classes</code> method of a <code>dynatopGIS</code>
 allows classes to be combined in two ways, which are applied in the
 order shown</p>
@@ -449,1263 +483,27 @@ new class</li>
 <p>To demonstrate a pairing combination consider combining the atb
 classes generated above with the classification provided by the distance
 band</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band"</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_20_band-1.png" width="700"></p>
 <p>Additionally the land greater then 500 in altitude can be burnt in
 with</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">combine_classes</span><span class="op">(</span><span class="st">"atb_20_band_500"</span>,pairs<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"atb_20"</span>,<span class="st">"band"</span><span class="op">)</span>,burns<span class="op">=</span><span class="st">"greater_500"</span><span class="op">)</span></span>
 <span><span class="va">ctch</span><span class="op">$</span><span class="fu">plot_layer</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="dynatopGIS_files/figure-html/atb_20_band_burn-1.png" width="700"></p>
 <p>The each class in the combined classification the values of the
 classes used in the computations can be returned</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_method</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span> <span class="op">)</span></span>
-<span><span class="co">#&gt; $type</span></span>
-<span><span class="co">#&gt; [1] "combination"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $groups</span></span>
-<span><span class="co">#&gt;      atb_20_band_500 atb_20 band burns</span></span>
-<span><span class="co">#&gt; 1                  1      3  194  TRUE</span></span>
-<span><span class="co">#&gt; 2                  2      4    3 FALSE</span></span>
-<span><span class="co">#&gt; 3                  3      6    2 FALSE</span></span>
-<span><span class="co">#&gt; 4                  4      5    3 FALSE</span></span>
-<span><span class="co">#&gt; 5                  5      6    3 FALSE</span></span>
-<span><span class="co">#&gt; 6                  6      5    4 FALSE</span></span>
-<span><span class="co">#&gt; 7                  7      3    6 FALSE</span></span>
-<span><span class="co">#&gt; 8                  8      1    8 FALSE</span></span>
-<span><span class="co">#&gt; 9                  9      5    5 FALSE</span></span>
-<span><span class="co">#&gt; 10                10      4    6 FALSE</span></span>
-<span><span class="co">#&gt; 11                11      3    7 FALSE</span></span>
-<span><span class="co">#&gt; 12                12      2    8 FALSE</span></span>
-<span><span class="co">#&gt; 13                13      6    5 FALSE</span></span>
-<span><span class="co">#&gt; 14                14      5    6 FALSE</span></span>
-<span><span class="co">#&gt; 15                15      4    7 FALSE</span></span>
-<span><span class="co">#&gt; 16                16      3    8 FALSE</span></span>
-<span><span class="co">#&gt; 17                17      9    3 FALSE</span></span>
-<span><span class="co">#&gt; 18                18      8    4 FALSE</span></span>
-<span><span class="co">#&gt; 19                19      7    5 FALSE</span></span>
-<span><span class="co">#&gt; 20                20      6    6 FALSE</span></span>
-<span><span class="co">#&gt; 21                21      5    7 FALSE</span></span>
-<span><span class="co">#&gt; 22                22      4    8 FALSE</span></span>
-<span><span class="co">#&gt; 23                23      3    9 FALSE</span></span>
-<span><span class="co">#&gt; 24                24      2   10 FALSE</span></span>
-<span><span class="co">#&gt; 25                25     10    3 FALSE</span></span>
-<span><span class="co">#&gt; 26                26      9    4 FALSE</span></span>
-<span><span class="co">#&gt; 27                27      8    5 FALSE</span></span>
-<span><span class="co">#&gt; 28                28      7    6 FALSE</span></span>
-<span><span class="co">#&gt; 29                29      6    7 FALSE</span></span>
-<span><span class="co">#&gt; 30                30      5    8 FALSE</span></span>
-<span><span class="co">#&gt; 31                31      4    9 FALSE</span></span>
-<span><span class="co">#&gt; 32                32      3   10 FALSE</span></span>
-<span><span class="co">#&gt; 33                33      2   11 FALSE</span></span>
-<span><span class="co">#&gt; 34                34      1   12 FALSE</span></span>
-<span><span class="co">#&gt; 35                35     12    2 FALSE</span></span>
-<span><span class="co">#&gt; 36                36      9    5 FALSE</span></span>
-<span><span class="co">#&gt; 37                37      8    6 FALSE</span></span>
-<span><span class="co">#&gt; 38                38      7    7 FALSE</span></span>
-<span><span class="co">#&gt; 39                39      6    8 FALSE</span></span>
-<span><span class="co">#&gt; 40                40      5    9 FALSE</span></span>
-<span><span class="co">#&gt; 41                41      4   10 FALSE</span></span>
-<span><span class="co">#&gt; 42                42      3   11 FALSE</span></span>
-<span><span class="co">#&gt; 43                43      2   12 FALSE</span></span>
-<span><span class="co">#&gt; 44                44      1   13 FALSE</span></span>
-<span><span class="co">#&gt; 45                45      9    6 FALSE</span></span>
-<span><span class="co">#&gt; 46                46      8    7 FALSE</span></span>
-<span><span class="co">#&gt; 47                47      7    8 FALSE</span></span>
-<span><span class="co">#&gt; 48                48      6    9 FALSE</span></span>
-<span><span class="co">#&gt; 49                49      5   10 FALSE</span></span>
-<span><span class="co">#&gt; 50                50      4   11 FALSE</span></span>
-<span><span class="co">#&gt; 51                51      3   12 FALSE</span></span>
-<span><span class="co">#&gt; 52                52      9    7 FALSE</span></span>
-<span><span class="co">#&gt; 53                53      8    8 FALSE</span></span>
-<span><span class="co">#&gt; 54                54      7    9 FALSE</span></span>
-<span><span class="co">#&gt; 55                55      6   10 FALSE</span></span>
-<span><span class="co">#&gt; 56                56      5   11 FALSE</span></span>
-<span><span class="co">#&gt; 57                57      4   12 FALSE</span></span>
-<span><span class="co">#&gt; 58                58      3   13 FALSE</span></span>
-<span><span class="co">#&gt; 59                59      2   14 FALSE</span></span>
-<span><span class="co">#&gt; 60                60      1   15 FALSE</span></span>
-<span><span class="co">#&gt; 61                61     11    6 FALSE</span></span>
-<span><span class="co">#&gt; 62                62      9    8 FALSE</span></span>
-<span><span class="co">#&gt; 63                63      8    9 FALSE</span></span>
-<span><span class="co">#&gt; 64                64      7   10 FALSE</span></span>
-<span><span class="co">#&gt; 65                65      6   11 FALSE</span></span>
-<span><span class="co">#&gt; 66                66      5   12 FALSE</span></span>
-<span><span class="co">#&gt; 67                67      4   13 FALSE</span></span>
-<span><span class="co">#&gt; 68                68      3   14 FALSE</span></span>
-<span><span class="co">#&gt; 69                69      2   15 FALSE</span></span>
-<span><span class="co">#&gt; 70                70     12    6 FALSE</span></span>
-<span><span class="co">#&gt; 71                71     11    7 FALSE</span></span>
-<span><span class="co">#&gt; 72                72     10    8 FALSE</span></span>
-<span><span class="co">#&gt; 73                73      9    9 FALSE</span></span>
-<span><span class="co">#&gt; 74                74      8   10 FALSE</span></span>
-<span><span class="co">#&gt; 75                75      7   11 FALSE</span></span>
-<span><span class="co">#&gt; 76                76      6   12 FALSE</span></span>
-<span><span class="co">#&gt; 77                77      5   13 FALSE</span></span>
-<span><span class="co">#&gt; 78                78      4   14 FALSE</span></span>
-<span><span class="co">#&gt; 79                79      3   15 FALSE</span></span>
-<span><span class="co">#&gt; 80                80      2   16 FALSE</span></span>
-<span><span class="co">#&gt; 81                81     15    4 FALSE</span></span>
-<span><span class="co">#&gt; 82                82     13    6 FALSE</span></span>
-<span><span class="co">#&gt; 83                83     11    8 FALSE</span></span>
-<span><span class="co">#&gt; 84                84     10    9 FALSE</span></span>
-<span><span class="co">#&gt; 85                85      9   10 FALSE</span></span>
-<span><span class="co">#&gt; 86                86      8   11 FALSE</span></span>
-<span><span class="co">#&gt; 87                87      7   12 FALSE</span></span>
-<span><span class="co">#&gt; 88                88      6   13 FALSE</span></span>
-<span><span class="co">#&gt; 89                89      5   14 FALSE</span></span>
-<span><span class="co">#&gt; 90                90      4   15 FALSE</span></span>
-<span><span class="co">#&gt; 91                91      3   16 FALSE</span></span>
-<span><span class="co">#&gt; 92                92      2   17 FALSE</span></span>
-<span><span class="co">#&gt; 93                93      1   18 FALSE</span></span>
-<span><span class="co">#&gt; 94                94     15    5 FALSE</span></span>
-<span><span class="co">#&gt; 95                95     14    6 FALSE</span></span>
-<span><span class="co">#&gt; 96                96     13    7 FALSE</span></span>
-<span><span class="co">#&gt; 97                97     12    8 FALSE</span></span>
-<span><span class="co">#&gt; 98                98     11    9 FALSE</span></span>
-<span><span class="co">#&gt; 99                99     10   10 FALSE</span></span>
-<span><span class="co">#&gt; 100              100      9   11 FALSE</span></span>
-<span><span class="co">#&gt; 101              101      8   12 FALSE</span></span>
-<span><span class="co">#&gt; 102              102      7   13 FALSE</span></span>
-<span><span class="co">#&gt; 103              103      6   14 FALSE</span></span>
-<span><span class="co">#&gt; 104              104      5   15 FALSE</span></span>
-<span><span class="co">#&gt; 105              105      4   16 FALSE</span></span>
-<span><span class="co">#&gt; 106              106      3   17 FALSE</span></span>
-<span><span class="co">#&gt; 107              107      2   18 FALSE</span></span>
-<span><span class="co">#&gt; 108              108     16    5 FALSE</span></span>
-<span><span class="co">#&gt; 109              109     14    7 FALSE</span></span>
-<span><span class="co">#&gt; 110              110     12    9 FALSE</span></span>
-<span><span class="co">#&gt; 111              111     11   10 FALSE</span></span>
-<span><span class="co">#&gt; 112              112     10   11 FALSE</span></span>
-<span><span class="co">#&gt; 113              113      9   12 FALSE</span></span>
-<span><span class="co">#&gt; 114              114      8   13 FALSE</span></span>
-<span><span class="co">#&gt; 115              115      7   14 FALSE</span></span>
-<span><span class="co">#&gt; 116              116      6   15 FALSE</span></span>
-<span><span class="co">#&gt; 117              117      5   16 FALSE</span></span>
-<span><span class="co">#&gt; 118              118      4   17 FALSE</span></span>
-<span><span class="co">#&gt; 119              119      3   18 FALSE</span></span>
-<span><span class="co">#&gt; 120              120      2   19 FALSE</span></span>
-<span><span class="co">#&gt; 121              121      1   20 FALSE</span></span>
-<span><span class="co">#&gt; 122              122     19    3 FALSE</span></span>
-<span><span class="co">#&gt; 123              123     13    9 FALSE</span></span>
-<span><span class="co">#&gt; 124              124     12   10 FALSE</span></span>
-<span><span class="co">#&gt; 125              125     11   11 FALSE</span></span>
-<span><span class="co">#&gt; 126              126     10   12 FALSE</span></span>
-<span><span class="co">#&gt; 127              127      9   13 FALSE</span></span>
-<span><span class="co">#&gt; 128              128      8   14 FALSE</span></span>
-<span><span class="co">#&gt; 129              129      7   15 FALSE</span></span>
-<span><span class="co">#&gt; 130              130      6   16 FALSE</span></span>
-<span><span class="co">#&gt; 131              131      5   17 FALSE</span></span>
-<span><span class="co">#&gt; 132              132      4   18 FALSE</span></span>
-<span><span class="co">#&gt; 133              133      3   19 FALSE</span></span>
-<span><span class="co">#&gt; 134              134      2   20 FALSE</span></span>
-<span><span class="co">#&gt; 135              135      1   21 FALSE</span></span>
-<span><span class="co">#&gt; 136              136     14    9 FALSE</span></span>
-<span><span class="co">#&gt; 137              137     13   10 FALSE</span></span>
-<span><span class="co">#&gt; 138              138     10   13 FALSE</span></span>
-<span><span class="co">#&gt; 139              139      9   14 FALSE</span></span>
-<span><span class="co">#&gt; 140              140      8   15 FALSE</span></span>
-<span><span class="co">#&gt; 141              141      7   16 FALSE</span></span>
-<span><span class="co">#&gt; 142              142      6   17 FALSE</span></span>
-<span><span class="co">#&gt; 143              143      5   18 FALSE</span></span>
-<span><span class="co">#&gt; 144              144      4   19 FALSE</span></span>
-<span><span class="co">#&gt; 145              145      3   20 FALSE</span></span>
-<span><span class="co">#&gt; 146              146      2   21 FALSE</span></span>
-<span><span class="co">#&gt; 147              147     17    7 FALSE</span></span>
-<span><span class="co">#&gt; 148              148     14   10 FALSE</span></span>
-<span><span class="co">#&gt; 149              149     12   12 FALSE</span></span>
-<span><span class="co">#&gt; 150              150     11   13 FALSE</span></span>
-<span><span class="co">#&gt; 151              151      9   15 FALSE</span></span>
-<span><span class="co">#&gt; 152              152      8   16 FALSE</span></span>
-<span><span class="co">#&gt; 153              153      7   17 FALSE</span></span>
-<span><span class="co">#&gt; 154              154      6   18 FALSE</span></span>
-<span><span class="co">#&gt; 155              155      5   19 FALSE</span></span>
-<span><span class="co">#&gt; 156              156      4   20 FALSE</span></span>
-<span><span class="co">#&gt; 157              157      3   21 FALSE</span></span>
-<span><span class="co">#&gt; 158              158      2   22 FALSE</span></span>
-<span><span class="co">#&gt; 159              159     17    8 FALSE</span></span>
-<span><span class="co">#&gt; 160              160     14   11 FALSE</span></span>
-<span><span class="co">#&gt; 161              161     11   14 FALSE</span></span>
-<span><span class="co">#&gt; 162              162     10   15 FALSE</span></span>
-<span><span class="co">#&gt; 163              163      9   16 FALSE</span></span>
-<span><span class="co">#&gt; 164              164      8   17 FALSE</span></span>
-<span><span class="co">#&gt; 165              165      7   18 FALSE</span></span>
-<span><span class="co">#&gt; 166              166      6   19 FALSE</span></span>
-<span><span class="co">#&gt; 167              167      5   20 FALSE</span></span>
-<span><span class="co">#&gt; 168              168      4   21 FALSE</span></span>
-<span><span class="co">#&gt; 169              169      3   22 FALSE</span></span>
-<span><span class="co">#&gt; 170              170      2   23 FALSE</span></span>
-<span><span class="co">#&gt; 171              171      1   24 FALSE</span></span>
-<span><span class="co">#&gt; 172              172     13   13 FALSE</span></span>
-<span><span class="co">#&gt; 173              173     12   14 FALSE</span></span>
-<span><span class="co">#&gt; 174              174     11   15 FALSE</span></span>
-<span><span class="co">#&gt; 175              175     10   16 FALSE</span></span>
-<span><span class="co">#&gt; 176              176      9   17 FALSE</span></span>
-<span><span class="co">#&gt; 177              177      8   18 FALSE</span></span>
-<span><span class="co">#&gt; 178              178      7   19 FALSE</span></span>
-<span><span class="co">#&gt; 179              179      6   20 FALSE</span></span>
-<span><span class="co">#&gt; 180              180      5   21 FALSE</span></span>
-<span><span class="co">#&gt; 181              181      4   22 FALSE</span></span>
-<span><span class="co">#&gt; 182              182      3   23 FALSE</span></span>
-<span><span class="co">#&gt; 183              183      2   24 FALSE</span></span>
-<span><span class="co">#&gt; 184              184      1   25 FALSE</span></span>
-<span><span class="co">#&gt; 185              185     19    8 FALSE</span></span>
-<span><span class="co">#&gt; 186              186     14   13 FALSE</span></span>
-<span><span class="co">#&gt; 187              187     13   14 FALSE</span></span>
-<span><span class="co">#&gt; 188              188     12   15 FALSE</span></span>
-<span><span class="co">#&gt; 189              189     11   16 FALSE</span></span>
-<span><span class="co">#&gt; 190              190     10   17 FALSE</span></span>
-<span><span class="co">#&gt; 191              191      9   18 FALSE</span></span>
-<span><span class="co">#&gt; 192              192      8   19 FALSE</span></span>
-<span><span class="co">#&gt; 193              193      7   20 FALSE</span></span>
-<span><span class="co">#&gt; 194              194      6   21 FALSE</span></span>
-<span><span class="co">#&gt; 195              195      5   22 FALSE</span></span>
-<span><span class="co">#&gt; 196              196      4   23 FALSE</span></span>
-<span><span class="co">#&gt; 197              197      3   24 FALSE</span></span>
-<span><span class="co">#&gt; 198              198      2   25 FALSE</span></span>
-<span><span class="co">#&gt; 199              199      1   26 FALSE</span></span>
-<span><span class="co">#&gt; 200              200     11   17 FALSE</span></span>
-<span><span class="co">#&gt; 201              201     10   18 FALSE</span></span>
-<span><span class="co">#&gt; 202              202      9   19 FALSE</span></span>
-<span><span class="co">#&gt; 203              203      8   20 FALSE</span></span>
-<span><span class="co">#&gt; 204              204      7   21 FALSE</span></span>
-<span><span class="co">#&gt; 205              205      6   22 FALSE</span></span>
-<span><span class="co">#&gt; 206              206      5   23 FALSE</span></span>
-<span><span class="co">#&gt; 207              207      4   24 FALSE</span></span>
-<span><span class="co">#&gt; 208              208      3   25 FALSE</span></span>
-<span><span class="co">#&gt; 209              209      2   26 FALSE</span></span>
-<span><span class="co">#&gt; 210              210      1   27 FALSE</span></span>
-<span><span class="co">#&gt; 211              211     11   18 FALSE</span></span>
-<span><span class="co">#&gt; 212              212     10   19 FALSE</span></span>
-<span><span class="co">#&gt; 213              213      9   20 FALSE</span></span>
-<span><span class="co">#&gt; 214              214      8   21 FALSE</span></span>
-<span><span class="co">#&gt; 215              215      7   22 FALSE</span></span>
-<span><span class="co">#&gt; 216              216      6   23 FALSE</span></span>
-<span><span class="co">#&gt; 217              217      5   24 FALSE</span></span>
-<span><span class="co">#&gt; 218              218      4   25 FALSE</span></span>
-<span><span class="co">#&gt; 219              219      3   26 FALSE</span></span>
-<span><span class="co">#&gt; 220              220      2   27 FALSE</span></span>
-<span><span class="co">#&gt; 221              221      1   28 FALSE</span></span>
-<span><span class="co">#&gt; 222              222      0   29 FALSE</span></span>
-<span><span class="co">#&gt; 223              223     11   19 FALSE</span></span>
-<span><span class="co">#&gt; 224              224     10   20 FALSE</span></span>
-<span><span class="co">#&gt; 225              225      9   21 FALSE</span></span>
-<span><span class="co">#&gt; 226              226      8   22 FALSE</span></span>
-<span><span class="co">#&gt; 227              227      7   23 FALSE</span></span>
-<span><span class="co">#&gt; 228              228      6   24 FALSE</span></span>
-<span><span class="co">#&gt; 229              229      5   25 FALSE</span></span>
-<span><span class="co">#&gt; 230              230      4   26 FALSE</span></span>
-<span><span class="co">#&gt; 231              231      3   27 FALSE</span></span>
-<span><span class="co">#&gt; 232              232      2   28 FALSE</span></span>
-<span><span class="co">#&gt; 233              233      1   29 FALSE</span></span>
-<span><span class="co">#&gt; 234              234      0   30 FALSE</span></span>
-<span><span class="co">#&gt; 235              235     10   21 FALSE</span></span>
-<span><span class="co">#&gt; 236              236      9   22 FALSE</span></span>
-<span><span class="co">#&gt; 237              237      8   23 FALSE</span></span>
-<span><span class="co">#&gt; 238              238      7   24 FALSE</span></span>
-<span><span class="co">#&gt; 239              239      6   25 FALSE</span></span>
-<span><span class="co">#&gt; 240              240      5   26 FALSE</span></span>
-<span><span class="co">#&gt; 241              241      4   27 FALSE</span></span>
-<span><span class="co">#&gt; 242              242      3   28 FALSE</span></span>
-<span><span class="co">#&gt; 243              243      2   29 FALSE</span></span>
-<span><span class="co">#&gt; 244              244      1   30 FALSE</span></span>
-<span><span class="co">#&gt; 245              245      0   31 FALSE</span></span>
-<span><span class="co">#&gt; 246              246     10   22 FALSE</span></span>
-<span><span class="co">#&gt; 247              247      8   24 FALSE</span></span>
-<span><span class="co">#&gt; 248              248      7   25 FALSE</span></span>
-<span><span class="co">#&gt; 249              249      6   26 FALSE</span></span>
-<span><span class="co">#&gt; 250              250      5   27 FALSE</span></span>
-<span><span class="co">#&gt; 251              251      4   28 FALSE</span></span>
-<span><span class="co">#&gt; 252              252      3   29 FALSE</span></span>
-<span><span class="co">#&gt; 253              253      2   30 FALSE</span></span>
-<span><span class="co">#&gt; 254              254      1   31 FALSE</span></span>
-<span><span class="co">#&gt; 255              255      0   32 FALSE</span></span>
-<span><span class="co">#&gt; 256              256     11   22 FALSE</span></span>
-<span><span class="co">#&gt; 257              257      9   24 FALSE</span></span>
-<span><span class="co">#&gt; 258              258      8   25 FALSE</span></span>
-<span><span class="co">#&gt; 259              259      7   26 FALSE</span></span>
-<span><span class="co">#&gt; 260              260      6   27 FALSE</span></span>
-<span><span class="co">#&gt; 261              261      5   28 FALSE</span></span>
-<span><span class="co">#&gt; 262              262      4   29 FALSE</span></span>
-<span><span class="co">#&gt; 263              263      3   30 FALSE</span></span>
-<span><span class="co">#&gt; 264              264      2   31 FALSE</span></span>
-<span><span class="co">#&gt; 265              265      1   32 FALSE</span></span>
-<span><span class="co">#&gt; 266              266      0   33 FALSE</span></span>
-<span><span class="co">#&gt; 267              267     11   23 FALSE</span></span>
-<span><span class="co">#&gt; 268              268     10   24 FALSE</span></span>
-<span><span class="co">#&gt; 269              269      8   26 FALSE</span></span>
-<span><span class="co">#&gt; 270              270      7   27 FALSE</span></span>
-<span><span class="co">#&gt; 271              271      6   28 FALSE</span></span>
-<span><span class="co">#&gt; 272              272      5   29 FALSE</span></span>
-<span><span class="co">#&gt; 273              273      4   30 FALSE</span></span>
-<span><span class="co">#&gt; 274              274      3   31 FALSE</span></span>
-<span><span class="co">#&gt; 275              275      2   32 FALSE</span></span>
-<span><span class="co">#&gt; 276              276      1   33 FALSE</span></span>
-<span><span class="co">#&gt; 277              277      0   34 FALSE</span></span>
-<span><span class="co">#&gt; 278              278     11   24 FALSE</span></span>
-<span><span class="co">#&gt; 279              279      8   27 FALSE</span></span>
-<span><span class="co">#&gt; 280              280      7   28 FALSE</span></span>
-<span><span class="co">#&gt; 281              281      6   29 FALSE</span></span>
-<span><span class="co">#&gt; 282              282      5   30 FALSE</span></span>
-<span><span class="co">#&gt; 283              283      4   31 FALSE</span></span>
-<span><span class="co">#&gt; 284              284      3   32 FALSE</span></span>
-<span><span class="co">#&gt; 285              285      2   33 FALSE</span></span>
-<span><span class="co">#&gt; 286              286      1   34 FALSE</span></span>
-<span><span class="co">#&gt; 287              287      0   35 FALSE</span></span>
-<span><span class="co">#&gt; 288              288     10   26 FALSE</span></span>
-<span><span class="co">#&gt; 289              289      8   28 FALSE</span></span>
-<span><span class="co">#&gt; 290              290      7   29 FALSE</span></span>
-<span><span class="co">#&gt; 291              291      6   30 FALSE</span></span>
-<span><span class="co">#&gt; 292              292      5   31 FALSE</span></span>
-<span><span class="co">#&gt; 293              293      4   32 FALSE</span></span>
-<span><span class="co">#&gt; 294              294      3   33 FALSE</span></span>
-<span><span class="co">#&gt; 295              295      2   34 FALSE</span></span>
-<span><span class="co">#&gt; 296              296      1   35 FALSE</span></span>
-<span><span class="co">#&gt; 297              297      0   36 FALSE</span></span>
-<span><span class="co">#&gt; 298              298     12   25 FALSE</span></span>
-<span><span class="co">#&gt; 299              299     10   27 FALSE</span></span>
-<span><span class="co">#&gt; 300              300      9   28 FALSE</span></span>
-<span><span class="co">#&gt; 301              301      8   29 FALSE</span></span>
-<span><span class="co">#&gt; 302              302      7   30 FALSE</span></span>
-<span><span class="co">#&gt; 303              303      6   31 FALSE</span></span>
-<span><span class="co">#&gt; 304              304      5   32 FALSE</span></span>
-<span><span class="co">#&gt; 305              305      4   33 FALSE</span></span>
-<span><span class="co">#&gt; 306              306      3   34 FALSE</span></span>
-<span><span class="co">#&gt; 307              307      2   35 FALSE</span></span>
-<span><span class="co">#&gt; 308              308      1   36 FALSE</span></span>
-<span><span class="co">#&gt; 309              309      0   37 FALSE</span></span>
-<span><span class="co">#&gt; 310              310     11   27 FALSE</span></span>
-<span><span class="co">#&gt; 311              311     10   28 FALSE</span></span>
-<span><span class="co">#&gt; 312              312      9   29 FALSE</span></span>
-<span><span class="co">#&gt; 313              313      8   30 FALSE</span></span>
-<span><span class="co">#&gt; 314              314      7   31 FALSE</span></span>
-<span><span class="co">#&gt; 315              315      6   32 FALSE</span></span>
-<span><span class="co">#&gt; 316              316      5   33 FALSE</span></span>
-<span><span class="co">#&gt; 317              317      4   34 FALSE</span></span>
-<span><span class="co">#&gt; 318              318      3   35 FALSE</span></span>
-<span><span class="co">#&gt; 319              319      2   36 FALSE</span></span>
-<span><span class="co">#&gt; 320              320      1   37 FALSE</span></span>
-<span><span class="co">#&gt; 321              321      0   38 FALSE</span></span>
-<span><span class="co">#&gt; 322              322     11   28 FALSE</span></span>
-<span><span class="co">#&gt; 323              323     10   29 FALSE</span></span>
-<span><span class="co">#&gt; 324              324      9   30 FALSE</span></span>
-<span><span class="co">#&gt; 325              325      7   32 FALSE</span></span>
-<span><span class="co">#&gt; 326              326      6   33 FALSE</span></span>
-<span><span class="co">#&gt; 327              327      5   34 FALSE</span></span>
-<span><span class="co">#&gt; 328              328      4   35 FALSE</span></span>
-<span><span class="co">#&gt; 329              329      3   36 FALSE</span></span>
-<span><span class="co">#&gt; 330              330      2   37 FALSE</span></span>
-<span><span class="co">#&gt; 331              331      1   38 FALSE</span></span>
-<span><span class="co">#&gt; 332              332      0   39 FALSE</span></span>
-<span><span class="co">#&gt; 333              333      9   31 FALSE</span></span>
-<span><span class="co">#&gt; 334              334      8   32 FALSE</span></span>
-<span><span class="co">#&gt; 335              335      6   34 FALSE</span></span>
-<span><span class="co">#&gt; 336              336      5   35 FALSE</span></span>
-<span><span class="co">#&gt; 337              337      4   36 FALSE</span></span>
-<span><span class="co">#&gt; 338              338      3   37 FALSE</span></span>
-<span><span class="co">#&gt; 339              339      2   38 FALSE</span></span>
-<span><span class="co">#&gt; 340              340      1   39 FALSE</span></span>
-<span><span class="co">#&gt; 341              341      0   40 FALSE</span></span>
-<span><span class="co">#&gt; 342              342     10   31 FALSE</span></span>
-<span><span class="co">#&gt; 343              343      9   32 FALSE</span></span>
-<span><span class="co">#&gt; 344              344      8   33 FALSE</span></span>
-<span><span class="co">#&gt; 345              345      7   34 FALSE</span></span>
-<span><span class="co">#&gt; 346              346      6   35 FALSE</span></span>
-<span><span class="co">#&gt; 347              347      5   36 FALSE</span></span>
-<span><span class="co">#&gt; 348              348      4   37 FALSE</span></span>
-<span><span class="co">#&gt; 349              349      3   38 FALSE</span></span>
-<span><span class="co">#&gt; 350              350      2   39 FALSE</span></span>
-<span><span class="co">#&gt; 351              351      1   40 FALSE</span></span>
-<span><span class="co">#&gt; 352              352      0   41 FALSE</span></span>
-<span><span class="co">#&gt; 353              353      9   33 FALSE</span></span>
-<span><span class="co">#&gt; 354              354      8   34 FALSE</span></span>
-<span><span class="co">#&gt; 355              355      7   35 FALSE</span></span>
-<span><span class="co">#&gt; 356              356      6   36 FALSE</span></span>
-<span><span class="co">#&gt; 357              357      5   37 FALSE</span></span>
-<span><span class="co">#&gt; 358              358      4   38 FALSE</span></span>
-<span><span class="co">#&gt; 359              359      3   39 FALSE</span></span>
-<span><span class="co">#&gt; 360              360      2   40 FALSE</span></span>
-<span><span class="co">#&gt; 361              361      1   41 FALSE</span></span>
-<span><span class="co">#&gt; 362              362      0   42 FALSE</span></span>
-<span><span class="co">#&gt; 363              363     10   33 FALSE</span></span>
-<span><span class="co">#&gt; 364              364      9   34 FALSE</span></span>
-<span><span class="co">#&gt; 365              365      8   35 FALSE</span></span>
-<span><span class="co">#&gt; 366              366      7   36 FALSE</span></span>
-<span><span class="co">#&gt; 367              367      6   37 FALSE</span></span>
-<span><span class="co">#&gt; 368              368      5   38 FALSE</span></span>
-<span><span class="co">#&gt; 369              369      4   39 FALSE</span></span>
-<span><span class="co">#&gt; 370              370      3   40 FALSE</span></span>
-<span><span class="co">#&gt; 371              371      2   41 FALSE</span></span>
-<span><span class="co">#&gt; 372              372      1   42 FALSE</span></span>
-<span><span class="co">#&gt; 373              373      0   43 FALSE</span></span>
-<span><span class="co">#&gt; 374              374     11   33 FALSE</span></span>
-<span><span class="co">#&gt; 375              375      9   35 FALSE</span></span>
-<span><span class="co">#&gt; 376              376      7   37 FALSE</span></span>
-<span><span class="co">#&gt; 377              377      6   38 FALSE</span></span>
-<span><span class="co">#&gt; 378              378      5   39 FALSE</span></span>
-<span><span class="co">#&gt; 379              379      4   40 FALSE</span></span>
-<span><span class="co">#&gt; 380              380      3   41 FALSE</span></span>
-<span><span class="co">#&gt; 381              381      2   42 FALSE</span></span>
-<span><span class="co">#&gt; 382              382      1   43 FALSE</span></span>
-<span><span class="co">#&gt; 383              383      0   44 FALSE</span></span>
-<span><span class="co">#&gt; 384              384     10   35 FALSE</span></span>
-<span><span class="co">#&gt; 385              385      6   39 FALSE</span></span>
-<span><span class="co">#&gt; 386              386      5   40 FALSE</span></span>
-<span><span class="co">#&gt; 387              387      4   41 FALSE</span></span>
-<span><span class="co">#&gt; 388              388      3   42 FALSE</span></span>
-<span><span class="co">#&gt; 389              389      2   43 FALSE</span></span>
-<span><span class="co">#&gt; 390              390      1   44 FALSE</span></span>
-<span><span class="co">#&gt; 391              391      0   45 FALSE</span></span>
-<span><span class="co">#&gt; 392              392      9   37 FALSE</span></span>
-<span><span class="co">#&gt; 393              393      7   39 FALSE</span></span>
-<span><span class="co">#&gt; 394              394      6   40 FALSE</span></span>
-<span><span class="co">#&gt; 395              395      5   41 FALSE</span></span>
-<span><span class="co">#&gt; 396              396      4   42 FALSE</span></span>
-<span><span class="co">#&gt; 397              397      3   43 FALSE</span></span>
-<span><span class="co">#&gt; 398              398      2   44 FALSE</span></span>
-<span><span class="co">#&gt; 399              399      1   45 FALSE</span></span>
-<span><span class="co">#&gt; 400              400      0   46 FALSE</span></span>
-<span><span class="co">#&gt; 401              401     10   37 FALSE</span></span>
-<span><span class="co">#&gt; 402              402      9   38 FALSE</span></span>
-<span><span class="co">#&gt; 403              403      8   39 FALSE</span></span>
-<span><span class="co">#&gt; 404              404      7   40 FALSE</span></span>
-<span><span class="co">#&gt; 405              405      6   41 FALSE</span></span>
-<span><span class="co">#&gt; 406              406      5   42 FALSE</span></span>
-<span><span class="co">#&gt; 407              407      4   43 FALSE</span></span>
-<span><span class="co">#&gt; 408              408      3   44 FALSE</span></span>
-<span><span class="co">#&gt; 409              409      2   45 FALSE</span></span>
-<span><span class="co">#&gt; 410              410      1   46 FALSE</span></span>
-<span><span class="co">#&gt; 411              411      8   40 FALSE</span></span>
-<span><span class="co">#&gt; 412              412      6   42 FALSE</span></span>
-<span><span class="co">#&gt; 413              413      5   43 FALSE</span></span>
-<span><span class="co">#&gt; 414              414      4   44 FALSE</span></span>
-<span><span class="co">#&gt; 415              415      3   45 FALSE</span></span>
-<span><span class="co">#&gt; 416              416      2   46 FALSE</span></span>
-<span><span class="co">#&gt; 417              417      1   47 FALSE</span></span>
-<span><span class="co">#&gt; 418              418      0   48 FALSE</span></span>
-<span><span class="co">#&gt; 419              419     13   36 FALSE</span></span>
-<span><span class="co">#&gt; 420              420      9   40 FALSE</span></span>
-<span><span class="co">#&gt; 421              421      8   41 FALSE</span></span>
-<span><span class="co">#&gt; 422              422      7   42 FALSE</span></span>
-<span><span class="co">#&gt; 423              423      6   43 FALSE</span></span>
-<span><span class="co">#&gt; 424              424      5   44 FALSE</span></span>
-<span><span class="co">#&gt; 425              425      4   45 FALSE</span></span>
-<span><span class="co">#&gt; 426              426      3   46 FALSE</span></span>
-<span><span class="co">#&gt; 427              427      2   47 FALSE</span></span>
-<span><span class="co">#&gt; 428              428      1   48 FALSE</span></span>
-<span><span class="co">#&gt; 429              429      8   42 FALSE</span></span>
-<span><span class="co">#&gt; 430              430      7   43 FALSE</span></span>
-<span><span class="co">#&gt; 431              431      6   44 FALSE</span></span>
-<span><span class="co">#&gt; 432              432      5   45 FALSE</span></span>
-<span><span class="co">#&gt; 433              433      4   46 FALSE</span></span>
-<span><span class="co">#&gt; 434              434      3   47 FALSE</span></span>
-<span><span class="co">#&gt; 435              435      2   48 FALSE</span></span>
-<span><span class="co">#&gt; 436              436      1   49 FALSE</span></span>
-<span><span class="co">#&gt; 437              437      0   50 FALSE</span></span>
-<span><span class="co">#&gt; 438              438     10   41 FALSE</span></span>
-<span><span class="co">#&gt; 439              439      9   42 FALSE</span></span>
-<span><span class="co">#&gt; 440              440      8   43 FALSE</span></span>
-<span><span class="co">#&gt; 441              441      7   44 FALSE</span></span>
-<span><span class="co">#&gt; 442              442      6   45 FALSE</span></span>
-<span><span class="co">#&gt; 443              443      5   46 FALSE</span></span>
-<span><span class="co">#&gt; 444              444      4   47 FALSE</span></span>
-<span><span class="co">#&gt; 445              445      3   48 FALSE</span></span>
-<span><span class="co">#&gt; 446              446      2   49 FALSE</span></span>
-<span><span class="co">#&gt; 447              447      1   50 FALSE</span></span>
-<span><span class="co">#&gt; 448              448      0   51 FALSE</span></span>
-<span><span class="co">#&gt; 449              449      8   44 FALSE</span></span>
-<span><span class="co">#&gt; 450              450      7   45 FALSE</span></span>
-<span><span class="co">#&gt; 451              451      6   46 FALSE</span></span>
-<span><span class="co">#&gt; 452              452      5   47 FALSE</span></span>
-<span><span class="co">#&gt; 453              453      4   48 FALSE</span></span>
-<span><span class="co">#&gt; 454              454      3   49 FALSE</span></span>
-<span><span class="co">#&gt; 455              455      2   50 FALSE</span></span>
-<span><span class="co">#&gt; 456              456      1   51 FALSE</span></span>
-<span><span class="co">#&gt; 457              457      0   52 FALSE</span></span>
-<span><span class="co">#&gt; 458              458      9   44 FALSE</span></span>
-<span><span class="co">#&gt; 459              459      8   45 FALSE</span></span>
-<span><span class="co">#&gt; 460              460      7   46 FALSE</span></span>
-<span><span class="co">#&gt; 461              461      6   47 FALSE</span></span>
-<span><span class="co">#&gt; 462              462      5   48 FALSE</span></span>
-<span><span class="co">#&gt; 463              463      4   49 FALSE</span></span>
-<span><span class="co">#&gt; 464              464      3   50 FALSE</span></span>
-<span><span class="co">#&gt; 465              465      2   51 FALSE</span></span>
-<span><span class="co">#&gt; 466              466      1   52 FALSE</span></span>
-<span><span class="co">#&gt; 467              467      0   53 FALSE</span></span>
-<span><span class="co">#&gt; 468              468     11   43 FALSE</span></span>
-<span><span class="co">#&gt; 469              469      9   45 FALSE</span></span>
-<span><span class="co">#&gt; 470              470      8   46 FALSE</span></span>
-<span><span class="co">#&gt; 471              471      7   47 FALSE</span></span>
-<span><span class="co">#&gt; 472              472      6   48 FALSE</span></span>
-<span><span class="co">#&gt; 473              473      5   49 FALSE</span></span>
-<span><span class="co">#&gt; 474              474      4   50 FALSE</span></span>
-<span><span class="co">#&gt; 475              475      3   51 FALSE</span></span>
-<span><span class="co">#&gt; 476              476      2   52 FALSE</span></span>
-<span><span class="co">#&gt; 477              477      1   53 FALSE</span></span>
-<span><span class="co">#&gt; 478              478      0   54 FALSE</span></span>
-<span><span class="co">#&gt; 479              479     11   44 FALSE</span></span>
-<span><span class="co">#&gt; 480              480      8   47 FALSE</span></span>
-<span><span class="co">#&gt; 481              481      7   48 FALSE</span></span>
-<span><span class="co">#&gt; 482              482      6   49 FALSE</span></span>
-<span><span class="co">#&gt; 483              483      5   50 FALSE</span></span>
-<span><span class="co">#&gt; 484              484      4   51 FALSE</span></span>
-<span><span class="co">#&gt; 485              485      3   52 FALSE</span></span>
-<span><span class="co">#&gt; 486              486      2   53 FALSE</span></span>
-<span><span class="co">#&gt; 487              487      1   54 FALSE</span></span>
-<span><span class="co">#&gt; 488              488      0   55 FALSE</span></span>
-<span><span class="co">#&gt; 489              489     10   46 FALSE</span></span>
-<span><span class="co">#&gt; 490              490      9   47 FALSE</span></span>
-<span><span class="co">#&gt; 491              491      8   48 FALSE</span></span>
-<span><span class="co">#&gt; 492              492      7   49 FALSE</span></span>
-<span><span class="co">#&gt; 493              493      6   50 FALSE</span></span>
-<span><span class="co">#&gt; 494              494      5   51 FALSE</span></span>
-<span><span class="co">#&gt; 495              495      4   52 FALSE</span></span>
-<span><span class="co">#&gt; 496              496      3   53 FALSE</span></span>
-<span><span class="co">#&gt; 497              497      2   54 FALSE</span></span>
-<span><span class="co">#&gt; 498              498      1   55 FALSE</span></span>
-<span><span class="co">#&gt; 499              499      0   56 FALSE</span></span>
-<span><span class="co">#&gt; 500              500      9   48 FALSE</span></span>
-<span><span class="co">#&gt; 501              501      8   49 FALSE</span></span>
-<span><span class="co">#&gt; 502              502      7   50 FALSE</span></span>
-<span><span class="co">#&gt; 503              503      6   51 FALSE</span></span>
-<span><span class="co">#&gt; 504              504      5   52 FALSE</span></span>
-<span><span class="co">#&gt; 505              505      4   53 FALSE</span></span>
-<span><span class="co">#&gt; 506              506      3   54 FALSE</span></span>
-<span><span class="co">#&gt; 507              507      2   55 FALSE</span></span>
-<span><span class="co">#&gt; 508              508      1   56 FALSE</span></span>
-<span><span class="co">#&gt; 509              509      0   57 FALSE</span></span>
-<span><span class="co">#&gt; 510              510     12   46 FALSE</span></span>
-<span><span class="co">#&gt; 511              511      7   51 FALSE</span></span>
-<span><span class="co">#&gt; 512              512      6   52 FALSE</span></span>
-<span><span class="co">#&gt; 513              513      5   53 FALSE</span></span>
-<span><span class="co">#&gt; 514              514      4   54 FALSE</span></span>
-<span><span class="co">#&gt; 515              515      3   55 FALSE</span></span>
-<span><span class="co">#&gt; 516              516      2   56 FALSE</span></span>
-<span><span class="co">#&gt; 517              517      1   57 FALSE</span></span>
-<span><span class="co">#&gt; 518              518     11   48 FALSE</span></span>
-<span><span class="co">#&gt; 519              519      9   50 FALSE</span></span>
-<span><span class="co">#&gt; 520              520      8   51 FALSE</span></span>
-<span><span class="co">#&gt; 521              521      7   52 FALSE</span></span>
-<span><span class="co">#&gt; 522              522      6   53 FALSE</span></span>
-<span><span class="co">#&gt; 523              523      5   54 FALSE</span></span>
-<span><span class="co">#&gt; 524              524      4   55 FALSE</span></span>
-<span><span class="co">#&gt; 525              525      3   56 FALSE</span></span>
-<span><span class="co">#&gt; 526              526      2   57 FALSE</span></span>
-<span><span class="co">#&gt; 527              527      1   58 FALSE</span></span>
-<span><span class="co">#&gt; 528              528     10   50 FALSE</span></span>
-<span><span class="co">#&gt; 529              529      9   51 FALSE</span></span>
-<span><span class="co">#&gt; 530              530      8   52 FALSE</span></span>
-<span><span class="co">#&gt; 531              531      7   53 FALSE</span></span>
-<span><span class="co">#&gt; 532              532      6   54 FALSE</span></span>
-<span><span class="co">#&gt; 533              533      5   55 FALSE</span></span>
-<span><span class="co">#&gt; 534              534      4   56 FALSE</span></span>
-<span><span class="co">#&gt; 535              535      3   57 FALSE</span></span>
-<span><span class="co">#&gt; 536              536      2   58 FALSE</span></span>
-<span><span class="co">#&gt; 537              537      1   59 FALSE</span></span>
-<span><span class="co">#&gt; 538              538      0   60 FALSE</span></span>
-<span><span class="co">#&gt; 539              539     10   51 FALSE</span></span>
-<span><span class="co">#&gt; 540              540      9   52 FALSE</span></span>
-<span><span class="co">#&gt; 541              541      8   53 FALSE</span></span>
-<span><span class="co">#&gt; 542              542      7   54 FALSE</span></span>
-<span><span class="co">#&gt; 543              543      6   55 FALSE</span></span>
-<span><span class="co">#&gt; 544              544      5   56 FALSE</span></span>
-<span><span class="co">#&gt; 545              545      4   57 FALSE</span></span>
-<span><span class="co">#&gt; 546              546      3   58 FALSE</span></span>
-<span><span class="co">#&gt; 547              547      2   59 FALSE</span></span>
-<span><span class="co">#&gt; 548              548      1   60 FALSE</span></span>
-<span><span class="co">#&gt; 549              549      9   53 FALSE</span></span>
-<span><span class="co">#&gt; 550              550      8   54 FALSE</span></span>
-<span><span class="co">#&gt; 551              551      7   55 FALSE</span></span>
-<span><span class="co">#&gt; 552              552      6   56 FALSE</span></span>
-<span><span class="co">#&gt; 553              553      5   57 FALSE</span></span>
-<span><span class="co">#&gt; 554              554      4   58 FALSE</span></span>
-<span><span class="co">#&gt; 555              555      3   59 FALSE</span></span>
-<span><span class="co">#&gt; 556              556      2   60 FALSE</span></span>
-<span><span class="co">#&gt; 557              557      1   61 FALSE</span></span>
-<span><span class="co">#&gt; 558              558      8   55 FALSE</span></span>
-<span><span class="co">#&gt; 559              559      7   56 FALSE</span></span>
-<span><span class="co">#&gt; 560              560      6   57 FALSE</span></span>
-<span><span class="co">#&gt; 561              561      5   58 FALSE</span></span>
-<span><span class="co">#&gt; 562              562      4   59 FALSE</span></span>
-<span><span class="co">#&gt; 563              563      3   60 FALSE</span></span>
-<span><span class="co">#&gt; 564              564      2   61 FALSE</span></span>
-<span><span class="co">#&gt; 565              565      1   62 FALSE</span></span>
-<span><span class="co">#&gt; 566              566     10   54 FALSE</span></span>
-<span><span class="co">#&gt; 567              567      9   55 FALSE</span></span>
-<span><span class="co">#&gt; 568              568      8   56 FALSE</span></span>
-<span><span class="co">#&gt; 569              569      6   58 FALSE</span></span>
-<span><span class="co">#&gt; 570              570      5   59 FALSE</span></span>
-<span><span class="co">#&gt; 571              571      4   60 FALSE</span></span>
-<span><span class="co">#&gt; 572              572      3   61 FALSE</span></span>
-<span><span class="co">#&gt; 573              573      2   62 FALSE</span></span>
-<span><span class="co">#&gt; 574              574      1   63 FALSE</span></span>
-<span><span class="co">#&gt; 575              575      0   64 FALSE</span></span>
-<span><span class="co">#&gt; 576              576      9   56 FALSE</span></span>
-<span><span class="co">#&gt; 577              577      8   57 FALSE</span></span>
-<span><span class="co">#&gt; 578              578      7   58 FALSE</span></span>
-<span><span class="co">#&gt; 579              579      6   59 FALSE</span></span>
-<span><span class="co">#&gt; 580              580      5   60 FALSE</span></span>
-<span><span class="co">#&gt; 581              581      4   61 FALSE</span></span>
-<span><span class="co">#&gt; 582              582      3   62 FALSE</span></span>
-<span><span class="co">#&gt; 583              583      2   63 FALSE</span></span>
-<span><span class="co">#&gt; 584              584      1   64 FALSE</span></span>
-<span><span class="co">#&gt; 585              585      6   60 FALSE</span></span>
-<span><span class="co">#&gt; 586              586      5   61 FALSE</span></span>
-<span><span class="co">#&gt; 587              587      4   62 FALSE</span></span>
-<span><span class="co">#&gt; 588              588      3   63 FALSE</span></span>
-<span><span class="co">#&gt; 589              589      2   64 FALSE</span></span>
-<span><span class="co">#&gt; 590              590      1   65 FALSE</span></span>
-<span><span class="co">#&gt; 591              591      0   66 FALSE</span></span>
-<span><span class="co">#&gt; 592              592     10   57 FALSE</span></span>
-<span><span class="co">#&gt; 593              593      7   60 FALSE</span></span>
-<span><span class="co">#&gt; 594              594      6   61 FALSE</span></span>
-<span><span class="co">#&gt; 595              595      5   62 FALSE</span></span>
-<span><span class="co">#&gt; 596              596      4   63 FALSE</span></span>
-<span><span class="co">#&gt; 597              597      3   64 FALSE</span></span>
-<span><span class="co">#&gt; 598              598      2   65 FALSE</span></span>
-<span><span class="co">#&gt; 599              599      1   66 FALSE</span></span>
-<span><span class="co">#&gt; 600              600      0   67 FALSE</span></span>
-<span><span class="co">#&gt; 601              601     10   58 FALSE</span></span>
-<span><span class="co">#&gt; 602              602      9   59 FALSE</span></span>
-<span><span class="co">#&gt; 603              603      8   60 FALSE</span></span>
-<span><span class="co">#&gt; 604              604      6   62 FALSE</span></span>
-<span><span class="co">#&gt; 605              605      5   63 FALSE</span></span>
-<span><span class="co">#&gt; 606              606      4   64 FALSE</span></span>
-<span><span class="co">#&gt; 607              607      3   65 FALSE</span></span>
-<span><span class="co">#&gt; 608              608      2   66 FALSE</span></span>
-<span><span class="co">#&gt; 609              609      1   67 FALSE</span></span>
-<span><span class="co">#&gt; 610              610      0   68 FALSE</span></span>
-<span><span class="co">#&gt; 611              611     10   59 FALSE</span></span>
-<span><span class="co">#&gt; 612              612      9   60 FALSE</span></span>
-<span><span class="co">#&gt; 613              613      8   61 FALSE</span></span>
-<span><span class="co">#&gt; 614              614      7   62 FALSE</span></span>
-<span><span class="co">#&gt; 615              615      6   63 FALSE</span></span>
-<span><span class="co">#&gt; 616              616      5   64 FALSE</span></span>
-<span><span class="co">#&gt; 617              617      4   65 FALSE</span></span>
-<span><span class="co">#&gt; 618              618      3   66 FALSE</span></span>
-<span><span class="co">#&gt; 619              619      2   67 FALSE</span></span>
-<span><span class="co">#&gt; 620              620      1   68 FALSE</span></span>
-<span><span class="co">#&gt; 621              621     11   59 FALSE</span></span>
-<span><span class="co">#&gt; 622              622      9   61 FALSE</span></span>
-<span><span class="co">#&gt; 623              623      8   62 FALSE</span></span>
-<span><span class="co">#&gt; 624              624      6   64 FALSE</span></span>
-<span><span class="co">#&gt; 625              625      5   65 FALSE</span></span>
-<span><span class="co">#&gt; 626              626      4   66 FALSE</span></span>
-<span><span class="co">#&gt; 627              627      3   67 FALSE</span></span>
-<span><span class="co">#&gt; 628              628      2   68 FALSE</span></span>
-<span><span class="co">#&gt; 629              629      1   69 FALSE</span></span>
-<span><span class="co">#&gt; 630              630      6   65 FALSE</span></span>
-<span><span class="co">#&gt; 631              631      5   66 FALSE</span></span>
-<span><span class="co">#&gt; 632              632      4   67 FALSE</span></span>
-<span><span class="co">#&gt; 633              633      3   68 FALSE</span></span>
-<span><span class="co">#&gt; 634              634      2   69 FALSE</span></span>
-<span><span class="co">#&gt; 635              635      1   70 FALSE</span></span>
-<span><span class="co">#&gt; 636              636      0   71 FALSE</span></span>
-<span><span class="co">#&gt; 637              637     10   62 FALSE</span></span>
-<span><span class="co">#&gt; 638              638      9   63 FALSE</span></span>
-<span><span class="co">#&gt; 639              639      7   65 FALSE</span></span>
-<span><span class="co">#&gt; 640              640      6   66 FALSE</span></span>
-<span><span class="co">#&gt; 641              641      5   67 FALSE</span></span>
-<span><span class="co">#&gt; 642              642      4   68 FALSE</span></span>
-<span><span class="co">#&gt; 643              643      3   69 FALSE</span></span>
-<span><span class="co">#&gt; 644              644      2   70 FALSE</span></span>
-<span><span class="co">#&gt; 645              645      1   71 FALSE</span></span>
-<span><span class="co">#&gt; 646              646     10   63 FALSE</span></span>
-<span><span class="co">#&gt; 647              647      9   64 FALSE</span></span>
-<span><span class="co">#&gt; 648              648      8   65 FALSE</span></span>
-<span><span class="co">#&gt; 649              649      7   66 FALSE</span></span>
-<span><span class="co">#&gt; 650              650      6   67 FALSE</span></span>
-<span><span class="co">#&gt; 651              651      5   68 FALSE</span></span>
-<span><span class="co">#&gt; 652              652      4   69 FALSE</span></span>
-<span><span class="co">#&gt; 653              653      3   70 FALSE</span></span>
-<span><span class="co">#&gt; 654              654      2   71 FALSE</span></span>
-<span><span class="co">#&gt; 655              655      1   72 FALSE</span></span>
-<span><span class="co">#&gt; 656              656     13   61 FALSE</span></span>
-<span><span class="co">#&gt; 657              657     10   64 FALSE</span></span>
-<span><span class="co">#&gt; 658              658      8   66 FALSE</span></span>
-<span><span class="co">#&gt; 659              659      6   68 FALSE</span></span>
-<span><span class="co">#&gt; 660              660      5   69 FALSE</span></span>
-<span><span class="co">#&gt; 661              661      4   70 FALSE</span></span>
-<span><span class="co">#&gt; 662              662      3   71 FALSE</span></span>
-<span><span class="co">#&gt; 663              663      2   72 FALSE</span></span>
-<span><span class="co">#&gt; 664              664      1   73 FALSE</span></span>
-<span><span class="co">#&gt; 665              665      9   66 FALSE</span></span>
-<span><span class="co">#&gt; 666              666      6   69 FALSE</span></span>
-<span><span class="co">#&gt; 667              667      5   70 FALSE</span></span>
-<span><span class="co">#&gt; 668              668      4   71 FALSE</span></span>
-<span><span class="co">#&gt; 669              669      3   72 FALSE</span></span>
-<span><span class="co">#&gt; 670              670      2   73 FALSE</span></span>
-<span><span class="co">#&gt; 671              671      1   74 FALSE</span></span>
-<span><span class="co">#&gt; 672              672      6   70 FALSE</span></span>
-<span><span class="co">#&gt; 673              673      5   71 FALSE</span></span>
-<span><span class="co">#&gt; 674              674      4   72 FALSE</span></span>
-<span><span class="co">#&gt; 675              675      3   73 FALSE</span></span>
-<span><span class="co">#&gt; 676              676      2   74 FALSE</span></span>
-<span><span class="co">#&gt; 677              677      1   75 FALSE</span></span>
-<span><span class="co">#&gt; 678              678     11   66 FALSE</span></span>
-<span><span class="co">#&gt; 679              679     10   67 FALSE</span></span>
-<span><span class="co">#&gt; 680              680      9   68 FALSE</span></span>
-<span><span class="co">#&gt; 681              681      6   71 FALSE</span></span>
-<span><span class="co">#&gt; 682              682      5   72 FALSE</span></span>
-<span><span class="co">#&gt; 683              683      4   73 FALSE</span></span>
-<span><span class="co">#&gt; 684              684      3   74 FALSE</span></span>
-<span><span class="co">#&gt; 685              685      2   75 FALSE</span></span>
-<span><span class="co">#&gt; 686              686      1   76 FALSE</span></span>
-<span><span class="co">#&gt; 687              687      9   69 FALSE</span></span>
-<span><span class="co">#&gt; 688              688      6   72 FALSE</span></span>
-<span><span class="co">#&gt; 689              689      5   73 FALSE</span></span>
-<span><span class="co">#&gt; 690              690      4   74 FALSE</span></span>
-<span><span class="co">#&gt; 691              691      3   75 FALSE</span></span>
-<span><span class="co">#&gt; 692              692      2   76 FALSE</span></span>
-<span><span class="co">#&gt; 693              693      7   72 FALSE</span></span>
-<span><span class="co">#&gt; 694              694      6   73 FALSE</span></span>
-<span><span class="co">#&gt; 695              695      5   74 FALSE</span></span>
-<span><span class="co">#&gt; 696              696      4   75 FALSE</span></span>
-<span><span class="co">#&gt; 697              697      3   76 FALSE</span></span>
-<span><span class="co">#&gt; 698              698      2   77 FALSE</span></span>
-<span><span class="co">#&gt; 699              699      1   78 FALSE</span></span>
-<span><span class="co">#&gt; 700              700      0   79 FALSE</span></span>
-<span><span class="co">#&gt; 701              701      8   72 FALSE</span></span>
-<span><span class="co">#&gt; 702              702      7   73 FALSE</span></span>
-<span><span class="co">#&gt; 703              703      6   74 FALSE</span></span>
-<span><span class="co">#&gt; 704              704      5   75 FALSE</span></span>
-<span><span class="co">#&gt; 705              705      4   76 FALSE</span></span>
-<span><span class="co">#&gt; 706              706      3   77 FALSE</span></span>
-<span><span class="co">#&gt; 707              707      2   78 FALSE</span></span>
-<span><span class="co">#&gt; 708              708     13   68 FALSE</span></span>
-<span><span class="co">#&gt; 709              709     11   70 FALSE</span></span>
-<span><span class="co">#&gt; 710              710      7   74 FALSE</span></span>
-<span><span class="co">#&gt; 711              711      6   75 FALSE</span></span>
-<span><span class="co">#&gt; 712              712      5   76 FALSE</span></span>
-<span><span class="co">#&gt; 713              713      4   77 FALSE</span></span>
-<span><span class="co">#&gt; 714              714      3   78 FALSE</span></span>
-<span><span class="co">#&gt; 715              715      2   79 FALSE</span></span>
-<span><span class="co">#&gt; 716              716      1   80 FALSE</span></span>
-<span><span class="co">#&gt; 717              717     11   71 FALSE</span></span>
-<span><span class="co">#&gt; 718              718      9   73 FALSE</span></span>
-<span><span class="co">#&gt; 719              719      6   76 FALSE</span></span>
-<span><span class="co">#&gt; 720              720      5   77 FALSE</span></span>
-<span><span class="co">#&gt; 721              721      4   78 FALSE</span></span>
-<span><span class="co">#&gt; 722              722      3   79 FALSE</span></span>
-<span><span class="co">#&gt; 723              723      2   80 FALSE</span></span>
-<span><span class="co">#&gt; 724              724      9   74 FALSE</span></span>
-<span><span class="co">#&gt; 725              725      7   76 FALSE</span></span>
-<span><span class="co">#&gt; 726              726      6   77 FALSE</span></span>
-<span><span class="co">#&gt; 727              727      5   78 FALSE</span></span>
-<span><span class="co">#&gt; 728              728      4   79 FALSE</span></span>
-<span><span class="co">#&gt; 729              729      3   80 FALSE</span></span>
-<span><span class="co">#&gt; 730              730      2   81 FALSE</span></span>
-<span><span class="co">#&gt; 731              731     11   73 FALSE</span></span>
-<span><span class="co">#&gt; 732              732      7   77 FALSE</span></span>
-<span><span class="co">#&gt; 733              733      6   78 FALSE</span></span>
-<span><span class="co">#&gt; 734              734      5   79 FALSE</span></span>
-<span><span class="co">#&gt; 735              735      4   80 FALSE</span></span>
-<span><span class="co">#&gt; 736              736      3   81 FALSE</span></span>
-<span><span class="co">#&gt; 737              737      2   82 FALSE</span></span>
-<span><span class="co">#&gt; 738              738     16   69 FALSE</span></span>
-<span><span class="co">#&gt; 739              739     10   75 FALSE</span></span>
-<span><span class="co">#&gt; 740              740      9   76 FALSE</span></span>
-<span><span class="co">#&gt; 741              741      5   80 FALSE</span></span>
-<span><span class="co">#&gt; 742              742      4   81 FALSE</span></span>
-<span><span class="co">#&gt; 743              743      3   82 FALSE</span></span>
-<span><span class="co">#&gt; 744              744      2   83 FALSE</span></span>
-<span><span class="co">#&gt; 745              745     16   70 FALSE</span></span>
-<span><span class="co">#&gt; 746              746     11   75 FALSE</span></span>
-<span><span class="co">#&gt; 747              747      9   77 FALSE</span></span>
-<span><span class="co">#&gt; 748              748      7   79 FALSE</span></span>
-<span><span class="co">#&gt; 749              749      6   80 FALSE</span></span>
-<span><span class="co">#&gt; 750              750      5   81 FALSE</span></span>
-<span><span class="co">#&gt; 751              751      4   82 FALSE</span></span>
-<span><span class="co">#&gt; 752              752      3   83 FALSE</span></span>
-<span><span class="co">#&gt; 753              753      2   84 FALSE</span></span>
-<span><span class="co">#&gt; 754              754      1   85 FALSE</span></span>
-<span><span class="co">#&gt; 755              755     13   74 FALSE</span></span>
-<span><span class="co">#&gt; 756              756      8   79 FALSE</span></span>
-<span><span class="co">#&gt; 757              757      6   81 FALSE</span></span>
-<span><span class="co">#&gt; 758              758      5   82 FALSE</span></span>
-<span><span class="co">#&gt; 759              759      4   83 FALSE</span></span>
-<span><span class="co">#&gt; 760              760      3   84 FALSE</span></span>
-<span><span class="co">#&gt; 761              761      2   85 FALSE</span></span>
-<span><span class="co">#&gt; 762              762      1   86 FALSE</span></span>
-<span><span class="co">#&gt; 763              763     12   76 FALSE</span></span>
-<span><span class="co">#&gt; 764              764      7   81 FALSE</span></span>
-<span><span class="co">#&gt; 765              765      6   82 FALSE</span></span>
-<span><span class="co">#&gt; 766              766      5   83 FALSE</span></span>
-<span><span class="co">#&gt; 767              767      4   84 FALSE</span></span>
-<span><span class="co">#&gt; 768              768      3   85 FALSE</span></span>
-<span><span class="co">#&gt; 769              769      2   86 FALSE</span></span>
-<span><span class="co">#&gt; 770              770      1   87 FALSE</span></span>
-<span><span class="co">#&gt; 771              771      9   80 FALSE</span></span>
-<span><span class="co">#&gt; 772              772      7   82 FALSE</span></span>
-<span><span class="co">#&gt; 773              773      6   83 FALSE</span></span>
-<span><span class="co">#&gt; 774              774      5   84 FALSE</span></span>
-<span><span class="co">#&gt; 775              775      4   85 FALSE</span></span>
-<span><span class="co">#&gt; 776              776      3   86 FALSE</span></span>
-<span><span class="co">#&gt; 777              777      2   87 FALSE</span></span>
-<span><span class="co">#&gt; 778              778      1   88 FALSE</span></span>
-<span><span class="co">#&gt; 779              779     13   77 FALSE</span></span>
-<span><span class="co">#&gt; 780              780     12   78 FALSE</span></span>
-<span><span class="co">#&gt; 781              781     10   80 FALSE</span></span>
-<span><span class="co">#&gt; 782              782      9   81 FALSE</span></span>
-<span><span class="co">#&gt; 783              783      7   83 FALSE</span></span>
-<span><span class="co">#&gt; 784              784      6   84 FALSE</span></span>
-<span><span class="co">#&gt; 785              785      5   85 FALSE</span></span>
-<span><span class="co">#&gt; 786              786      4   86 FALSE</span></span>
-<span><span class="co">#&gt; 787              787      3   87 FALSE</span></span>
-<span><span class="co">#&gt; 788              788      2   88 FALSE</span></span>
-<span><span class="co">#&gt; 789              789      1   89 FALSE</span></span>
-<span><span class="co">#&gt; 790              790      7   84 FALSE</span></span>
-<span><span class="co">#&gt; 791              791      6   85 FALSE</span></span>
-<span><span class="co">#&gt; 792              792      5   86 FALSE</span></span>
-<span><span class="co">#&gt; 793              793      4   87 FALSE</span></span>
-<span><span class="co">#&gt; 794              794      3   88 FALSE</span></span>
-<span><span class="co">#&gt; 795              795      2   89 FALSE</span></span>
-<span><span class="co">#&gt; 796              796      1   90 FALSE</span></span>
-<span><span class="co">#&gt; 797              797      6   86 FALSE</span></span>
-<span><span class="co">#&gt; 798              798      5   87 FALSE</span></span>
-<span><span class="co">#&gt; 799              799      4   88 FALSE</span></span>
-<span><span class="co">#&gt; 800              800      3   89 FALSE</span></span>
-<span><span class="co">#&gt; 801              801      2   90 FALSE</span></span>
-<span><span class="co">#&gt; 802              802     12   81 FALSE</span></span>
-<span><span class="co">#&gt; 803              803     11   82 FALSE</span></span>
-<span><span class="co">#&gt; 804              804     10   83 FALSE</span></span>
-<span><span class="co">#&gt; 805              805      7   86 FALSE</span></span>
-<span><span class="co">#&gt; 806              806      6   87 FALSE</span></span>
-<span><span class="co">#&gt; 807              807      5   88 FALSE</span></span>
-<span><span class="co">#&gt; 808              808      4   89 FALSE</span></span>
-<span><span class="co">#&gt; 809              809      3   90 FALSE</span></span>
-<span><span class="co">#&gt; 810              810      2   91 FALSE</span></span>
-<span><span class="co">#&gt; 811              811      8   86 FALSE</span></span>
-<span><span class="co">#&gt; 812              812      7   87 FALSE</span></span>
-<span><span class="co">#&gt; 813              813      5   89 FALSE</span></span>
-<span><span class="co">#&gt; 814              814      4   90 FALSE</span></span>
-<span><span class="co">#&gt; 815              815      3   91 FALSE</span></span>
-<span><span class="co">#&gt; 816              816      2   92 FALSE</span></span>
-<span><span class="co">#&gt; 817              817      1   93 FALSE</span></span>
-<span><span class="co">#&gt; 818              818     11   84 FALSE</span></span>
-<span><span class="co">#&gt; 819              819      8   87 FALSE</span></span>
-<span><span class="co">#&gt; 820              820      6   89 FALSE</span></span>
-<span><span class="co">#&gt; 821              821      5   90 FALSE</span></span>
-<span><span class="co">#&gt; 822              822      4   91 FALSE</span></span>
-<span><span class="co">#&gt; 823              823      3   92 FALSE</span></span>
-<span><span class="co">#&gt; 824              824      2   93 FALSE</span></span>
-<span><span class="co">#&gt; 825              825     11   85 FALSE</span></span>
-<span><span class="co">#&gt; 826              826      7   89 FALSE</span></span>
-<span><span class="co">#&gt; 827              827      6   90 FALSE</span></span>
-<span><span class="co">#&gt; 828              828      5   91 FALSE</span></span>
-<span><span class="co">#&gt; 829              829      4   92 FALSE</span></span>
-<span><span class="co">#&gt; 830              830      3   93 FALSE</span></span>
-<span><span class="co">#&gt; 831              831      2   94 FALSE</span></span>
-<span><span class="co">#&gt; 832              832      1   95 FALSE</span></span>
-<span><span class="co">#&gt; 833              833     11   86 FALSE</span></span>
-<span><span class="co">#&gt; 834              834      9   88 FALSE</span></span>
-<span><span class="co">#&gt; 835              835      8   89 FALSE</span></span>
-<span><span class="co">#&gt; 836              836      6   91 FALSE</span></span>
-<span><span class="co">#&gt; 837              837      5   92 FALSE</span></span>
-<span><span class="co">#&gt; 838              838      4   93 FALSE</span></span>
-<span><span class="co">#&gt; 839              839      3   94 FALSE</span></span>
-<span><span class="co">#&gt; 840              840      2   95 FALSE</span></span>
-<span><span class="co">#&gt; 841              841     10   88 FALSE</span></span>
-<span><span class="co">#&gt; 842              842      8   90 FALSE</span></span>
-<span><span class="co">#&gt; 843              843      7   91 FALSE</span></span>
-<span><span class="co">#&gt; 844              844      6   92 FALSE</span></span>
-<span><span class="co">#&gt; 845              845      5   93 FALSE</span></span>
-<span><span class="co">#&gt; 846              846      4   94 FALSE</span></span>
-<span><span class="co">#&gt; 847              847      3   95 FALSE</span></span>
-<span><span class="co">#&gt; 848              848      2   96 FALSE</span></span>
-<span><span class="co">#&gt; 849              849     10   89 FALSE</span></span>
-<span><span class="co">#&gt; 850              850      7   92 FALSE</span></span>
-<span><span class="co">#&gt; 851              851      6   93 FALSE</span></span>
-<span><span class="co">#&gt; 852              852      5   94 FALSE</span></span>
-<span><span class="co">#&gt; 853              853      4   95 FALSE</span></span>
-<span><span class="co">#&gt; 854              854      3   96 FALSE</span></span>
-<span><span class="co">#&gt; 855              855      2   97 FALSE</span></span>
-<span><span class="co">#&gt; 856              856     10   90 FALSE</span></span>
-<span><span class="co">#&gt; 857              857      5   95 FALSE</span></span>
-<span><span class="co">#&gt; 858              858      4   96 FALSE</span></span>
-<span><span class="co">#&gt; 859              859      3   97 FALSE</span></span>
-<span><span class="co">#&gt; 860              860      2   98 FALSE</span></span>
-<span><span class="co">#&gt; 861              861      1   99 FALSE</span></span>
-<span><span class="co">#&gt; 862              862      8   93 FALSE</span></span>
-<span><span class="co">#&gt; 863              863      5   96 FALSE</span></span>
-<span><span class="co">#&gt; 864              864      4   97 FALSE</span></span>
-<span><span class="co">#&gt; 865              865      3   98 FALSE</span></span>
-<span><span class="co">#&gt; 866              866      2   99 FALSE</span></span>
-<span><span class="co">#&gt; 867              867      1  100 FALSE</span></span>
-<span><span class="co">#&gt; 868              868     11   91 FALSE</span></span>
-<span><span class="co">#&gt; 869              869     10   92 FALSE</span></span>
-<span><span class="co">#&gt; 870              870      7   95 FALSE</span></span>
-<span><span class="co">#&gt; 871              871      6   96 FALSE</span></span>
-<span><span class="co">#&gt; 872              872      5   97 FALSE</span></span>
-<span><span class="co">#&gt; 873              873      4   98 FALSE</span></span>
-<span><span class="co">#&gt; 874              874      3   99 FALSE</span></span>
-<span><span class="co">#&gt; 875              875      2  100 FALSE</span></span>
-<span><span class="co">#&gt; 876              876      1  101 FALSE</span></span>
-<span><span class="co">#&gt; 877              877     10   93 FALSE</span></span>
-<span><span class="co">#&gt; 878              878      6   97 FALSE</span></span>
-<span><span class="co">#&gt; 879              879      5   98 FALSE</span></span>
-<span><span class="co">#&gt; 880              880      4   99 FALSE</span></span>
-<span><span class="co">#&gt; 881              881      3  100 FALSE</span></span>
-<span><span class="co">#&gt; 882              882      2  101 FALSE</span></span>
-<span><span class="co">#&gt; 883              883      1  102 FALSE</span></span>
-<span><span class="co">#&gt; 884              884      9   95 FALSE</span></span>
-<span><span class="co">#&gt; 885              885      5   99 FALSE</span></span>
-<span><span class="co">#&gt; 886              886      4  100 FALSE</span></span>
-<span><span class="co">#&gt; 887              887      3  101 FALSE</span></span>
-<span><span class="co">#&gt; 888              888      2  102 FALSE</span></span>
-<span><span class="co">#&gt; 889              889      1  103 FALSE</span></span>
-<span><span class="co">#&gt; 890              890      0  104 FALSE</span></span>
-<span><span class="co">#&gt; 891              891     12   93 FALSE</span></span>
-<span><span class="co">#&gt; 892              892     11   94 FALSE</span></span>
-<span><span class="co">#&gt; 893              893      9   96 FALSE</span></span>
-<span><span class="co">#&gt; 894              894      8   97 FALSE</span></span>
-<span><span class="co">#&gt; 895              895      6   99 FALSE</span></span>
-<span><span class="co">#&gt; 896              896      5  100 FALSE</span></span>
-<span><span class="co">#&gt; 897              897      4  101 FALSE</span></span>
-<span><span class="co">#&gt; 898              898      3  102 FALSE</span></span>
-<span><span class="co">#&gt; 899              899      2  103 FALSE</span></span>
-<span><span class="co">#&gt; 900              900      9   97 FALSE</span></span>
-<span><span class="co">#&gt; 901              901      8   98 FALSE</span></span>
-<span><span class="co">#&gt; 902              902      7   99 FALSE</span></span>
-<span><span class="co">#&gt; 903              903      5  101 FALSE</span></span>
-<span><span class="co">#&gt; 904              904      4  102 FALSE</span></span>
-<span><span class="co">#&gt; 905              905      3  103 FALSE</span></span>
-<span><span class="co">#&gt; 906              906      2  104 FALSE</span></span>
-<span><span class="co">#&gt; 907              907      1  105 FALSE</span></span>
-<span><span class="co">#&gt; 908              908      7  100 FALSE</span></span>
-<span><span class="co">#&gt; 909              909      6  101 FALSE</span></span>
-<span><span class="co">#&gt; 910              910      5  102 FALSE</span></span>
-<span><span class="co">#&gt; 911              911      4  103 FALSE</span></span>
-<span><span class="co">#&gt; 912              912      3  104 FALSE</span></span>
-<span><span class="co">#&gt; 913              913      2  105 FALSE</span></span>
-<span><span class="co">#&gt; 914              914      1  106 FALSE</span></span>
-<span><span class="co">#&gt; 915              915      9   99 FALSE</span></span>
-<span><span class="co">#&gt; 916              916      8  100 FALSE</span></span>
-<span><span class="co">#&gt; 917              917      7  101 FALSE</span></span>
-<span><span class="co">#&gt; 918              918      6  102 FALSE</span></span>
-<span><span class="co">#&gt; 919              919      5  103 FALSE</span></span>
-<span><span class="co">#&gt; 920              920      4  104 FALSE</span></span>
-<span><span class="co">#&gt; 921              921      3  105 FALSE</span></span>
-<span><span class="co">#&gt; 922              922      2  106 FALSE</span></span>
-<span><span class="co">#&gt; 923              923      1  107 FALSE</span></span>
-<span><span class="co">#&gt; 924              924      7  102 FALSE</span></span>
-<span><span class="co">#&gt; 925              925      6  103 FALSE</span></span>
-<span><span class="co">#&gt; 926              926      5  104 FALSE</span></span>
-<span><span class="co">#&gt; 927              927      4  105 FALSE</span></span>
-<span><span class="co">#&gt; 928              928      3  106 FALSE</span></span>
-<span><span class="co">#&gt; 929              929      2  107 FALSE</span></span>
-<span><span class="co">#&gt; 930              930      1  108 FALSE</span></span>
-<span><span class="co">#&gt; 931              931      7  103 FALSE</span></span>
-<span><span class="co">#&gt; 932              932      5  105 FALSE</span></span>
-<span><span class="co">#&gt; 933              933      4  106 FALSE</span></span>
-<span><span class="co">#&gt; 934              934      3  107 FALSE</span></span>
-<span><span class="co">#&gt; 935              935      2  108 FALSE</span></span>
-<span><span class="co">#&gt; 936              936      1  109 FALSE</span></span>
-<span><span class="co">#&gt; 937              937     10  101 FALSE</span></span>
-<span><span class="co">#&gt; 938              938      5  106 FALSE</span></span>
-<span><span class="co">#&gt; 939              939      4  107 FALSE</span></span>
-<span><span class="co">#&gt; 940              940      3  108 FALSE</span></span>
-<span><span class="co">#&gt; 941              941      2  109 FALSE</span></span>
-<span><span class="co">#&gt; 942              942      1  110 FALSE</span></span>
-<span><span class="co">#&gt; 943              943      7  105 FALSE</span></span>
-<span><span class="co">#&gt; 944              944      6  106 FALSE</span></span>
-<span><span class="co">#&gt; 945              945      5  107 FALSE</span></span>
-<span><span class="co">#&gt; 946              946      4  108 FALSE</span></span>
-<span><span class="co">#&gt; 947              947      3  109 FALSE</span></span>
-<span><span class="co">#&gt; 948              948      2  110 FALSE</span></span>
-<span><span class="co">#&gt; 949              949      6  107 FALSE</span></span>
-<span><span class="co">#&gt; 950              950      4  109 FALSE</span></span>
-<span><span class="co">#&gt; 951              951      3  110 FALSE</span></span>
-<span><span class="co">#&gt; 952              952      2  111 FALSE</span></span>
-<span><span class="co">#&gt; 953              953      1  112 FALSE</span></span>
-<span><span class="co">#&gt; 954              954     11  103 FALSE</span></span>
-<span><span class="co">#&gt; 955              955      8  106 FALSE</span></span>
-<span><span class="co">#&gt; 956              956      6  108 FALSE</span></span>
-<span><span class="co">#&gt; 957              957      5  109 FALSE</span></span>
-<span><span class="co">#&gt; 958              958      4  110 FALSE</span></span>
-<span><span class="co">#&gt; 959              959      3  111 FALSE</span></span>
-<span><span class="co">#&gt; 960              960      2  112 FALSE</span></span>
-<span><span class="co">#&gt; 961              961      1  113 FALSE</span></span>
-<span><span class="co">#&gt; 962              962      7  108 FALSE</span></span>
-<span><span class="co">#&gt; 963              963      6  109 FALSE</span></span>
-<span><span class="co">#&gt; 964              964      5  110 FALSE</span></span>
-<span><span class="co">#&gt; 965              965      4  111 FALSE</span></span>
-<span><span class="co">#&gt; 966              966      3  112 FALSE</span></span>
-<span><span class="co">#&gt; 967              967      2  113 FALSE</span></span>
-<span><span class="co">#&gt; 968              968      1  114 FALSE</span></span>
-<span><span class="co">#&gt; 969              969      6  110 FALSE</span></span>
-<span><span class="co">#&gt; 970              970      5  111 FALSE</span></span>
-<span><span class="co">#&gt; 971              971      4  112 FALSE</span></span>
-<span><span class="co">#&gt; 972              972      3  113 FALSE</span></span>
-<span><span class="co">#&gt; 973              973      2  114 FALSE</span></span>
-<span><span class="co">#&gt; 974              974     13  104 FALSE</span></span>
-<span><span class="co">#&gt; 975              975      8  109 FALSE</span></span>
-<span><span class="co">#&gt; 976              976      7  110 FALSE</span></span>
-<span><span class="co">#&gt; 977              977      6  111 FALSE</span></span>
-<span><span class="co">#&gt; 978              978      5  112 FALSE</span></span>
-<span><span class="co">#&gt; 979              979      4  113 FALSE</span></span>
-<span><span class="co">#&gt; 980              980      3  114 FALSE</span></span>
-<span><span class="co">#&gt; 981              981      2  115 FALSE</span></span>
-<span><span class="co">#&gt; 982              982      1  116 FALSE</span></span>
-<span><span class="co">#&gt; 983              983     13  105 FALSE</span></span>
-<span><span class="co">#&gt; 984              984     12  106 FALSE</span></span>
-<span><span class="co">#&gt; 985              985     10  108 FALSE</span></span>
-<span><span class="co">#&gt; 986              986      6  112 FALSE</span></span>
-<span><span class="co">#&gt; 987              987      5  113 FALSE</span></span>
-<span><span class="co">#&gt; 988              988      4  114 FALSE</span></span>
-<span><span class="co">#&gt; 989              989      3  115 FALSE</span></span>
-<span><span class="co">#&gt; 990              990      2  116 FALSE</span></span>
-<span><span class="co">#&gt; 991              991     10  109 FALSE</span></span>
-<span><span class="co">#&gt; 992              992      9  110 FALSE</span></span>
-<span><span class="co">#&gt; 993              993      8  111 FALSE</span></span>
-<span><span class="co">#&gt; 994              994      7  112 FALSE</span></span>
-<span><span class="co">#&gt; 995              995      5  114 FALSE</span></span>
-<span><span class="co">#&gt; 996              996      4  115 FALSE</span></span>
-<span><span class="co">#&gt; 997              997      3  116 FALSE</span></span>
-<span><span class="co">#&gt; 998              998      2  117 FALSE</span></span>
-<span><span class="co">#&gt; 999              999      1  118 FALSE</span></span>
-<span><span class="co">#&gt; 1000            1000     13  107 FALSE</span></span>
-<span><span class="co">#&gt; 1001            1001      9  111 FALSE</span></span>
-<span><span class="co">#&gt; 1002            1002      8  112 FALSE</span></span>
-<span><span class="co">#&gt; 1003            1003      5  115 FALSE</span></span>
-<span><span class="co">#&gt; 1004            1004      4  116 FALSE</span></span>
-<span><span class="co">#&gt; 1005            1005      3  117 FALSE</span></span>
-<span><span class="co">#&gt; 1006            1006      2  118 FALSE</span></span>
-<span><span class="co">#&gt; 1007            1007      1  119 FALSE</span></span>
-<span><span class="co">#&gt; 1008            1008      8  113 FALSE</span></span>
-<span><span class="co">#&gt; 1009            1009      5  116 FALSE</span></span>
-<span><span class="co">#&gt; 1010            1010      4  117 FALSE</span></span>
-<span><span class="co">#&gt; 1011            1011      3  118 FALSE</span></span>
-<span><span class="co">#&gt; 1012            1012      2  119 FALSE</span></span>
-<span><span class="co">#&gt; 1013            1013      1  120 FALSE</span></span>
-<span><span class="co">#&gt; 1014            1014      8  114 FALSE</span></span>
-<span><span class="co">#&gt; 1015            1015      4  118 FALSE</span></span>
-<span><span class="co">#&gt; 1016            1016      3  119 FALSE</span></span>
-<span><span class="co">#&gt; 1017            1017      2  120 FALSE</span></span>
-<span><span class="co">#&gt; 1018            1018      1  121 FALSE</span></span>
-<span><span class="co">#&gt; 1019            1019     10  113 FALSE</span></span>
-<span><span class="co">#&gt; 1020            1020      8  115 FALSE</span></span>
-<span><span class="co">#&gt; 1021            1021      7  116 FALSE</span></span>
-<span><span class="co">#&gt; 1022            1022      6  117 FALSE</span></span>
-<span><span class="co">#&gt; 1023            1023      4  119 FALSE</span></span>
-<span><span class="co">#&gt; 1024            1024      3  120 FALSE</span></span>
-<span><span class="co">#&gt; 1025            1025      2  121 FALSE</span></span>
-<span><span class="co">#&gt; 1026            1026      1  122 FALSE</span></span>
-<span><span class="co">#&gt; 1027            1027     10  114 FALSE</span></span>
-<span><span class="co">#&gt; 1028            1028      9  115 FALSE</span></span>
-<span><span class="co">#&gt; 1029            1029      5  119 FALSE</span></span>
-<span><span class="co">#&gt; 1030            1030      4  120 FALSE</span></span>
-<span><span class="co">#&gt; 1031            1031      3  121 FALSE</span></span>
-<span><span class="co">#&gt; 1032            1032      2  122 FALSE</span></span>
-<span><span class="co">#&gt; 1033            1033      8  117 FALSE</span></span>
-<span><span class="co">#&gt; 1034            1034      6  119 FALSE</span></span>
-<span><span class="co">#&gt; 1035            1035      5  120 FALSE</span></span>
-<span><span class="co">#&gt; 1036            1036      4  121 FALSE</span></span>
-<span><span class="co">#&gt; 1037            1037      3  122 FALSE</span></span>
-<span><span class="co">#&gt; 1038            1038      2  123 FALSE</span></span>
-<span><span class="co">#&gt; 1039            1039      1  124 FALSE</span></span>
-<span><span class="co">#&gt; 1040            1040      9  117 FALSE</span></span>
-<span><span class="co">#&gt; 1041            1041      4  122 FALSE</span></span>
-<span><span class="co">#&gt; 1042            1042      3  123 FALSE</span></span>
-<span><span class="co">#&gt; 1043            1043      2  124 FALSE</span></span>
-<span><span class="co">#&gt; 1044            1044      1  125 FALSE</span></span>
-<span><span class="co">#&gt; 1045            1045     11  116 FALSE</span></span>
-<span><span class="co">#&gt; 1046            1046      9  118 FALSE</span></span>
-<span><span class="co">#&gt; 1047            1047      8  119 FALSE</span></span>
-<span><span class="co">#&gt; 1048            1048      7  120 FALSE</span></span>
-<span><span class="co">#&gt; 1049            1049      5  122 FALSE</span></span>
-<span><span class="co">#&gt; 1050            1050      4  123 FALSE</span></span>
-<span><span class="co">#&gt; 1051            1051      3  124 FALSE</span></span>
-<span><span class="co">#&gt; 1052            1052      2  125 FALSE</span></span>
-<span><span class="co">#&gt; 1053            1053      1  126 FALSE</span></span>
-<span><span class="co">#&gt; 1054            1054     10  118 FALSE</span></span>
-<span><span class="co">#&gt; 1055            1055      7  121 FALSE</span></span>
-<span><span class="co">#&gt; 1056            1056      6  122 FALSE</span></span>
-<span><span class="co">#&gt; 1057            1057      5  123 FALSE</span></span>
-<span><span class="co">#&gt; 1058            1058      4  124 FALSE</span></span>
-<span><span class="co">#&gt; 1059            1059      3  125 FALSE</span></span>
-<span><span class="co">#&gt; 1060            1060      2  126 FALSE</span></span>
-<span><span class="co">#&gt; 1061            1061      1  127 FALSE</span></span>
-<span><span class="co">#&gt; 1062            1062      6  123 FALSE</span></span>
-<span><span class="co">#&gt; 1063            1063      5  124 FALSE</span></span>
-<span><span class="co">#&gt; 1064            1064      4  125 FALSE</span></span>
-<span><span class="co">#&gt; 1065            1065      3  126 FALSE</span></span>
-<span><span class="co">#&gt; 1066            1066      2  127 FALSE</span></span>
-<span><span class="co">#&gt; 1067            1067      1  128 FALSE</span></span>
-<span><span class="co">#&gt; 1068            1068     10  120 FALSE</span></span>
-<span><span class="co">#&gt; 1069            1069      8  122 FALSE</span></span>
-<span><span class="co">#&gt; 1070            1070      6  124 FALSE</span></span>
-<span><span class="co">#&gt; 1071            1071      5  125 FALSE</span></span>
-<span><span class="co">#&gt; 1072            1072      4  126 FALSE</span></span>
-<span><span class="co">#&gt; 1073            1073      3  127 FALSE</span></span>
-<span><span class="co">#&gt; 1074            1074      2  128 FALSE</span></span>
-<span><span class="co">#&gt; 1075            1075      1  129 FALSE</span></span>
-<span><span class="co">#&gt; 1076            1076      8  123 FALSE</span></span>
-<span><span class="co">#&gt; 1077            1077      7  124 FALSE</span></span>
-<span><span class="co">#&gt; 1078            1078      5  126 FALSE</span></span>
-<span><span class="co">#&gt; 1079            1079      4  127 FALSE</span></span>
-<span><span class="co">#&gt; 1080            1080      3  128 FALSE</span></span>
-<span><span class="co">#&gt; 1081            1081      2  129 FALSE</span></span>
-<span><span class="co">#&gt; 1082            1082      6  126 FALSE</span></span>
-<span><span class="co">#&gt; 1083            1083      5  127 FALSE</span></span>
-<span><span class="co">#&gt; 1084            1084      4  128 FALSE</span></span>
-<span><span class="co">#&gt; 1085            1085      3  129 FALSE</span></span>
-<span><span class="co">#&gt; 1086            1086     12  121 FALSE</span></span>
-<span><span class="co">#&gt; 1087            1087      8  125 FALSE</span></span>
-<span><span class="co">#&gt; 1088            1088      6  127 FALSE</span></span>
-<span><span class="co">#&gt; 1089            1089      5  128 FALSE</span></span>
-<span><span class="co">#&gt; 1090            1090      4  129 FALSE</span></span>
-<span><span class="co">#&gt; 1091            1091      3  130 FALSE</span></span>
-<span><span class="co">#&gt; 1092            1092      2  131 FALSE</span></span>
-<span><span class="co">#&gt; 1093            1093      1  132 FALSE</span></span>
-<span><span class="co">#&gt; 1094            1094      5  129 FALSE</span></span>
-<span><span class="co">#&gt; 1095            1095      4  130 FALSE</span></span>
-<span><span class="co">#&gt; 1096            1096      3  131 FALSE</span></span>
-<span><span class="co">#&gt; 1097            1097      2  132 FALSE</span></span>
-<span><span class="co">#&gt; 1098            1098      1  133 FALSE</span></span>
-<span><span class="co">#&gt; 1099            1099     16  119 FALSE</span></span>
-<span><span class="co">#&gt; 1100            1100      9  126 FALSE</span></span>
-<span><span class="co">#&gt; 1101            1101      8  127 FALSE</span></span>
-<span><span class="co">#&gt; 1102            1102      7  128 FALSE</span></span>
-<span><span class="co">#&gt; 1103            1103      6  129 FALSE</span></span>
-<span><span class="co">#&gt; 1104            1104      5  130 FALSE</span></span>
-<span><span class="co">#&gt; 1105            1105      4  131 FALSE</span></span>
-<span><span class="co">#&gt; 1106            1106      3  132 FALSE</span></span>
-<span><span class="co">#&gt; 1107            1107      2  133 FALSE</span></span>
-<span><span class="co">#&gt; 1108            1108      1  134 FALSE</span></span>
-<span><span class="co">#&gt; 1109            1109      8  128 FALSE</span></span>
-<span><span class="co">#&gt; 1110            1110      7  129 FALSE</span></span>
-<span><span class="co">#&gt; 1111            1111      5  131 FALSE</span></span>
-<span><span class="co">#&gt; 1112            1112      4  132 FALSE</span></span>
-<span><span class="co">#&gt; 1113            1113      3  133 FALSE</span></span>
-<span><span class="co">#&gt; 1114            1114      2  134 FALSE</span></span>
-<span><span class="co">#&gt; 1115            1115      1  135 FALSE</span></span>
-<span><span class="co">#&gt; 1116            1116     13  124 FALSE</span></span>
-<span><span class="co">#&gt; 1117            1117     12  125 FALSE</span></span>
-<span><span class="co">#&gt; 1118            1118      9  128 FALSE</span></span>
-<span><span class="co">#&gt; 1119            1119      7  130 FALSE</span></span>
-<span><span class="co">#&gt; 1120            1120      6  131 FALSE</span></span>
-<span><span class="co">#&gt; 1121            1121      5  132 FALSE</span></span>
-<span><span class="co">#&gt; 1122            1122      4  133 FALSE</span></span>
-<span><span class="co">#&gt; 1123            1123      3  134 FALSE</span></span>
-<span><span class="co">#&gt; 1124            1124      2  135 FALSE</span></span>
-<span><span class="co">#&gt; 1125            1125     12  126 FALSE</span></span>
-<span><span class="co">#&gt; 1126            1126      8  130 FALSE</span></span>
-<span><span class="co">#&gt; 1127            1127      6  132 FALSE</span></span>
-<span><span class="co">#&gt; 1128            1128      5  133 FALSE</span></span>
-<span><span class="co">#&gt; 1129            1129      4  134 FALSE</span></span>
-<span><span class="co">#&gt; 1130            1130      3  135 FALSE</span></span>
-<span><span class="co">#&gt; 1131            1131      2  136 FALSE</span></span>
-<span><span class="co">#&gt; 1132            1132     12  127 FALSE</span></span>
-<span><span class="co">#&gt; 1133            1133      8  131 FALSE</span></span>
-<span><span class="co">#&gt; 1134            1134      7  132 FALSE</span></span>
-<span><span class="co">#&gt; 1135            1135      6  133 FALSE</span></span>
-<span><span class="co">#&gt; 1136            1136      5  134 FALSE</span></span>
-<span><span class="co">#&gt; 1137            1137      4  135 FALSE</span></span>
-<span><span class="co">#&gt; 1138            1138      3  136 FALSE</span></span>
-<span><span class="co">#&gt; 1139            1139      2  137 FALSE</span></span>
-<span><span class="co">#&gt; 1140            1140      6  134 FALSE</span></span>
-<span><span class="co">#&gt; 1141            1141      5  135 FALSE</span></span>
-<span><span class="co">#&gt; 1142            1142      4  136 FALSE</span></span>
-<span><span class="co">#&gt; 1143            1143      3  137 FALSE</span></span>
-<span><span class="co">#&gt; 1144            1144      2  138 FALSE</span></span>
-<span><span class="co">#&gt; 1145            1145      7  134 FALSE</span></span>
-<span><span class="co">#&gt; 1146            1146      6  135 FALSE</span></span>
-<span><span class="co">#&gt; 1147            1147      5  136 FALSE</span></span>
-<span><span class="co">#&gt; 1148            1148      4  137 FALSE</span></span>
-<span><span class="co">#&gt; 1149            1149      3  138 FALSE</span></span>
-<span><span class="co">#&gt; 1150            1150      2  139 FALSE</span></span>
-<span><span class="co">#&gt; 1151            1151      5  137 FALSE</span></span>
-<span><span class="co">#&gt; 1152            1152      4  138 FALSE</span></span>
-<span><span class="co">#&gt; 1153            1153      3  139 FALSE</span></span>
-<span><span class="co">#&gt; 1154            1154      2  140 FALSE</span></span>
-<span><span class="co">#&gt; 1155            1155      6  137 FALSE</span></span>
-<span><span class="co">#&gt; 1156            1156      5  138 FALSE</span></span>
-<span><span class="co">#&gt; 1157            1157      4  139 FALSE</span></span>
-<span><span class="co">#&gt; 1158            1158      3  140 FALSE</span></span>
-<span><span class="co">#&gt; 1159            1159      2  141 FALSE</span></span>
-<span><span class="co">#&gt; 1160            1160      1  142 FALSE</span></span>
-<span><span class="co">#&gt; 1161            1161      6  138 FALSE</span></span>
-<span><span class="co">#&gt; 1162            1162      5  139 FALSE</span></span>
-<span><span class="co">#&gt; 1163            1163      4  140 FALSE</span></span>
-<span><span class="co">#&gt; 1164            1164      3  141 FALSE</span></span>
-<span><span class="co">#&gt; 1165            1165      2  142 FALSE</span></span>
-<span><span class="co">#&gt; 1166            1166      6  139 FALSE</span></span>
-<span><span class="co">#&gt; 1167            1167      4  141 FALSE</span></span>
-<span><span class="co">#&gt; 1168            1168      3  142 FALSE</span></span>
-<span><span class="co">#&gt; 1169            1169      2  143 FALSE</span></span>
-<span><span class="co">#&gt; 1170            1170      6  140 FALSE</span></span>
-<span><span class="co">#&gt; 1171            1171      5  141 FALSE</span></span>
-<span><span class="co">#&gt; 1172            1172      4  142 FALSE</span></span>
-<span><span class="co">#&gt; 1173            1173      3  143 FALSE</span></span>
-<span><span class="co">#&gt; 1174            1174      2  144 FALSE</span></span>
-<span><span class="co">#&gt; 1175            1175      5  142 FALSE</span></span>
-<span><span class="co">#&gt; 1176            1176      4  143 FALSE</span></span>
-<span><span class="co">#&gt; 1177            1177      3  144 FALSE</span></span>
-<span><span class="co">#&gt; 1178            1178      2  145 FALSE</span></span>
-<span><span class="co">#&gt; 1179            1179      5  143 FALSE</span></span>
-<span><span class="co">#&gt; 1180            1180      4  144 FALSE</span></span>
-<span><span class="co">#&gt; 1181            1181      3  145 FALSE</span></span>
-<span><span class="co">#&gt; 1182            1182      2  146 FALSE</span></span>
-<span><span class="co">#&gt; 1183            1183      6  143 FALSE</span></span>
-<span><span class="co">#&gt; 1184            1184      5  144 FALSE</span></span>
-<span><span class="co">#&gt; 1185            1185      4  145 FALSE</span></span>
-<span><span class="co">#&gt; 1186            1186      3  146 FALSE</span></span>
-<span><span class="co">#&gt; 1187            1187      2  147 FALSE</span></span>
-<span><span class="co">#&gt; 1188            1188      1  148 FALSE</span></span>
-<span><span class="co">#&gt; 1189            1189      6  144 FALSE</span></span>
-<span><span class="co">#&gt; 1190            1190      4  146 FALSE</span></span>
-<span><span class="co">#&gt; 1191            1191      3  147 FALSE</span></span>
-<span><span class="co">#&gt; 1192            1192      2  148 FALSE</span></span>
-<span><span class="co">#&gt; 1193            1193      6  145 FALSE</span></span>
-<span><span class="co">#&gt; 1194            1194      5  146 FALSE</span></span>
-<span><span class="co">#&gt; 1195            1195      4  147 FALSE</span></span>
-<span><span class="co">#&gt; 1196            1196      3  148 FALSE</span></span>
-<span><span class="co">#&gt; 1197            1197      4  148 FALSE</span></span>
-<span><span class="co">#&gt; 1198            1198      3  149 FALSE</span></span>
-<span><span class="co">#&gt; 1199            1199      2  150 FALSE</span></span>
-<span><span class="co">#&gt; 1200            1200      6  147 FALSE</span></span>
-<span><span class="co">#&gt; 1201            1201      5  148 FALSE</span></span>
-<span><span class="co">#&gt; 1202            1202      4  149 FALSE</span></span>
-<span><span class="co">#&gt; 1203            1203      2  151 FALSE</span></span>
-<span><span class="co">#&gt; 1204            1204      6  148 FALSE</span></span>
-<span><span class="co">#&gt; 1205            1205      5  149 FALSE</span></span>
-<span><span class="co">#&gt; 1206            1206      4  150 FALSE</span></span>
-<span><span class="co">#&gt; 1207            1207      3  151 FALSE</span></span>
-<span><span class="co">#&gt; 1208            1208      5  150 FALSE</span></span>
-<span><span class="co">#&gt; 1209            1209      4  151 FALSE</span></span>
-<span><span class="co">#&gt; 1210            1210      3  152 FALSE</span></span>
-<span><span class="co">#&gt; 1211            1211      2  153 FALSE</span></span>
-<span><span class="co">#&gt; 1212            1212      4  152 FALSE</span></span>
-<span><span class="co">#&gt; 1213            1213      3  153 FALSE</span></span>
-<span><span class="co">#&gt; 1214            1214      2  154 FALSE</span></span>
-<span><span class="co">#&gt; 1215            1215      4  153 FALSE</span></span>
-<span><span class="co">#&gt; 1216            1216      3  154 FALSE</span></span>
-<span><span class="co">#&gt; 1217            1217      3  155 FALSE</span></span>
-<span><span class="co">#&gt; 1218            1218      2  156 FALSE</span></span>
-<span><span class="co">#&gt; 1219            1219      1  157 FALSE</span></span>
-<span><span class="co">#&gt; 1220            1220      5  154 FALSE</span></span>
-<span><span class="co">#&gt; 1221            1221      4  155 FALSE</span></span>
-<span><span class="co">#&gt; 1222            1222      3  156 FALSE</span></span>
-<span><span class="co">#&gt; 1223            1223      2  157 FALSE</span></span>
-<span><span class="co">#&gt; 1224            1224      1  158 FALSE</span></span>
-<span><span class="co">#&gt; 1225            1225      4  156 FALSE</span></span>
-<span><span class="co">#&gt; 1226            1226      3  157 FALSE</span></span>
-<span><span class="co">#&gt; 1227            1227      1  159 FALSE</span></span>
-<span><span class="co">#&gt; 1228            1228      4  157 FALSE</span></span>
-<span><span class="co">#&gt; 1229            1229      3  158 FALSE</span></span>
-<span><span class="co">#&gt; 1230            1230      2  159 FALSE</span></span>
-<span><span class="co">#&gt; 1231            1231      6  156 FALSE</span></span>
-<span><span class="co">#&gt; 1232            1232      4  158 FALSE</span></span>
-<span><span class="co">#&gt; 1233            1233      2  160 FALSE</span></span>
-<span><span class="co">#&gt; 1234            1234      4  159 FALSE</span></span>
-<span><span class="co">#&gt; 1235            1235      4  160 FALSE</span></span>
-<span><span class="co">#&gt; 1236            1236      5  160 FALSE</span></span>
-<span><span class="co">#&gt; 1237            1237      6  161 FALSE</span></span>
-<span><span class="co">#&gt; 1238            1238      6  162 FALSE</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span> <span class="va">ctch</span><span class="op">$</span><span class="fu">get_method</span><span class="op">(</span><span class="st">"atb_20_band_500"</span><span class="op">)</span><span class="op">$</span><span class="va">groups</span> <span class="op">)</span></span>
+<span><span class="co">#&gt;   atb_20_band_500 atb_20 band burns</span></span>
+<span><span class="co">#&gt; 1               1      4  194  TRUE</span></span>
+<span><span class="co">#&gt; 2               2      5    3 FALSE</span></span>
+<span><span class="co">#&gt; 3               3      7    2 FALSE</span></span>
+<span><span class="co">#&gt; 4               4      6    3 FALSE</span></span>
+<span><span class="co">#&gt; 5               5      7    3 FALSE</span></span>
+<span><span class="co">#&gt; 6               6      6    4 FALSE</span></span></code></pre></div>
 <p>Note that by giving the area to be burnt in a negative value when it
 was generated above we have ensured that the values do not clash with
 those generated by the cuts which (except potentially when a cut is NA)
@@ -1731,16 +529,16 @@ produce valid model</strong>.</p>
 <p>For example, in the case of the division of Swindale by topographic
 index into 21 classes and the bands directly the resulting model can be
 generated by</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"new_model"</span><span class="op">)</span>,<span class="st">"atb_20_band"</span>,<span class="st">"band"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ctch</span><span class="op">$</span><span class="fu">create_model</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">demo_dir</span>,<span class="st">"new_model"</span><span class="op">)</span>,<span class="st">"atb_20"</span><span class="op">)</span></span></code></pre></div>
 <p>Looking at the files within the <code>demo_dir</code> folder</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">demo_dir</span>,pattern<span class="op">=</span><span class="st">"new_model*"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "new_model.rds" "new_model.tif"</span></span></code></pre></div>
 <p>shows that an addition raster map of the HRUs has been created in
 <code>new_model.tif</code> along with a file <code>new_model.rds</code>
 containing a model suitable for <code>dynatop</code>. The values on the
-map correspond to the <code>ìd</code> column of the hru table in the
+map correspond to the <code>ìd</code> of the HRUs in the
 <code>dynatop</code> model.</p>
 </div>
   </div>
@@ -1762,7 +560,7 @@ map correspond to the <code>ìd</code> column of the hru table in the
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.7.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
 </div>
 
       </footer>
