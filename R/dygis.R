@@ -1289,9 +1289,11 @@ dynatopGIS <- R6::R6Class(
             ## handle precip and pet inputs
             if(!is.null(rain_lyr)){
                 cell_precip <- paste0(rainfall_label,terra::as.matrix(private$brk[[rain_lyr]]))
+                dummy_precip <- setdiff( unique(cell_precip), paste0(rainfall_label,NaN) )[1]
             }
             if(!is.null(pet_lyr)){
                 cell_pet <- paste0(pet_label,terra::as.matrix(private$brk[[pet_lyr]]))
+                dummy_pet <- setdiff( unique(cell_pet), paste0(pet_label,NaN) )[1]
             }
 
             ## pass over all the cells to get flow directions areas etc
@@ -1373,10 +1375,10 @@ dynatopGIS <- R6::R6Class(
 
                     ## handle inputs if zero area
                     if( !is.null(rain_lyr) & hru[[ii]]$properties["area"]==0 ){
-                        hru[[ii]]$precip <- setNames(1, cell_precip[1])
+                        hru[[ii]]$precip <- setNames(1, dummy_precip) #cell_precip[1])
                     }
                     if( !is.null(pet_lyr) & hru[[ii]]$properties["area"]==0 ){
-                        hru[[ii]]$pet <- setNames(1, cell_pet[1])
+                        hru[[ii]]$pet <- setNames(1, dummy_pet) #cell_pet[1])
                     }
 
                     ## do downstream routing
